@@ -36,10 +36,22 @@ cd src/
 make
 ```
 
-To create HepMC:
+To create HepMC run:
+```
+./bin/displacedHepmc inputdata ${mech}_${mass}_${eps}.root ${mech} ${lep} ${rseed} ${eps} ${mass} ${vtx1} ${vtx2}
+```
+e.g.
+```
+./bin/displacedHepmc data/Aprime_Electrons/SeaQuestAprimeToElectronsLHE_Eta_mAp_0.54_GeV.txt Eta_0.54_-7.6.root Eta electron 0 -7.6 0.54 500 600
+```
+
+For all masses and couplings:
 ```
 mkdir displaced_Aprime_Muons
 mkdir displaced_Aprime_Electrons
+source run_dimuons.sh
+source run_dielectrons.sh
 ```
+these will be the input to SpinQues simulation framework.
 
-To draw contours:
+To draw contours use `DQ-acceptance.ipynb` notebook.
