@@ -123,10 +123,6 @@ int main(int argc,char** argv)
     char *cvalue = NULL;
     int index;
 
-    for (int j=0;j<argc;j++) {
-      std::cout << "arg " << j << " " << argv[j] << std::endl;
-    }
-
     if(argc<10) {
       printf("Wrong number of arguments, usage: <input stdhep filename> <output stdhep filename> mech muon/electron seed epsPow mass minVz maxVz");
     }
@@ -144,13 +140,6 @@ int main(int argc,char** argv)
     min_vz = atof(argv[8]);
     max_vz = atof(argv[9]);
 
-    std::cout << "is muons "<< ismuons  << std::endl;
-    std::cout << "is electrons "<< iselectrons  << std::endl;
-    std::cout << "rseed " << rseed << std::endl;
-    std::cout << "eps " << eps << " " << epsStr << std::endl;
-    std::cout << "mass " << argv[7] << " " << mass << std::endl;
-    std::cout << "min vz " << min_vz << " " << max_vz << std::endl;
-
     double e_cm[2000], r_ratio[2000];
     int n_rpoints = 0;
     FILE * r_file;
@@ -163,14 +152,20 @@ int main(int argc,char** argv)
             n_rpoints++;
         }
     }
-    printf("loaded R data with %d points\n",n_rpoints);
+    //printf("loaded R data with %d points\n",n_rpoints);
     fclose(r_file);
     TSpline3 * r_spline = new TSpline3("R_ratio", e_cm, r_ratio, n_rpoints, "", 0.0, r_ratio[n_rpoints-1]);
     r_spline->SetName("R_ratio");
     if (mass>0) {
         ctau = get_ctau(r_spline,mass)/(eps*eps);
-        printf("mass=%f GeV, epsilon=%e, ctau=%f cm\n",mass, eps, ctau);
+        //printf("mass=%f GeV, epsilon=%e, ctau=%f cm\n",mass, eps, ctau);
     }
+    //if(ismuons){
+    //  std::cout << "BR dimuon " << branching_dimuon(r_spline,mass) << std::endl;
+    //}
+    //if(iselectrons){
+    //  std::cout << "BR dielectron "<< branching_dielectron(r_spline,mass) << std::endl;
+    //}
 
 
     FILE * in_file;
@@ -269,10 +264,9 @@ int main(int argc,char** argv)
             input_events.push_back(temp_event);
         }
         else printf("WARNING: missing A' decays\n");
-        if (nevhep%1000==0) printf("%d\n",nevhep);
+        //if (nevhep%1000==0) printf("%d\n",nevhep);
         nevhep++;
     }
-    std::cout << "Finish reading file"<< std::endl; 
 
 
     // writing HepMC file
@@ -353,5 +347,6 @@ int main(int argc,char** argv)
             }
         }
     } while (n_accepted_events<10000 and n_extra_repeats <= 10000);//Go for 10k events
-    printf("%d events accepted by cuts after %d samples, %d samples of %d events\n",n_accepted_events,n_extra_repeats,n_repeat,int(input_events.size()));
+    //printf("%d events accepted by cuts after %d samples, %d samples of %d events\n",n_accepted_events,n_extra_repeats,n_repeat,int(input_events.size()));
+    printf("%d %d %f %e %f %f %s \n",n_accepted_events,n_extra_repeats,mass,eps,min_vz,max_vz,mech.c_str());
 }
