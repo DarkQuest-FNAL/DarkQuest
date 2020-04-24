@@ -4,7 +4,7 @@
 
 You will need HepMC to run the `displacedHepmc` script.
 
-If you are in `spinquestgpvm01` you can use Dylan's HepMC version here: `LDLIBS=$(ROOTLIBS) -lgsl -lgslcblas -L/seaquest/users/dylrus/HepMC2/lib/ -lHepMC  -I/seaquest/users/dylrus/HepMC2/include/`. You will need to modify this in `src/Makefile`. Also you should probably modify HepMC3 libraries -> HepMC.
+If you are in `spinquestgpvm01` you can use Dylan's HepMC version here: `LDLIBS=$(ROOTLIBS) -lgsl -lgslcblas -L/seaquest/users/dylrus/HepMC2/lib/ -lHepMC  -I/seaquest/users/dylrus/HepMC2/include/`. You will need to modify this in `src/Makefile`.
 
 If not, you can install locally HepMC2:
 ```
@@ -23,6 +23,7 @@ Then edit Makefile in `src/` to include your HepMC3 bin/include path e.g. replac
 
 To compile:
 ```
+mkdir bin
 cd src/
 make
 ```
@@ -40,23 +41,26 @@ data/Aprime_Muons
 and are currently in dropbox
 https://www.dropbox.com/sh/92xuab9e37gyujt/AAAogZsPCfrtvOTV1rEtAella?dl=0
 
-To run `displacedHepmc`, this creates a HepMC displaced file sampled 2000 times, run:
+To run `displacedHepmc`, which creates a HepMC displaced file sampled 2000 times, create the output directories
+```
+mkdir displaced_Aprime_Muons
+mkdir displaced_Aprime_Electrons
+```
+and then run like
 ```
 ./bin/displacedHepmc inputdata ${mech}_${mass}_${eps}.root ${mech} ${lep} ${rseed} ${eps} ${mass} ${vtx1} ${vtx2}
 ```
-and customize it ith options e.g.
+customizing it with options such as
 ```
 ./bin/displacedHepmc data/Aprime_Electrons/SeaQuestAprimeToElectronsLHE_Eta_mAp_0.54_GeV.txt Eta_0.54_-7.6.root Eta electron 0 -7.6 0.54 500 600
 ```
 
-A short script that runs for all masses and couplings:
+There are short scripts that run all masses and couplings:
 ```
-mkdir displaced_Aprime_Muons
-mkdir displaced_Aprime_Electrons
 source run_dimuons.sh
 source run_dielectrons.sh
 ```
-produces the input to SpinQues simulation framework. It is quite heavy.
+These produce inputs to the SpinQuest simulation framework. Be warned that the outputs can be quite large!
 
 The ratio of `number of accepted events / number of sampled events` can be used to calculate the acceptance. 
 I currently save the output of `source run_dimuons.sh` e.g. `source run_dimuons.sh > data/output_muons_500_600.txt` and draw contours using the `DQ-acceptance.ipynb` notebook.
