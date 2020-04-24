@@ -21,12 +21,13 @@ using namespace std;
 #include <TFile.h>
 #include <TTree.h>
 
-#include "HepMC3/GenEvent.h"
-#include "HepMC3/GenParticle.h"
-#include "HepMC3/GenVertex.h"
-#include "HepMC3/WriterAscii.h"
+#include "HepMC/GenEvent.h"
+#include "HepMC/GenParticle.h"
+#include "HepMC/GenVertex.h"
+#include "HepMC/IO_AsciiParticles.h"
+#include "HepMC/IO_GenEvent.h"
 
-using namespace HepMC3;
+using namespace HepMC;
 
 
 struct stdhep_entry {
@@ -105,7 +106,8 @@ int main(int argc,char** argv)
     std::stringstream stream;    
     string epsStr = "";
 
-    int n_repeat = 2000; //number of times to sample the decay distribution for each input event
+    //int n_repeat = 2000; //number of times to sample the decay distribution for each input event
+    int n_repeat = 2;
     double vx_production[3] = {0.0, 2.0, 50.0}; //beamspot at y=2 cm; guess z=50 cm for mean interaction position (dump face at 25 cm, interaction length 16.77 cm)
     float min_vz = 300.0;
     float max_vz = 800.0;
@@ -276,7 +278,8 @@ int main(int argc,char** argv)
     std::string lepStr = "Muons";
     if(iselectrons) lepStr = "Electrons";
     string outFile = "displaced_Aprime_"+lepStr+"/"+mech+"_"+massStr+"_z"+std::to_string((int)min_vz)+"_"+std::to_string((int)max_vz)+"_eps_"+epsStr+".txt";
-    WriterAscii output_file(outFile);
+    //WriterAscii output_file(outFile);
+    IO_GenEvent output_file(outFile);
     int n_extra_repeats = 0;
 
     do {
@@ -317,26 +320,32 @@ int main(int argc,char** argv)
 	      n_accepted_events++;
 	      
 	      // create HepMC evt
-	      GenEvent evt = GenEvent(Units::GEV, Units::CM);
+	      //GenEvent evt = GenEvent(Units::GEV, Units::CM);
+	      GenEvent* evt = new GenEvent(Units::GEV, Units::CM);
 	      //GenEvent evt = GenEvent(Units::GEV, Units::MM);
 	      //evt->use_units(HepMC::Units::GEV, HepMC::Units::MM);
-	      evt.set_event_number(n_accepted_events);
+	      evt->set_event_number(n_accepted_events);
 	      // create A' particle 
 	      // px      py        pz       e     pdgid status  
-	      GenParticlePtr paprime = std::make_shared<GenParticle>( FourVector(px0,py0,pz0,event->aprime->phep[3]), event->aprime->idhep, event->aprime->isthep);
+	      //GenParticlePtr paprime = std::make_shared<GenParticle>( FourVector(px0,py0,pz0,event->aprime->phep[3]), event->aprime->idhep, event->aprime->isthep);
+	      GenParticle* paprime = new GenParticle(FourVector(px0,py0,pz0,event->aprime->phep[3]), event->aprime->idhep, event->aprime->isthep);
 	      // create postrack particle
-	      GenParticlePtr ppostrack = std::make_shared<GenParticle>( FourVector(px1,py1,pz1,pt1), event->postrack->idhep, event->postrack->isthep);
+	      //GenParticlePtr ppostrack = std::make_shared<GenParticle>( FourVector(px1,py1,pz1,pt1), event->postrack->idhep, event->postrack->isthep);
+	      GenParticle* ppostrack = new GenParticle(FourVector(px1,py1,pz1,pt1), event->postrack->idhep, event->postrack->isthep);
 	      ppostrack->set_status(1);
 	      // create negtrack particle
-	      GenParticlePtr pnegtrack = std::make_shared<GenParticle>( FourVector(px2,py2,pz2,pt2), event->negtrack->idhep, event->negtrack->isthep);
+	      //GenParticlePtr pnegtrack = std::make_shared<GenParticle>( FourVector(px2,py2,pz2,pt2), event->negtrack->idhep, event->negtrack->isthep);
+	      GenParticle* pnegtrack = new GenParticle(FourVector(px2,py2,pz2,pt2), event->negtrack->idhep, event->negtrack->isthep);
 	      pnegtrack->set_status(1);
 	      
 	      // create A' vertex
 	      // need to know where the vertex is (vx)
 	      vx[3] = sqrt(vx[0]*vx[0] + vx[1]*vx[1] + vx[2]*vx[2] + event->aprime->phep[4]*event->aprime->phep[4]);
 	      
-	      GenVertexPtr vaprime = std::make_shared<GenVertex>( FourVector(vx[0], vx[1], vx[2], vx[3]) );
-	      evt.add_vertex( vaprime );
+	      //std::cout <<  vx[0] << vx[1] << vx[2] << vx[3] << std::endl;
+	      //GenVertexPtr vaprime = std::make_shared<GenVertex>( FourVector(vx[0], vx[1], vx[2], vx[3]) );
+	      GenVertex* vaprime = new GenVertex(FourVector(vx[0], vx[1], vx[2], vx[3]) );
+	      evt->add_vertex( vaprime );
 	      vaprime->add_particle_in( paprime );
 	      vaprime->add_particle_out( ppostrack );
 	      vaprime->add_particle_out( pnegtrack );

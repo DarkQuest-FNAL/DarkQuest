@@ -6,20 +6,20 @@ You will need HepMC to run the `displacedHepmc` script.
 
 If you are in `spinquestgpvm01` you can use Dylan's HepMC version here: `LDLIBS=$(ROOTLIBS) -lgsl -lgslcblas -L/seaquest/users/dylrus/HepMC2/lib/ -lHepMC  -I/seaquest/users/dylrus/HepMC2/include/`. You will need to modify this in `src/Makefile`. Also you should probably modify HepMC3 libraries -> HepMC.
 
-If not, you can install locally HepMC3:
+If not, you can install locally HepMC2:
 ```
 cd DarkQuest/lhe/
-wget https://hepmc.web.cern.ch/hepmc/releases/HepMC3-3.2.1.tar.gz
-tar -zxvf HepMC3-3.2.1.tar.gz 
-mkdir HepMC3/
-cp -r ../HepMC3-3.2.1/cmake HepMC3/
-cd HepMC3/
-cmake ../HepMC3-3.2.1/ -DCMAKE_INSTALL_PREFIX=$YOURPATH/DarkQuest/lhe/HepMC3
+wget https://hepmc.web.cern.ch/hepmc/releases/hepmc2.06.10.tgz
+tar -zxvf hepmc2.06.10.tgz
+mkdir HepMC/
+cp -r ../HepMC-2.06.10/cmake HepMC/
+cd HepMC/
+cmake ../HepMC-2.06.10/ -DCMAKE_INSTALL_PREFIX=$YOURPATH/DarkQuest/lhe/HepMC -Dmomentum:STRING=GEV -Dlength:STRING=CM
 make
 make install
 ```
 
-Then edit Makefile in `src/` to include your HepMC3 bin/include path e.g. replace `-L/Users/cristina/darkquest/DarkQuest/lhe/HepMC3/lib/ -lHepMC  -I/Users/cristina/darkquest/DarkQuest/lhe/HepMC3/include/`, with your paths.
+Then edit Makefile in `src/` to include your HepMC3 bin/include path e.g. replace `-L/Users/cristina/darkquest/DarkQuest/lhe/HepMC/lib/ -lHepMC  -I/Users/cristina/darkquest/DarkQuest/lhe/HepMC/include/`, with your paths.
 
 To compile:
 ```
@@ -29,7 +29,7 @@ make
 
 Note, for OS, you can replace @rpath in `bin/displacedHepmc` with:
 ```
-sudo install_name_tool -change @rpath/libHepMC3.3.dylib /Users/cristina/darkquest/DarkQuest/lhe/HepMC3/lib/libHepMC3.dylib bin/displacedHepmc
+sudo install_name_tool -change @rpath/libHepMC.4.dylib  /Users/cristina/darkquest/DarkQuest/lhe/HepMC3/lib/libHepMC.4.dylib bin/displacedHepmc
 ```
 
 The location of A' files lhe files should be in data:
