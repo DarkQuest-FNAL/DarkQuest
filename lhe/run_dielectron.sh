@@ -7,6 +7,7 @@ do
     mass=${strarr[4]}
     for logeps in `seq -5.0 -0.2 -8.0`
     do
-	./bin/displacedHepmc ${f} ${mech}_${mass}_${logeps}.root ${mech} electron 0 ${logeps} ${mass} 400 650
+	#echo ./bin/displacedHepmc ${f} ${mech}_${mass}_${logeps}.root ${mech} electron 0 ${logeps} ${mass} 500 600
+	./bin/displacedHepmc ${f} ${mech}_${mass}_${logeps}.root ${mech} electron 0 ${logeps} ${mass} 500 600
     done
 done
