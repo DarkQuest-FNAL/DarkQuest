@@ -7,8 +7,11 @@ source /e906/app/software/osg/software/e1039/this-e1039.sh
 mkdir work
 mkdir install
 cd work
+cmake ../src/ cmake -DCMAKE_INSTALL_PREFIX=../install
 make
 make install
+cd ../
+export DIR_TOP=`pwd`
 export LD_LIBRARY_PATH=$DIR_TOP/install/lib/:$LD_LIBRARY_PATH
 ```
 
