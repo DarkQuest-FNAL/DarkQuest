@@ -10,7 +10,7 @@ cmake ../src/ cmake -DCMAKE_INSTALL_PREFIX=../install
 cd work
 make
 make install
-export LD_LIBRARY_PATH=$DIR_TOP/install/lib/:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=`pwd`/install/lib/:$LD_LIBRARY_PATH
 ```
 
 Or to setup after code has compiled (every time) in spinquestgpvm01.fnal.gov:
