@@ -106,8 +106,7 @@ int main(int argc,char** argv)
     std::stringstream stream;    
     string epsStr = "";
 
-    //int n_repeat = 2000; //number of times to sample the decay distribution for each input event
-    int n_repeat = 2;
+    int n_repeat = 2000; //number of times to sample the decay distribution for each input event
     double vx_production[3] = {0.0, 2.0, 50.0}; //beamspot at y=2 cm; guess z=50 cm for mean interaction position (dump face at 25 cm, interaction length 16.77 cm)
     float min_vz = 300.0;
     float max_vz = 800.0;
@@ -191,7 +190,6 @@ int main(int argc,char** argv)
 
     nevhep = 1;
     int n_accepted_events = 0;
-    
 
     while (true) {
 
@@ -280,82 +278,84 @@ int main(int argc,char** argv)
     string outFile = "displaced_Aprime_"+lepStr+"/"+mech+"_"+massStr+"_z"+std::to_string((int)min_vz)+"_"+std::to_string((int)max_vz)+"_eps_"+epsStr+".txt";
     //WriterAscii output_file(outFile);
     IO_GenEvent output_file(outFile);
+
+    // Loop over events
+    int nevents = int(input_events.size());
+    // n_accepted_perevent = 10k/nevents 
+    int goal = 10000/nevents;
     int n_extra_repeats = 0;
 
-    do {
+    for (vector<stdhep_event>::iterator event = input_events.begin(); event!=input_events.end();++event) {
+      double gamma, beta;
+      gamma = event->aprime->phep[3]/event->aprime->phep[4];
+      beta = sqrt(1.0-pow(gamma,-2.0));
+      double decay_length = beta*gamma*ctau;
+      double p = 0.0;
+      for (int j=0;j<3;j++) p += event->aprime->phep[j]*event->aprime->phep[j];
+      p = sqrt(p);
       
-        for (vector<stdhep_event>::iterator event = input_events.begin(); event!=input_events.end();++event) {
-            double gamma, beta;
-            gamma = event->aprime->phep[3]/event->aprime->phep[4];
-            beta = sqrt(1.0-pow(gamma,-2.0));
-            double decay_length = beta*gamma*ctau;
-            double p = 0.0;
-            for (int j=0;j<3;j++) p += event->aprime->phep[j]*event->aprime->phep[j];
-            p = sqrt(p);
+      px0 = event->aprime->phep[0];
+      py0 = event->aprime->phep[1];
+      pz0 = event->aprime->phep[2];
+      
+      double px1 = event->postrack->phep[0];
+      double py1 = event->postrack->phep[1];
+      double pz1 = event->postrack->phep[2];
+      double pt1 = event->postrack->phep[3];
+      
+      double px2 = event->negtrack->phep[0];
+      double py2 = event->negtrack->phep[1];
+      double pz2 = event->negtrack->phep[2];
+      double pt2 = event->negtrack->phep[3];
+      
+      int n_accepted_perevent = 0;
+      do{
+	n_extra_repeats++;
 
-            px0 = event->aprime->phep[0];
-            py0 = event->aprime->phep[1];
-            pz0 = event->aprime->phep[2];
-	    
-	    double px1 = event->postrack->phep[0];
-	    double py1 = event->postrack->phep[1];
-	    double pz1 = event->postrack->phep[2];
-	    double pt1 = event->postrack->phep[3];
-	    
-	    double px2 = event->negtrack->phep[0];
-	    double py2 = event->negtrack->phep[1];
-	    double pz2 = event->negtrack->phep[2];
-	    double pt2 = event->negtrack->phep[3];
-	    
-            for (int i=0;i<n_repeat;i++) {
-	      n_extra_repeats++;
+	double vx[4];
+	
+	double vtx_displacement = gsl_ran_exponential(r,decay_length);
+	double vx_production_displ[3] = {vx_production[0],vx_production[1], 25+gsl_ran_exponential(r,16.77)};
+	for (int j=0;j<3;j++) vx[j] = vtx_displacement*event->aprime->phep[j]/p + vx_production_displ[j];
+	//std::cout << " vx production 3 " << vx_production[2] << " random " << vx_production_displ[2] << " vx decay " << vtx_displacement*event->aprime->phep[2]/p << " total displ " << vx[2] << std::endl;
+	// this does not include fmag or kmag kick                                                                                                                                                           
+	if (vx[2]<min_vz || vx[2]>max_vz) continue;
+	n_accepted_events++;
+	n_accepted_perevent++;
+	
+	//std::cout << "accepted total " << n_accepted_events << " per event " << n_accepted_perevent << " ; goal : " << goal << std::endl;
+	
+	// create HepMC evt
+	GenEvent* evt = new GenEvent(Units::GEV, Units::CM);
+	evt->set_event_number(n_accepted_events);
+	
+	// create A' particle 
+	// px      py        pz       e     pdgid status  
+	GenParticle* paprime = new GenParticle(FourVector(px0,py0,pz0,event->aprime->phep[3]), event->aprime->idhep, event->aprime->isthep);
+	// create postrack particle
+	GenParticle* ppostrack = new GenParticle(FourVector(px1,py1,pz1,pt1), event->postrack->idhep, event->postrack->isthep);
+	ppostrack->set_status(1);
+	// create negtrack particle
+	GenParticle* pnegtrack = new GenParticle(FourVector(px2,py2,pz2,pt2), event->negtrack->idhep, event->negtrack->isthep);
+	pnegtrack->set_status(1);
+	
+	// create A' vertex
+	// need to know where the vertex is (vx)
+	vx[3] = sqrt(vx[0]*vx[0] + vx[1]*vx[1] + vx[2]*vx[2] + event->aprime->phep[4]*event->aprime->phep[4]);
+	
+	//std::cout <<  vx[0] << vx[1] << vx[2] << vx[3] << std::endl;
+	GenVertex* vaprime = new GenVertex(FourVector(vx[0], vx[1], vx[2], vx[3]) );
+	evt->add_vertex( vaprime );
+	vaprime->add_particle_in( paprime );
+	vaprime->add_particle_out( ppostrack );
+	vaprime->add_particle_out( pnegtrack );
+	
+	// write file
+	output_file.write_event(evt);
+      } while (n_accepted_perevent < goal);
+      //std::cout << "n_accepted_perevent " << n_accepted_perevent << " ntotal " << n_accepted_events << " nextra repeats " << n_extra_repeats << std::endl;
+    } // end event loop
 
-	      double vx[4];
-	      
-	      double vtx_displacement = gsl_ran_exponential(r,decay_length);
-	      for (int j=0;j<3;j++) vx[j] = vtx_displacement*event->aprime->phep[j]/p + vx_production[j];
-	      if (vx[2]<min_vz || vx[2]>max_vz) continue;
-
-	      // this does not include fmag or kmag kick
-	      n_accepted_events++;
-	      
-	      // create HepMC evt
-	      //GenEvent evt = GenEvent(Units::GEV, Units::CM);
-	      GenEvent* evt = new GenEvent(Units::GEV, Units::CM);
-	      //GenEvent evt = GenEvent(Units::GEV, Units::MM);
-	      //evt->use_units(HepMC::Units::GEV, HepMC::Units::MM);
-	      evt->set_event_number(n_accepted_events);
-	      // create A' particle 
-	      // px      py        pz       e     pdgid status  
-	      //GenParticlePtr paprime = std::make_shared<GenParticle>( FourVector(px0,py0,pz0,event->aprime->phep[3]), event->aprime->idhep, event->aprime->isthep);
-	      GenParticle* paprime = new GenParticle(FourVector(px0,py0,pz0,event->aprime->phep[3]), event->aprime->idhep, event->aprime->isthep);
-	      // create postrack particle
-	      //GenParticlePtr ppostrack = std::make_shared<GenParticle>( FourVector(px1,py1,pz1,pt1), event->postrack->idhep, event->postrack->isthep);
-	      GenParticle* ppostrack = new GenParticle(FourVector(px1,py1,pz1,pt1), event->postrack->idhep, event->postrack->isthep);
-	      ppostrack->set_status(1);
-	      // create negtrack particle
-	      //GenParticlePtr pnegtrack = std::make_shared<GenParticle>( FourVector(px2,py2,pz2,pt2), event->negtrack->idhep, event->negtrack->isthep);
-	      GenParticle* pnegtrack = new GenParticle(FourVector(px2,py2,pz2,pt2), event->negtrack->idhep, event->negtrack->isthep);
-	      pnegtrack->set_status(1);
-	      
-	      // create A' vertex
-	      // need to know where the vertex is (vx)
-	      vx[3] = sqrt(vx[0]*vx[0] + vx[1]*vx[1] + vx[2]*vx[2] + event->aprime->phep[4]*event->aprime->phep[4]);
-	      
-	      //std::cout <<  vx[0] << vx[1] << vx[2] << vx[3] << std::endl;
-	      //GenVertexPtr vaprime = std::make_shared<GenVertex>( FourVector(vx[0], vx[1], vx[2], vx[3]) );
-	      GenVertex* vaprime = new GenVertex(FourVector(vx[0], vx[1], vx[2], vx[3]) );
-	      evt->add_vertex( vaprime );
-	      vaprime->add_particle_in( paprime );
-	      vaprime->add_particle_out( ppostrack );
-	      vaprime->add_particle_out( pnegtrack );
-	      
-	      // write file
-	      output_file.write_event(evt);
-	      //if (n_accepted_events%1000==0) printf("accepted %d\n",n_accepted_events);
-            }
-        }
-    } while (n_accepted_events<10000 and n_extra_repeats <= 10000);//Go for 10k events
-    //printf("%d events accepted by cuts after %d samples, %d samples of %d events\n",n_accepted_events,n_extra_repeats,n_repeat,int(input_events.size()));
+    //printf("%d events accepted by cuts after %d samples of %d events\n",n_accepted_events,n_extra_repeats,int(input_events.size()));
     printf("%d %d %f %e %f %f %s \n",n_accepted_events,n_extra_repeats,mass,eps,min_vz,max_vz,mech.c_str());
 }

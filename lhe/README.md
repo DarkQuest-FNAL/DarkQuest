@@ -12,14 +12,19 @@ cd DarkQuest/lhe/
 wget https://hepmc.web.cern.ch/hepmc/releases/hepmc2.06.10.tgz
 tar -zxvf hepmc2.06.10.tgz
 mkdir HepMC/
-cp -r ../HepMC-2.06.10/cmake HepMC/
 cd HepMC/
+cp -r ../HepMC-2.06.10/cmake .
 cmake ../HepMC-2.06.10/ -DCMAKE_INSTALL_PREFIX=$YOURPATH/DarkQuest/lhe/HepMC -Dmomentum:STRING=GEV -Dlength:STRING=CM
 make
 make install
 ```
 
 Then edit Makefile in `src/` to include your HepMC3 bin/include path e.g. replace `-L/Users/cristina/darkquest/DarkQuest/lhe/HepMC/lib/ -lHepMC  -I/Users/cristina/darkquest/DarkQuest/lhe/HepMC/include/`, with your paths.
+
+To setup ROOT in spinquest dir:
+```
+source /e906/app/software/osg/software/e1039/this-e1039.sh
+```
 
 To compile:
 ```
