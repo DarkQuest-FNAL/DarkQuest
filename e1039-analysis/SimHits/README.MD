@@ -6,6 +6,7 @@ To compile
 source /e906/app/software/osg/software/e1039/this-e1039.sh
 mkdir work
 mkdir install
+cmake ../src/ cmake -DCMAKE_INSTALL_PREFIX=../install
 cd work
 make
 make install
