@@ -31,70 +31,92 @@ using namespace HepMC;
 
 
 struct stdhep_entry {
-  int isthep;     /* status code */
-  int idhep;      /* The particle id */
-  int jmohep[2];  /* The position of the mother particle */
-  double phep[5]; /* 4-Momentum, mass */
+    int isthep;     /* status code */
+    int idhep;      /* The particle id */
+    int jmohep[2];  /* The position of the mother particle */
+    double phep[5]; /* 4-Momentum, mass */
 };
 
 struct stdhep_event {
-  stdhep_entry *aprime;
-  stdhep_entry *postrack;
-  stdhep_entry *negtrack;
+    stdhep_entry *aprime;
+    stdhep_entry *postrack;
+    stdhep_entry *negtrack;
 };
 
 // decay width calculations follow arXiv:1311.3870, Eq. 27 and 28
 // all decay widths must be multiplied by epsilon^2
 // decay width of A'->e+e- in units of GeV
 double width_dielectron(double m_aprime) {
-  double alpha = 1.0/137.036;
-  double m_electron = 5.11e-3;
-  double massratio_sq = m_electron*m_electron/(m_aprime*m_aprime);
-  if (m_aprime>2*m_electron)
-    return (alpha*m_aprime/3.0) * sqrt(1 - 4*massratio_sq) * (1 + 2*massratio_sq);
-  else return 0.0;
+    double alpha = 1.0/137.036;
+    double m_electron = 5.11e-3;
+    double massratio_sq = m_electron*m_electron/(m_aprime*m_aprime);
+    if (m_aprime>2*m_electron)
+        return (alpha*m_aprime/3.0) * sqrt(1 - 4*massratio_sq) * (1 + 2*massratio_sq);
+    else return 0.0;
 }
 
 // decay width of A'->mu+mu- in units of GeV
 double width_dimuon(double m_aprime) {
-  double alpha = 1.0/137.036;
-  double m_muon = 105.66e-3;
-  double massratio_sq = m_muon*m_muon/(m_aprime*m_aprime);
-  if (m_aprime>2*m_muon)
-    return (alpha*m_aprime/3.0) * sqrt(1 - 4*massratio_sq) * (1 + 2*massratio_sq);
-  else return 0.0;
+    double alpha = 1.0/137.036;
+    double m_muon = 105.66e-3;
+    double massratio_sq = m_muon*m_muon/(m_aprime*m_aprime);
+    if (m_aprime>2*m_muon)
+        return (alpha*m_aprime/3.0) * sqrt(1 - 4*massratio_sq) * (1 + 2*massratio_sq);
+    else return 0.0;
 }
 
 // decay width of A'->hadrons in units of GeV
 double width_dihadron(TSpline * r_spline, double m_aprime) {
-  double alpha = 1.0/137.036;
-  double m_pion = 139.57e-3;
-  if (m_aprime>2*m_pion)
-    return (alpha*m_aprime/3.0) * r_spline->Eval(m_aprime);
-  else return 0.0;
+    double alpha = 1.0/137.036;
+    double m_pion = 139.57e-3;
+    if (m_aprime>2*m_pion)
+        return (alpha*m_aprime/3.0) * r_spline->Eval(m_aprime);
+    else return 0.0;
 }
 
 // total decay width in units of GeV
 double width_total(TSpline * r_spline, double m_aprime) {
-  return width_dielectron(m_aprime)+width_dimuon(m_aprime)+width_dihadron(r_spline,m_aprime);
+    return width_dielectron(m_aprime)+width_dimuon(m_aprime)+width_dihadron(r_spline,m_aprime);
 }
 
 // mean lifetime in units of cm
 // must be divided by epsilon^2
 double get_ctau(TSpline * r_spline, double m_aprime) {
-  //1e9*elementary charge = conversion factor from GeV to joules
-  return TMath::Ccgs()*TMath::Hbar()/(1e9*TMath::Qe()*width_total(r_spline,m_aprime));
+    //1e9*elementary charge = conversion factor from GeV to joules
+    return TMath::Ccgs()*TMath::Hbar()/(1e9*TMath::Qe()*width_total(r_spline,m_aprime));
 }
 
 // branching fraction to dimuon
 double branching_dimuon(TSpline * r_spline, double m_aprime) {
-  return width_dimuon(m_aprime)/width_total(r_spline,m_aprime);
+    return width_dimuon(m_aprime)/width_total(r_spline,m_aprime);
 }
 
 // branching fraction to dielectron
 double branching_dielectron(TSpline * r_spline, double m_aprime) {
-  return width_dielectron(m_aprime)/width_total(r_spline,m_aprime);
+    return width_dielectron(m_aprime)/width_total(r_spline,m_aprime);
 }
+
+// probability to decay in range (lo, hi) given exponential prod, decay probabilities
+float p_decay_simple(float offset, float decay_length, float _zlo, float _zhi){
+    float lo = _zlo-offset;
+    float hi = _zhi-offset;
+    float p = TMath::Exp(-lo/decay_length) - TMath::Exp(-hi/decay_length);
+    return p;
+}
+
+float p_decay(float offset, float prod_length, float decay_length, 
+              float _zlo, float _zhi){
+    float lo = _zlo-offset;
+    float hi = _zhi-offset;
+    float p = TMath::Exp(-lo/decay_length) - TMath::Exp(-hi/decay_length);
+    //convolve exponential probabilities
+    // Prob survive to z given decay_length is
+    // P(z, decay_length) = 1/decay_length * e^(-z/decay_length)
+    // P(tot) = P(z, prod) * P(tot-z,decay), integrated from z=0 to tot
+    //double p = 1/(decay_length-prod_length) * TMath::Exp()
+    return p;
+}
+
 
 int main(int argc,char** argv)
 {
@@ -106,7 +128,10 @@ int main(int argc,char** argv)
     std::stringstream stream;    
     string epsStr = "";
 
-    int n_repeat = 2000; //number of times to sample the decay distribution for each input event
+    int n_hepmc = 10e3;
+
+    // int n_repeat = 2000; //number of times to sample the decay distribution for each input event
+    // int n_repeat = 2; //number of times to sample the decay distribution for each input event
     double vx_production[3] = {0.0, 2.0, 50.0}; //beamspot at y=2 cm; guess z=50 cm for mean interaction position (dump face at 25 cm, interaction length 16.77 cm)
     float min_vz = 300.0;
     float max_vz = 800.0;
@@ -125,7 +150,7 @@ int main(int argc,char** argv)
     int index;
 
     if(argc<10) {
-      printf("Wrong number of arguments, usage: <input stdhep filename> <output stdhep filename> mech muon/electron seed epsPow mass minVz maxVz");
+        printf("Wrong number of arguments, usage: <input stdhep filename> <output stdhep filename> mech muon/electron seed epsPow mass minVz maxVz");
     }
 
     mech = argv[3];
@@ -161,12 +186,6 @@ int main(int argc,char** argv)
         ctau = get_ctau(r_spline,mass)/(eps*eps);
         //printf("mass=%f GeV, epsilon=%e, ctau=%f cm\n",mass, eps, ctau);
     }
-    //if(ismuons){
-    //  std::cout << "BR dimuon " << branching_dimuon(r_spline,mass) << std::endl;
-    //}
-    //if(iselectrons){
-    //  std::cout << "BR dielectron "<< branching_dielectron(r_spline,mass) << std::endl;
-    //}
 
 
     FILE * in_file;
@@ -187,13 +206,12 @@ int main(int argc,char** argv)
     Double_t pz1, y1, ty1, x1_st1, tx1_st1, x1, tx1;
     Double_t pz2, y2, ty2, x2_st1, tx2_st1, x2, tx2;
     vector<stdhep_event> input_events;
+    vector<float> v_prob;
 
     nevhep = 1;
-    int n_accepted_events = 0;
+    //int n_accepted_events = 0;
 
-    while (true) {
-
-      
+    while (true) {     
         char line[1000];
         bool found_event = false;
 	
@@ -213,13 +231,13 @@ int main(int argc,char** argv)
 	
 	int pdgID; //pdgID of decay
 	if (ismuons){
-	  pdgID = 13;
+            pdgID = 13;
 	}
 	else if (iselectrons){
-          pdgID= 11;
+            pdgID= 11;
 	}
 	else{
-	  break;
+            break;
 	}
 
 	// read LHE
@@ -232,14 +250,14 @@ int main(int argc,char** argv)
 				  &(temp->idhep),&(temp->isthep),&(temp->jmohep[0]),&(temp->phep[3]),&(temp->phep[0]),&(temp->phep[1]),&(temp->phep[2]),&(temp->phep[4]));
             if (n_tokens<8) break;
             switch (temp->isthep) {//translate between status conventions for HEPEUP (LHE) and HEPEVT (StdHep)
-                case 1:
-                case 2:
-                    break;
-                case -1:
-                    temp->isthep = 3;
-                    break;
-                default:
-                    temp->isthep = 0;
+            case 1:
+            case 2:
+                break;
+            case -1:
+                temp->isthep = 3;
+                break;
+            default:
+                temp->isthep = 0;
             }
             if (temp->isthep==2 && temp->idhep==666) {// intermediate particle, PDG ID 666
                 if (temp_event.aprime) printf("WARNING: multiple A'\n");
@@ -262,12 +280,31 @@ int main(int argc,char** argv)
         }
         if (temp_event.aprime && temp_event.negtrack && temp_event.postrack) {
             input_events.push_back(temp_event);
+
+            // can calc acceptance analytiaclly here, i.e. for efficient sampling
+            double gamma = temp_event.aprime->phep[3]/temp_event.aprime->phep[4];
+            double beta = sqrt(1.0-pow(gamma,-2.0));
+            double decay_length = beta*gamma*ctau;
+            double p = sqrt(pow(temp_event.aprime->phep[3],2) - pow(temp_event.aprime->phep[4],2)); // for pz/p
+            float prob =  p_decay_simple(42., decay_length * temp_event.aprime->phep[3] / p, 500.,600.);
+            v_prob.push_back(prob);
         }
         else printf("WARNING: missing A' decays\n");
-        //if (nevhep%1000==0) printf("%d\n",nevhep);
         nevhep++;
     }
 
+
+    float sum_probs = 0;
+    for(int i=0;i<v_prob.size();i++) sum_probs += v_prob.at(i);
+    float mean_acceptance = sum_probs / v_prob.size();
+
+    // vector<int> v_goal_accept;
+    // vector<int> v_goal_samples;
+    // for(auto p : v_probs){
+    //     // skip simulating events that should contribute < 1 evt to final sample
+    //     v_goal_accept.push_back( p/sum_probs*n_hepmc > 0.5 ? int(p/sum_probs*n_hepmc)+1 : 0);
+    //     v_goal_accept.push_back( p*n_hepmc > 0.5 ? int(p*n_hepmc)+1 : 0);
+    // }
 
     // writing HepMC file
     stream.str("");
@@ -279,83 +316,80 @@ int main(int argc,char** argv)
     //WriterAscii output_file(outFile);
     IO_GenEvent output_file(outFile);
 
-    // Loop over events
-    int nevents = int(input_events.size());
-    // n_accepted_perevent = 10k/nevents 
-    int goal = 10000/nevents;
-    int n_extra_repeats = 0;
+    int n_sampled=0;
+    int n_accepted=0;
+    bool exit=false;
+    while(true){
+        if(exit) break;
+        for (vector<stdhep_event>::iterator event = input_events.begin(); event!=input_events.end();++event) {
+            exit=(n_accepted >= n_hepmc || n_sampled >= n_hepmc*1e3);
+            if(exit) break;
+            n_sampled++;
 
-    for (vector<stdhep_event>::iterator event = input_events.begin(); event!=input_events.end();++event) {
-      double gamma, beta;
-      gamma = event->aprime->phep[3]/event->aprime->phep[4];
-      beta = sqrt(1.0-pow(gamma,-2.0));
-      double decay_length = beta*gamma*ctau;
-      double p = 0.0;
-      for (int j=0;j<3;j++) p += event->aprime->phep[j]*event->aprime->phep[j];
-      p = sqrt(p);
+            double gamma, beta;
+            gamma = event->aprime->phep[3]/event->aprime->phep[4];
+            beta = sqrt(1.0-pow(gamma,-2.0));
+            double decay_length = beta*gamma*ctau;
+            double p = 0.0;
+            for (int j=0;j<3;j++) p += event->aprime->phep[j]*event->aprime->phep[j];
+            p = sqrt(p);
       
-      px0 = event->aprime->phep[0];
-      py0 = event->aprime->phep[1];
-      pz0 = event->aprime->phep[2];
+            px0 = event->aprime->phep[0];
+            py0 = event->aprime->phep[1];
+            pz0 = event->aprime->phep[2];
       
-      double px1 = event->postrack->phep[0];
-      double py1 = event->postrack->phep[1];
-      double pz1 = event->postrack->phep[2];
-      double pt1 = event->postrack->phep[3];
+            double px1 = event->postrack->phep[0];
+            double py1 = event->postrack->phep[1];
+            double pz1 = event->postrack->phep[2];
+            double pt1 = event->postrack->phep[3];
       
-      double px2 = event->negtrack->phep[0];
-      double py2 = event->negtrack->phep[1];
-      double pz2 = event->negtrack->phep[2];
-      double pt2 = event->negtrack->phep[3];
+            double px2 = event->negtrack->phep[0];
+            double py2 = event->negtrack->phep[1];
+            double pz2 = event->negtrack->phep[2];
+            double pt2 = event->negtrack->phep[3];
       
-      int n_accepted_perevent = 0;
-      do{
-	n_extra_repeats++;
-
-	double vx[4];
+            // begin sampling
+            double vx[4];	
+            double vtx_displacement = gsl_ran_exponential(r,decay_length);
+            double vx_production_displ[3] = {vx_production[0],vx_production[1], 25+gsl_ran_exponential(r,16.77)};
+            for (int j=0;j<3;j++) vx[j] = vtx_displacement*event->aprime->phep[j]/p + vx_production_displ[j];
+            // this does not include fmag or kmag kick                                                                                                                                                           
+            if (vx[2]<min_vz || vx[2]>max_vz) continue;
+            n_accepted++;
 	
-	double vtx_displacement = gsl_ran_exponential(r,decay_length);
-	double vx_production_displ[3] = {vx_production[0],vx_production[1], 25+gsl_ran_exponential(r,16.77)};
-	for (int j=0;j<3;j++) vx[j] = vtx_displacement*event->aprime->phep[j]/p + vx_production_displ[j];
-	//std::cout << " vx production 3 " << vx_production[2] << " random " << vx_production_displ[2] << " vx decay " << vtx_displacement*event->aprime->phep[2]/p << " total displ " << vx[2] << std::endl;
-	// this does not include fmag or kmag kick                                                                                                                                                           
-	if (vx[2]<min_vz || vx[2]>max_vz) continue;
-	n_accepted_events++;
-	n_accepted_perevent++;
+            // create HepMC evt
+            GenEvent* evt = new GenEvent(Units::GEV, Units::CM);
+            evt->set_event_number(n_accepted);
 	
-	//std::cout << "accepted total " << n_accepted_events << " per event " << n_accepted_perevent << " ; goal : " << goal << std::endl;
+            // create A' particle 
+            // px      py        pz       e     pdgid status  
+            GenParticle* paprime = new GenParticle(FourVector(px0,py0,pz0,event->aprime->phep[3]), event->aprime->idhep, event->aprime->isthep);
+            // create postrack particle
+            GenParticle* ppostrack = new GenParticle(FourVector(px1,py1,pz1,pt1), event->postrack->idhep, event->postrack->isthep);
+            ppostrack->set_status(1);
+            // create negtrack particle
+            GenParticle* pnegtrack = new GenParticle(FourVector(px2,py2,pz2,pt2), event->negtrack->idhep, event->negtrack->isthep);
+            pnegtrack->set_status(1);
 	
-	// create HepMC evt
-	GenEvent* evt = new GenEvent(Units::GEV, Units::CM);
-	evt->set_event_number(n_accepted_events);
+            // create A' vertex
+            // need to know where the vertex is (vx)
+            vx[3] = sqrt(vx[0]*vx[0] + vx[1]*vx[1] + vx[2]*vx[2] + event->aprime->phep[4]*event->aprime->phep[4]);
 	
-	// create A' particle 
-	// px      py        pz       e     pdgid status  
-	GenParticle* paprime = new GenParticle(FourVector(px0,py0,pz0,event->aprime->phep[3]), event->aprime->idhep, event->aprime->isthep);
-	// create postrack particle
-	GenParticle* ppostrack = new GenParticle(FourVector(px1,py1,pz1,pt1), event->postrack->idhep, event->postrack->isthep);
-	ppostrack->set_status(1);
-	// create negtrack particle
-	GenParticle* pnegtrack = new GenParticle(FourVector(px2,py2,pz2,pt2), event->negtrack->idhep, event->negtrack->isthep);
-	pnegtrack->set_status(1);
+            //std::cout <<  vx[0] << vx[1] << vx[2] << vx[3] << std::endl;
+            GenVertex* vaprime = new GenVertex(FourVector(vx[0], vx[1], vx[2], vx[3]) );
+            evt->add_vertex( vaprime );
+            vaprime->add_particle_in( paprime );
+            vaprime->add_particle_out( ppostrack );
+            vaprime->add_particle_out( pnegtrack );
 	
-	// create A' vertex
-	// need to know where the vertex is (vx)
-	vx[3] = sqrt(vx[0]*vx[0] + vx[1]*vx[1] + vx[2]*vx[2] + event->aprime->phep[4]*event->aprime->phep[4]);
-	
-	//std::cout <<  vx[0] << vx[1] << vx[2] << vx[3] << std::endl;
-	GenVertex* vaprime = new GenVertex(FourVector(vx[0], vx[1], vx[2], vx[3]) );
-	evt->add_vertex( vaprime );
-	vaprime->add_particle_in( paprime );
-	vaprime->add_particle_out( ppostrack );
-	vaprime->add_particle_out( pnegtrack );
-	
-	// write file
-	output_file.write_event(evt);
-      } while (n_accepted_perevent < goal);
-      //std::cout << "n_accepted_perevent " << n_accepted_perevent << " ntotal " << n_accepted_events << " nextra repeats " << n_extra_repeats << std::endl;
-    } // end event loop
-
-    //printf("%d events accepted by cuts after %d samples of %d events\n",n_accepted_events,n_extra_repeats,int(input_events.size()));
-    printf("%d %d %f %e %f %f %s \n",n_accepted_events,n_extra_repeats,mass,eps,min_vz,max_vz,mech.c_str());
+            // write file
+            output_file.write_event(evt);
+        } // end lhe event loop
+    }// generated all events
+      
+    printf("%d %d %f %e %f %f %s \n",n_accepted,n_sampled,mass,eps,min_vz,max_vz,mech.c_str());
+    // compare predicted with toy mc, binomial errors
+    // printf("%d %d %f %e %f %f %s %f %f [%f %f] \n",n_accepted,n_sampled,mass,eps,min_vz,max_vz,mech.c_str(), mean_acceptance, float(n_accepted)/n_sampled,
+    //        float(n_accepted)/n_sampled - float(n_accepted)/n_sampled * float(n_sampled-n_accepted)/n_sampled,
+    //        float(n_accepted)/n_sampled + float(n_accepted)/n_sampled * float(n_sampled-n_accepted)/n_sampled);
 }
