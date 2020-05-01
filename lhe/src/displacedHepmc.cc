@@ -108,13 +108,10 @@ float p_decay(float offset, float prod_length, float decay_length,
               float _zlo, float _zhi){
     float lo = _zlo-offset;
     float hi = _zhi-offset;
-    float p = TMath::Exp(-lo/decay_length) - TMath::Exp(-hi/decay_length);
-    //convolve exponential probabilities
-    // Prob survive to z given decay_length is
-    // P(z, decay_length) = 1/decay_length * e^(-z/decay_length)
-    // P(tot) = P(z, prod) * P(tot-z,decay), integrated from z=0 to tot
-    //double p = 1/(decay_length-prod_length) * TMath::Exp()
-    return p;
+    //convolution of exponential probabilities
+    float p_prod = TMath::Exp(-lo/prod_length) - TMath::Exp(-hi/prod_length);
+    float p_decay = TMath::Exp(-lo/decay_length) - TMath::Exp(-hi/decay_length);
+    return (decay_length * p_decay - prod_length * p_prod) / (decay_length-prod_length);
 }
 
 
@@ -129,6 +126,7 @@ int main(int argc,char** argv)
     string epsStr = "";
 
     int n_hepmc = 10e3;
+    bool calcAcceptance=false;
 
     // int n_repeat = 2000; //number of times to sample the decay distribution for each input event
     // int n_repeat = 2; //number of times to sample the decay distribution for each input event
@@ -207,6 +205,7 @@ int main(int argc,char** argv)
     Double_t pz2, y2, ty2, x2_st1, tx2_st1, x2, tx2;
     vector<stdhep_event> input_events;
     vector<float> v_prob;
+    vector<float> v_prob_simple;
 
     nevhep = 1;
     //int n_accepted_events = 0;
@@ -282,18 +281,24 @@ int main(int argc,char** argv)
             input_events.push_back(temp_event);
 
             // can calc acceptance analytiaclly here, i.e. for efficient sampling
-            double gamma = temp_event.aprime->phep[3]/temp_event.aprime->phep[4];
-            double beta = sqrt(1.0-pow(gamma,-2.0));
-            double decay_length = beta*gamma*ctau;
-            double p = sqrt(pow(temp_event.aprime->phep[3],2) - pow(temp_event.aprime->phep[4],2)); // for pz/p
-            float prob =  p_decay_simple(42., decay_length * temp_event.aprime->phep[3] / p, 500.,600.);
-            v_prob.push_back(prob);
+            if(calcAcceptance){
+                double gamma = temp_event.aprime->phep[3]/temp_event.aprime->phep[4];
+                double beta = sqrt(1.0-pow(gamma,-2.0));
+                double decay_length = beta*gamma*ctau;
+                double p = sqrt(pow(temp_event.aprime->phep[3],2) - pow(temp_event.aprime->phep[4],2)); // for pz/p
+                float prob_simple =  p_decay_simple(42., decay_length * temp_event.aprime->phep[3] / p, min_vz, max_vz);
+                float prob =  p_decay(25., 16.77, decay_length * temp_event.aprime->phep[3] / p, min_vz, max_vz);
+                v_prob.push_back(prob);
+                v_prob_simple.push_back(prob_simple);
+            }
         }
         else printf("WARNING: missing A' decays\n");
         nevhep++;
     }
 
-
+    float sum_probs_simple = 0;
+    for(int i=0;i<v_prob_simple.size();i++) sum_probs_simple += v_prob_simple.at(i);
+    float mean_acceptance_simple = sum_probs_simple / v_prob_simple.size();
     float sum_probs = 0;
     for(int i=0;i<v_prob.size();i++) sum_probs += v_prob.at(i);
     float mean_acceptance = sum_probs / v_prob.size();
@@ -388,6 +393,7 @@ int main(int argc,char** argv)
     }// generated all events
       
     printf("%d %d %f %e %f %f %s \n",n_accepted,n_sampled,mass,eps,min_vz,max_vz,mech.c_str());
+    printf("%d %d %f %e %f %f %s %f [%f %f] \n",n_accepted,n_sampled,mass,eps,min_vz,max_vz,mech.c_str(), float(n_accepted)/n_sampled, mean_acceptance, mean_acceptance_simple);
     // compare predicted with toy mc, binomial errors
     // printf("%d %d %f %e %f %f %s %f %f [%f %f] \n",n_accepted,n_sampled,mass,eps,min_vz,max_vz,mech.c_str(), mean_acceptance, float(n_accepted)/n_sampled,
     //        float(n_accepted)/n_sampled - float(n_accepted)/n_sampled * float(n_sampled-n_accepted)/n_sampled,
