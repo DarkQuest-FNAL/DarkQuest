@@ -393,7 +393,6 @@ int main(int argc,char** argv)
     }// generated all events
       
     printf("%d %d %f %e %f %f %s \n",n_accepted,n_sampled,mass,eps,min_vz,max_vz,mech.c_str());
-    printf("%d %d %f %e %f %f %s %f [%f %f] \n",n_accepted,n_sampled,mass,eps,min_vz,max_vz,mech.c_str(), float(n_accepted)/n_sampled, mean_acceptance, mean_acceptance_simple);
     // compare predicted with toy mc, binomial errors
     // printf("%d %d %f %e %f %f %s %f %f [%f %f] \n",n_accepted,n_sampled,mass,eps,min_vz,max_vz,mech.c_str(), mean_acceptance, float(n_accepted)/n_sampled,
     //        float(n_accepted)/n_sampled - float(n_accepted)/n_sampled * float(n_sampled-n_accepted)/n_sampled,
