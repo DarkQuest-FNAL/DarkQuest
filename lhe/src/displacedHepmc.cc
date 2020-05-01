@@ -303,14 +303,6 @@ int main(int argc,char** argv)
     for(int i=0;i<v_prob.size();i++) sum_probs += v_prob.at(i);
     float mean_acceptance = sum_probs / v_prob.size();
 
-    // vector<int> v_goal_accept;
-    // vector<int> v_goal_samples;
-    // for(auto p : v_probs){
-    //     // skip simulating events that should contribute < 1 evt to final sample
-    //     v_goal_accept.push_back( p/sum_probs*n_hepmc > 0.5 ? int(p/sum_probs*n_hepmc)+1 : 0);
-    //     v_goal_accept.push_back( p*n_hepmc > 0.5 ? int(p*n_hepmc)+1 : 0);
-    // }
-
     // writing HepMC file
     stream.str("");
     stream << std::fixed << std::setprecision(2) << mass;
