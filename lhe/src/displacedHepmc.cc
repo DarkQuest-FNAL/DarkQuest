@@ -93,16 +93,17 @@ int main(int argc,char** argv)
         // create KL particle and daughters
         // px      py        pz       e     pdgid status  
         GenParticle* gen_kl = new GenParticle(FourVector(kl.Px(), kl.Py(), kl.Pz(), kl.E()),130,2);
-        Decay2(rand,kl,d1,d2);
-        GenParticle* gen_d1 = new GenParticle(FourVector(d1.Px(), d1.Py(), d1.Pz(), d1.E()), 211,1);
-        GenParticle* gen_d2 = new GenParticle(FourVector(d2.Px(), d2.Py(), d2.Pz(), d2.E()),-211,1);
+        // Decay2(rand,kl,d1,d2);
+        // GenParticle* gen_d1 = new GenParticle(FourVector(d1.Px(), d1.Py(), d1.Pz(), d1.E()), 211,1);
+        // GenParticle* gen_d2 = new GenParticle(FourVector(d2.Px(), d2.Py(), d2.Pz(), d2.E()),-211,1);
 
         // create KL vertex
         GenVertex* vaprime = new GenVertex(FourVector(vtx.Px(), vtx.Py(), vtx.Pz(), vtx.E()) );
         evt->add_vertex( vaprime );
         vaprime->add_particle_in( gen_kl );
-        vaprime->add_particle_out( gen_d1 );
-        vaprime->add_particle_out( gen_d2 );
+        vaprime->add_particle_out( gen_kl );
+        // vaprime->add_particle_out( gen_d1 );
+        // vaprime->add_particle_out( gen_d2 );
 	
         // write file
         output_file.write_event(evt);
