@@ -7,10 +7,11 @@ R__LOAD_LIBRARY(libfun4all)
 R__LOAD_LIBRARY(libg4detectors)
 R__LOAD_LIBRARY(libg4testbench)
 R__LOAD_LIBRARY(libg4eval)
+R__LOAD_LIBRARY(libg4dst)
 R__LOAD_LIBRARY(libdptrigger)
 R__LOAD_LIBRARY(libevt_filter)
 //R__LOAD_LIBRARY(libktracker)
-R__LOAD_LIBRARY(libsim_eval)
+//R__LOAD_LIBRARY(libsim_eval)
 #endif
 
 #include <iostream>
@@ -18,7 +19,8 @@ R__LOAD_LIBRARY(libsim_eval)
 using namespace std;
 
 int Fun4Sim(
-    const int nevent = 10
+	    const int nevent = 10,
+	    std::string ifile = "Brem_0.06_z500_600_eps_-6.2"
     )
 {
   const double target_coil_pos_z = -300;
@@ -33,20 +35,20 @@ int Fun4Sim(
   const double target_z = (7.9-target_l)/2.; //cm
   const int use_g4steps = 1;
 
+  const int RUNNUMBER = 1;
   const double FMAGSTR = -1.054;
   const double KMAGSTR = -0.951;
-
-  std::string ifile = "Brem_1.04_z500_600_eps_-6.4";
 
   gSystem->Load("libfun4all");
   gSystem->Load("libg4detectors");
   gSystem->Load("libg4testbench");
   gSystem->Load("libg4eval");
-  //gSystem->Load("libktracker.so");
+  gSystem->Load("libg4dst");
 
   recoConsts *rc = recoConsts::instance();
   rc->set_DoubleFlag("FMAGSTR", FMAGSTR);
   rc->set_DoubleFlag("KMAGSTR", KMAGSTR);
+  //  rc->set_IntFlag("RUNNUMBER", RUNNUMBER);
   rc->Print();
 
   // Alignment
@@ -116,10 +118,8 @@ int Fun4Sim(
   dptrigger->set_road_set_file_name(gSystem->ExpandPathName("$E1039_RESOURCE/trigger/trigger_67.txt"));
   se->registerSubsystem(dptrigger);
 
-  // Event Filter (not requiring trigger now)
+  // Event Filter
   EvtFilter *evt_filter = new EvtFilter();
-  //evt_filter->Verbosity(10);
-  //evt_filter->set_trigger_req(1<<5);
   se->registerSubsystem(evt_filter);
 
   // tracking module
@@ -134,20 +134,27 @@ int Fun4Sim(
   // se->registerSubsystem(vertexing);
 
   // evaluation module
-  gSystem->Load("libsim_eval.so");
-  SimEval *sim_eval = new SimEval();
-  sim_eval->Verbosity(0);//(3);
-  sim_eval->set_hit_container_choice("Vector");
-  stringstream ssout; ssout << "sim_eval_" << ifile << ".root";
-  sim_eval->set_out_name(ssout.str().c_str());
-  se->registerSubsystem(sim_eval);
+  //gSystem->Load("libsim_eval.so");
+  //SimEval *sim_eval = new SimEval();
+  //sim_eval->Verbosity(0);//(3);
+  //sim_eval->set_hit_container_choice("Vector");
+  //stringstream ssout; ssout << "sim_eval_" << ifile << ".root";
+  //sim_eval->set_out_name(ssout.str().c_str());
+  //se->registerSubsystem(sim_eval);
 
   // input 
   Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
   //in->set_vertex_distribution_mean(0,0,target_coil_pos_z,0);
   se->registerInputManager(in);
-  stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Electrons/" << ifile << ".txt";
+  //stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Electrons/" << ifile << ".txt";
+  stringstream ssin; ssin << ifile << ".txt";
   in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
+
+  // DST output manager
+  stringstream ssout; ssout << ifile << "0_dst.root";
+  //std::cout << ssout.str().c_str() << std::endl;
+  Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", ssout.str().c_str());
+  se->registerOutputManager(out);
 
   if (nevent >= 0)
   {
