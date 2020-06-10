@@ -20,8 +20,4 @@ Or to setup after code has compiled (every time) in spinquestgpvm01.fnal.gov:
 source setup.sh
 ```
 
-You can change the HepMC input in `Fun4Sim.C` (probably should be an option) and then run it as:
-```
-root -l Fun4Sim.C\(10000\)
-```
-It will look it in your `$DIR_TOP/../../lhe/displaced_*` files.
+The main script is `Fun4Sim.C` and is located in `macro`.
