@@ -43,7 +43,7 @@ echo $PWD
 #export LD_LIBRARY_PATH=$DIR_TOP/:$LD_LIBRARY_PATH
 #echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"
 
-time root -b -q Fun4Sim.C\(100,\"${ifile}\"\)
+time root -b -q Fun4Sim.C\(${nevents},\"${ifile}\"\)
 mv *.root $CONDOR_DIR_OUTPUT/
 
 echo "gridrun.sh finished!"

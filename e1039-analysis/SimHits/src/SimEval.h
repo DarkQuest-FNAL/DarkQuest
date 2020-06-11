@@ -136,10 +136,60 @@ private:
   float gx_dp1[1000];
   float gy_dp1[1000];
   float gz_dp1[1000];
-
+  float gpx_dp1[1000];
+  float gpy_dp1[1000];
+  float gpz_dp1[1000];
   float gx_dp2[1000];
   float gy_dp2[1000];
   float gz_dp2[1000];
+  float gpx_dp2[1000];
+  float gpy_dp2[1000];
+  float gpz_dp2[1000];
+
+  float gx_h1[1000];
+  float gy_h1[1000];
+  float gz_h1[1000];
+  float gpx_h1[1000];
+  float gpy_h1[1000];
+  float gpz_h1[1000];
+  float gx_h2[1000];
+  float gy_h2[1000];
+  float gz_h2[1000];
+  float gpx_h2[1000];
+  float gpy_h2[1000];
+  float gpz_h2[1000];
+
+  float gx_p1[1000];
+  float gy_p1[1000];
+  float gz_p1[1000];
+  float gpx_p1[1000];
+  float gpy_p1[1000];
+  float gpz_p1[1000];
+  float gx_p2[1000];
+  float gy_p2[1000];
+  float gz_p2[1000];
+  float gpx_p2[1000];
+  float gpy_p2[1000];
+  float gpz_p2[1000];
+
+  float gx_h4y2l[1000];
+  float gy_h4y2l[1000];
+  float gz_h4y2l[1000];
+  float gpx_h4y2l[1000];
+  float gpy_h4y2l[1000];
+  float gpz_h4y2l[1000];
+  float gx_h4y2r[1000];
+  float gy_h4y2r[1000];
+  float gz_h4y2r[1000];
+  float gpx_h4y2r[1000];
+  float gpy_h4y2r[1000];
+  float gpz_h4y2r[1000];
+
+  float gedep_st1[1000];
+  float gedep_st2[1000];
+  float gedep_st3[1000];
+  float gedep_p1[1000];
+  float gedep_p2[1000];
 
   float gbarID_h1[1000];
   float gbarID_h2[1000];

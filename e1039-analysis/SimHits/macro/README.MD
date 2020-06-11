@@ -44,3 +44,5 @@ source gridsub.sh Eta_0.54_z500_600_eps_-6.2-10000 1 1 10000 Eta_0.54_z500_600_e
 ```
 
 A submission for all files is summarized in `submit_electrons.sh`.
+
+You can run `jobsub_q --user=$USER` (or its alias jobsub_q_mine) to check the status of your jobs.

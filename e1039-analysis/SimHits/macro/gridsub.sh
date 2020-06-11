@@ -8,7 +8,7 @@ nevents=$4
 ifile=$5
 
 nmu=1
-LIFE_TIME=medium # short (3h), medium (8h) or long (23h)
+LIFE_TIME=long # short (3h), medium (8h) or long (23h)
 
 if [ $do_sub == 1 ]; then
   echo "grid!"
