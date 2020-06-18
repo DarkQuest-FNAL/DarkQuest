@@ -1,8 +1,7 @@
-#if ROOT_VERSION_CODE >= ROOT_VERSION(6,00,0)
-#include <TSystem.h>
+#include "G4_InsensitiveVolumes.C"
 #include "G4_SensitiveDetectors.C"
+#include "G4_Beamline.C"
 #include "G4_Target.C"
-
 R__LOAD_LIBRARY(libfun4all)
 R__LOAD_LIBRARY(libg4detectors)
 R__LOAD_LIBRARY(libg4testbench)
@@ -12,7 +11,7 @@ R__LOAD_LIBRARY(libdptrigger)
 R__LOAD_LIBRARY(libevt_filter)
 //R__LOAD_LIBRARY(libktracker)
 //R__LOAD_LIBRARY(libsim_eval)
-#endif
+using namespace std;
 
 #include <iostream>
 #include <sstream>
@@ -30,6 +29,9 @@ int Fun4Sim(
   const bool do_collimator = true;
   const bool do_target = true;
   const bool do_e1039_shielding = true;
+  const bool do_fmag = true;
+  const bool do_kmag = true;
+  const bool do_absorber = true;
 
   const double target_l = 7.9; //cm
   const double target_z = (7.9-target_l)/2.; //cm
@@ -39,16 +41,9 @@ int Fun4Sim(
   const double FMAGSTR = -1.054;
   const double KMAGSTR = -0.951;
 
-  gSystem->Load("libfun4all");
-  gSystem->Load("libg4detectors");
-  gSystem->Load("libg4testbench");
-  gSystem->Load("libg4eval");
-  gSystem->Load("libg4dst");
-
   recoConsts *rc = recoConsts::instance();
   rc->set_DoubleFlag("FMAGSTR", FMAGSTR);
   rc->set_DoubleFlag("KMAGSTR", KMAGSTR);
-  //  rc->set_IntFlag("RUNNUMBER", RUNNUMBER);
   rc->Print();
 
   // Alignment
@@ -90,15 +85,16 @@ int Fun4Sim(
   g4Reco->SetPhysicsList("FTFP_BERT");
 
   // insensitive elements of the spectrometer
-  PHG4E1039InsensSubsystem* insens = new PHG4E1039InsensSubsystem("Insens");
-  g4Reco->registerSubsystem(insens);
+  SetupInsensitiveVolumes(g4Reco, do_e1039_shielding, do_fmag, do_kmag, do_absorber);
 
   // collimator, targer and shielding between target and FMag
-  gROOT->LoadMacro("G4_Target.C");
-  SetupTarget(g4Reco, do_collimator, do_target, do_e1039_shielding, target_coil_pos_z, target_l, target_z, use_g4steps);
+  SetupBeamline(g4Reco, do_collimator, target_coil_pos_z - 302.36); // Is the position correct??
+
+  if (do_target) {
+    SetupTarget(g4Reco, target_coil_pos_z, target_l, target_z, use_g4steps);
+  }
 
   // sensitive elements of the spectrometer
-  gROOT->LoadMacro("G4_SensitiveDetectors.C");
   SetupSensitiveDetectors(g4Reco, 0);
 
   se->registerSubsystem(g4Reco);
@@ -146,7 +142,7 @@ int Fun4Sim(
   Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
   //in->set_vertex_distribution_mean(0,0,target_coil_pos_z,0);
   se->registerInputManager(in);
-  //stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Electrons/" << ifile << ".txt";
+  in->Verbosity(10);
   stringstream ssin; ssin << ifile << ".txt";
   in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
 
@@ -156,19 +152,15 @@ int Fun4Sim(
   Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", ssout.str().c_str());
   se->registerOutputManager(out);
 
-  if (nevent >= 0)
-  {
-    se->run(nevent);
+  se->run(nevent);
 
-    // finish job - close and save output files
-    se->End();
-    //se->PrintTimer();
+  // finish job - close and save output files
+  se->End();
+  se->PrintTimer();
 
-    // cleanup - delete the server and exit
-    delete se;
-    gSystem->Exit(0);
-  }
-
+  // cleanup - delete the server and exit
+  delete se;
+  gSystem->Exit(0);
   return 0;
 }
 

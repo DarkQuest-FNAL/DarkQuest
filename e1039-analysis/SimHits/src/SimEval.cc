@@ -47,7 +47,6 @@ SimEval::SimEval(const std::string& name) :
   SubsysReco(name),
   _hit_container_type("Vector"),
   _event(0),
-  _run_header(nullptr),
   _event_header(nullptr),
   _hit_map(nullptr),
   _hit_vector(nullptr),
@@ -267,7 +266,7 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
 	      gpz_st1[n_tracks] = g4hit->get_pz(0)/1000.;
               gedep_st1[n_tracks] = g4hit->get_edep();
 	      if(gpz_st1[n_tracks] <0){
-		std::cout << "WARNING:: Negative z-momentum at Station 1!" << std::endl;
+		std::cout << "WARNING:: Negative z-momentum at Station 1! " << gpz_st1[n_tracks] <<std::endl;
 	      }
 	      break;
 	    }
@@ -987,11 +986,6 @@ int SimEval::ResetEvalVars() {
 }
 
 int SimEval::GetNodes(PHCompositeNode* topNode) {
-
-  _run_header = findNode::getClass<SQRun>(topNode, "SQRun");
-  if (!_run_header) {
-    LogError("!_run_header");
-  }
 
   _event_header = findNode::getClass<SQEvent>(topNode, "SQEvent");
   if (!_event_header) {

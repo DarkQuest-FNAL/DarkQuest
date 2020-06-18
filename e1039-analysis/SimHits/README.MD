@@ -7,7 +7,7 @@ source /e906/app/software/osg/software/e1039/this-e1039.sh
 mkdir work
 mkdir install
 cd work
-cmake ../src/ cmake -DCMAKE_INSTALL_PREFIX=../install
+cmake ../src/ -DCMAKE_INSTALL_PREFIX=../install
 make
 make install
 cd ../
