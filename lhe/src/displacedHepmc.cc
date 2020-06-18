@@ -309,7 +309,7 @@ int main(int argc,char** argv)
     std::string massStr = stream.str();
     std::string lepStr = "Muons";
     if(iselectrons) lepStr = "Electrons";
-    string outFile = "displacedv2_Aprime_"+lepStr+"/"+mech+"_"+massStr+"_z"+std::to_string((int)min_vz)+"_"+std::to_string((int)max_vz)+"_eps_"+epsStr+".txt";
+    string outFile = "displaced_Aprime_"+lepStr+"/"+mech+"_"+massStr+"_z"+std::to_string((int)min_vz)+"_"+std::to_string((int)max_vz)+"_eps_"+epsStr+".txt";
     //WriterAscii output_file(outFile);
     IO_GenEvent output_file(outFile);
 

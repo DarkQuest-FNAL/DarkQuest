@@ -62,8 +62,8 @@ customizing it with options such as
 
 There are short scripts that run all masses and couplings:
 ```
-source run_dimuons.sh
-source run_dielectrons.sh
+source run_dimuon.sh
+source run_dielectron.sh
 ```
 These produce inputs to the SpinQuest simulation framework. Be warned that the outputs can be quite large!
 
