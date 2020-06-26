@@ -20,12 +20,12 @@ using namespace std;
 
 int Fun4SimHit(
 	       const int nevent = 10,
-	       std::string ifile = "Eta_0.055176_z500_600_eps_-6.2"
+	       std::string ifile = "Eta_0.055176_z500_600_eps_-6.2",
+	       const int idLep = 11
     )
 {
   const double target_coil_pos_z = -300;
   const int nmu = 1;
-  const int idLep = 11;
 
   const bool do_collimator = true;
   const bool do_target = true;
@@ -84,7 +84,7 @@ int Fun4SimHit(
   g4Reco->SetWorldMaterial("G4_AIR"); //G4_Galactic, G4_AIR
   // Geant4 Physics list to use
   g4Reco->SetPhysicsList("FTFP_BERT");
-  //g4Reco->Verbosity(10);
+  g4Reco->Verbosity(10);
 
   // insensitive elements of the spectrometer
   SetupInsensitiveVolumes(g4Reco, do_e1039_shielding, do_fmag, do_kmag, do_absorber);
@@ -106,7 +106,7 @@ int Fun4SimHit(
 
   // digitizer
   DPDigitizer *digitizer = new DPDigitizer("DPDigitizer", 0);
-  digitizer->Verbosity(99);
+  //digitizer->Verbosity(99);
   se->registerSubsystem(digitizer);
 
   // Trigger Emulator
@@ -138,7 +138,7 @@ int Fun4SimHit(
   // evaluation module
   gSystem->Load("libsim_eval.so");
   SimEval *sim_eval = new SimEval();
-  sim_eval->Verbosity(99);
+  //sim_eval->Verbosity(99);
   sim_eval->set_hit_container_choice("Vector");
   stringstream ssout; ssout << "sim_eval_" << ifile << ".root";
   sim_eval->set_out_name(ssout.str().c_str());
@@ -149,8 +149,9 @@ int Fun4SimHit(
   //in->set_vertex_distribution_mean(0,0,target_coil_pos_z,0);
   se->registerInputManager(in);
   stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Electrons/" << ifile << ".txt";
+  //stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Muons/" << ifile << ".txt";
   in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
-  in->Verbosity(99);
+  //in->Verbosity(99);
 
   // run
   se->run(nevent);
