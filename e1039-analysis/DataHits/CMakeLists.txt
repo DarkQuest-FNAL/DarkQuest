@@ -16,8 +16,9 @@ add_custom_command (
   ARGS -f ${PROJECT_SOURCE_DIR}/src/SRawEventDict.cxx -c ${PROJECT_SOURCE_DIR}/inc/SRawEvent.h ${PROJECT_SOURCE_DIR}/inc/SRawEventLinkDef.h
   )
 
-file(GLOB sources ${PROJECT_SOURCE_DIR}/*.cc)
-file(GLOB headers ${PROJECT_SOURCE_DIR}/*.h)
+include_directories(${PROJECT_SOURCE_DIR}/inc)
+file(GLOB sources ${PROJECT_SOURCE_DIR}/src/*.cxx   ${PROJECT_SOURCE_DIR}/src/*.cc)
+file(GLOB headers ${PROJECT_SOURCE_DIR}/include/*.h ${PROJECT_SOURCE_DIR}/include/*.hh)
 
 # ROOT
 find_program(ROOTCONF "root-config")
@@ -43,6 +44,7 @@ foreach(exec ${execs})
 
   add_executable(${exec} ${PROJECT_SOURCE_DIR}/exe/${exec}.cxx)
   target_link_libraries(${exec} ${PROJECT_SOURCE_DIR}/lib/libdataEval.so)
-  target_link_libraries(${exec} ${ROOT_LINK}")
+  target_link_libraries(${exec} "${ROOT_LINK}")
+  #  target_include_directories(${exec} PUBLIC ${PROJECT_SOURCE_DIR}/src)
   add_dependencies(${exec} dataEval)
 endforeach(exec)

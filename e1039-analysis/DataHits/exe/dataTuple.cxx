@@ -32,28 +32,31 @@ int main(int argc, char *argv[])
   Int_t runID, spillID, eventID;
   Int_t triggerBits;
   Int_t nHits;
-  Int_t detectorID[1000], elementID[1000];
-  Double_t tdcTime[1000], driftDistance[1000];
+  Int_t detectorID[15000], elementID[15000];
+  Double_t tdcTime[15000], driftDistance[15000];
 
   TFile* saveFile = new TFile(argv[2], "recreate");
-  TTree* saveTree = new TTree("save", "save");
+  TTree* saveTree = new TTree("Events", "Events");
 
-  saveTree->Branch("runID", &runID);
-  saveTree->Branch("spillID", &spillID);
-  saveTree->Branch("eventID", &eventID);
-  saveTree->Branch("triggerBits", &triggerBits);
+  //saveTree->Branch("runID", &runID);
+  //saveTree->Branch("spillID", &spillID);
+  //saveTree->Branch("eventID", &eventID);
+  //saveTree->Branch("triggerBits", &triggerBits);
   saveTree->Branch("nHits", &nHits);
   saveTree->Branch("detectorID", detectorID, "detectorID[nHits]/I");
   saveTree->Branch("elementID", elementID, "elementID[nHits]/I");
-  saveTree->Branch("tdcTime", tdcTime, "tdcTime[nHits]/D")
-  saveTree->Branch("driftDistance", driftDistance, "driftDistance[nHits]/D")
+  saveTree->Branch("tdcTime", tdcTime, "tdcTime[nHits]/D");
+  saveTree->Branch("driftDistance", driftDistance, "driftDistance[nHits]/D");
 
   for(Int_t i = 0; i < dataTree->GetEntries(); ++i) {
       dataTree->GetEntry(i);
-      if(i % 10000 == 0) cout << i << endl;
+      if(i % 1000 == 0) cout << i << endl;
 
-      if (rawEvent->getTriggerBits()>0) {
+      // The NIM1 and NIM3 bits are random triggers. 
+      int nim1TriggerMask = 32; 
+      int nim3TriggerMask = 128;  
 
+      if (rawEvent->getTriggerBits()>0 && (rawEvent->getTriggerBits() & (nim1TriggerMask|nim3TriggerMask) != 0)){
 	runID = rawEvent->getRunID();
 	spillID = rawEvent->getSpillID();
 	eventID = rawEvent->getEventID();
@@ -65,7 +68,7 @@ int main(int argc, char *argv[])
 	    Hit h = rawEvent->getHit(k);
 	    detectorID[k] = h.detectorID; 
 	    elementID[k] = h.elementID;
-	    
+	   
 	    // detector ID refers to the detector number as seen here:
 	    // st1-drift chambers| D0: 1-6, D1: 7-12
 	    // st2-drift chambers| D2: 13-18
@@ -81,8 +84,10 @@ int main(int argc, char *argv[])
 
 	    tdcTime[k] = h.tdcTime;
 	    driftDistance[k] = h.driftDistance;
+
 	  }
-      }      
+        if(nHits > 0) saveTree->Fill();
+      }
 
       rawEvent->clear();
   }
