@@ -92,17 +92,12 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
     event_id    = _event_header->get_event_id();    
   }
 
-  // These maps are just counting the number of hits
-  std::map<int, int> parID_nhits_dc;
-  std::map<int, int> parID_nhits_hodo;
-  std::map<int, int> parID_nhits_prop;
-  std::map<int, int> parID_nhits_dp;
-  std::map<int, int> parID_nhits_H4Y;
+  // map of trackID, detID (detector ID) and element ID (e.g. bars of hodoscopes)
+  std::map<int, std::map<int, int> > trkID_detid_elmid;
 
-  std::map<int, std::map<int, int> > parID_detid_elmid;
-
+  // map of detID (detector ID) and
   typedef std::tuple<int, int> ParDetPair;
-  std::map<ParDetPair, int> parID_detID_ihit;
+  std::map<ParDetPair, int> trkID_detID_ihit;
   std::map<int, int> hitID_ihit;
   
   if(_hit_vector) {
@@ -134,68 +129,27 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
 	int det_id = hit->get_detector_id();
 
 	// NOTE HERE:
-	// parID is not the particle ID, but the trackID.
+	// trkID is the trackID
 	// It indexes by n_hits, starting from 1
 	// Anything indexed by n_tracks starts at 0
 	// Make sure you pay attention what is indexed where. 
 	
-	parID_detID_ihit[std::make_tuple(track_id, det_id)] = ihit;
+	trkID_detID_ihit[std::make_tuple(track_id, det_id)] = ihit;
 	
-	auto detid_elmid_iter = parID_detid_elmid.find(track_id);
-	if(detid_elmid_iter != parID_detid_elmid.end()) {
+	auto detid_elmid_iter = trkID_detid_elmid.find(track_id);
+	if(detid_elmid_iter != trkID_detid_elmid.end()) {
 	  detid_elmid_iter->second.insert(std::pair<int, int>(det_id, hit->get_element_id()));
 	} 
 	else {
 	  std::map<int, int> detid_elmid;
 	  detid_elmid.insert(std::pair<int, int>(det_id, hit->get_element_id()));
-	  parID_detid_elmid[track_id] = detid_elmid;
-	}
-	
-	// drift chamber hits
-	if(hit->get_detector_id() >= 1 and hit->get_detector_id() <=30) {
-	  if(parID_nhits_dc.find(track_id)!=parID_nhits_dc.end())
-	    parID_nhits_dc[track_id] = parID_nhits_dc[track_id]+1;
-	  else
-	    parID_nhits_dc[track_id] = 1;
-	}
-
-	// hodoscope hits
-	if(hit->get_detector_id() >= 31 and hit->get_detector_id() <=46) {
-	  if(parID_nhits_hodo.find(track_id)!=parID_nhits_hodo.end())
-	    parID_nhits_hodo[track_id] = parID_nhits_hodo[track_id]+1;
-	  else
-	    parID_nhits_hodo[track_id] = 1;
-	}
-	
-	// prop tube hits
-	if(hit->get_detector_id() >= 47 and hit->get_detector_id() <=54) {
-	  if(parID_nhits_prop.find(track_id)!=parID_nhits_prop.end())
-	    parID_nhits_prop[track_id] = parID_nhits_prop[track_id]+1;
-	  else
-	    parID_nhits_prop[track_id] = 1;
-	}
-	
-	// dp hits
-	if((hit->get_detector_id() >= 55 and hit->get_detector_id() <=62)) {
-	  if(parID_nhits_dp.find(track_id)!=parID_nhits_dp.end())
-	    parID_nhits_dp[track_id] = parID_nhits_dp[track_id]+1;
-	  else
-	    parID_nhits_dp[track_id] = 1;
-	}
-	
-	// h4y hits
-	if((hit->get_detector_id() == 43 or hit->get_detector_id() ==44)) {
-	  //it is possible that a hit will hit both det 43 and 44 since they over lap,
-	  //but we are only interested in if it hits 1 of the h4y, so as long as it hits, take that 
-	  // to be 1 hit.
-	  parID_nhits_H4Y[track_id] = 1;
+	  trkID_detid_elmid[track_id] = detid_elmid;
 	}
 	
 	//PHG4Hit is what has the true truth information.
 	hit_truthx[n_hits] = hit->get_truth_x();
 	hit_truthy[n_hits] = hit->get_truth_y();
-	hit_truthz[n_hits] = hit->get_truth_z();
-	
+	hit_truthz[n_hits] = hit->get_truth_z();	
 	double uVec[3] = {p_geomSvc->getPlane(hit->get_detector_id()).uVec[0],
 			  p_geomSvc->getPlane(hit->get_detector_id()).uVec[1],
 			  p_geomSvc->getPlane(hit->get_detector_id()).uVec[2]
@@ -208,6 +162,8 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
     }
   } // end SQ Hit_vector
   if(Verbosity() >= Fun4AllBase::VERBOSITY_A_LOT) LogInfo("ghit eval finished");
+
+  // trackID + detID -> SQHit -> PHG4Hit -> momentum
   
   // PHG4Particle is the particle information from geant. This has all the information 
   // that you put into the simulation and all the information the geant created when 
@@ -232,11 +188,14 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
       gpt[n_tracks] = mom.Pt();
       geta[n_tracks] = mom.Eta();
       gphi[n_tracks] = mom.Phi();
+      ge[n_tracks] =  par->get_e();
       
-      // Not particle ID, trackID
-      int parID = par->get_track_id();
-      gparid[n_tracks] = parID;
+      int trkID = par->get_track_id();
+      gtrkid[n_tracks] = trkID;
       
+      //PHG4Shower* shower = _truth->GetShower(par->get_primary_id());
+      //gedep[n_tracks] = shower->get_edep();
+
       // The detector ID and names are listed in e1039-core/packages/geom_svc/GeomSvc.cxx.
 
       // st1, 2, 3 are the drift chambers here   
@@ -244,16 +203,10 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
       if (!D1X_hits)
 	D1X_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D1X");
       
-      if (!D1X_hits){
-	if(Verbosity() >= Fun4AllBase::VERBOSITY_A_LOT)
-	  cout << Name() << " Could not locate g4 hit node " << "G4HIT_D0X or G4HIT_D1X" << endl;
-      }
-      
-      // trackID + detID -> SQHit -> PHG4Hit -> momentum
       // detID 1-6 deal with D0, 7-12 D1
       for(int det_id=1; det_id<=12; ++det_id) {
-	auto iter = parID_detID_ihit.find(std::make_tuple(parID, det_id));
-	if(iter != parID_detID_ihit.end()) {
+	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
+	if(iter != trkID_detID_ihit.end()) {
 	  SQHit *hit = _hit_vector->at(iter->second);
 	  if(hit and D1X_hits) {
 	    PHG4Hit* g4hit =  D1X_hits->findHit(hit->get_g4hit_id());
@@ -265,6 +218,7 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
 	      gpy_st1[n_tracks] = g4hit->get_py(0)/1000.;
 	      gpz_st1[n_tracks] = g4hit->get_pz(0)/1000.;
               gedep_st1[n_tracks] = g4hit->get_edep();
+	      std::cout << "edep st1 " << g4hit->get_edep() << std::endl;
 	      if(gpz_st1[n_tracks] <0){
 		std::cout << "WARNING:: Negative z-momentum at Station 1! " << gpz_st1[n_tracks] <<std::endl;
 	      }
@@ -288,8 +242,8 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
       // detID 13-18 are D2
       // trackID + detID -> SQHit -> PHG4Hit -> momentum
       for(int det_id=13; det_id<=18; ++det_id) {
-	auto iter = parID_detID_ihit.find(std::make_tuple(parID, det_id));
-	if(iter != parID_detID_ihit.end()) {
+	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
+	if(iter != trkID_detID_ihit.end()) {
 	  SQHit *hit = _hit_vector->at(iter->second);
 	  if(hit and D2X_hits) {
 	    PHG4Hit* g4hit =  D2X_hits->findHit(hit->get_g4hit_id());
@@ -318,8 +272,8 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
       
       // detID 19-24 are D3p, 25-30 are D3m
       for(int det_id=19; det_id<=24; ++det_id) {
-	auto iter = parID_detID_ihit.find(std::make_tuple(parID, det_id));
-	if(iter != parID_detID_ihit.end()) {
+	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
+	if(iter != trkID_detID_ihit.end()) {
 	  SQHit *hit = _hit_vector->at(iter->second);
 	  if(hit and D3X_hits) {
 	    PHG4Hit* g4hit =  D3X_hits->findHit(hit->get_g4hit_id());
@@ -351,8 +305,8 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
       
       // detID  25-30 are D3m
       for(int det_id=25; det_id<=30; ++det_id) {
-	auto iter = parID_detID_ihit.find(std::make_tuple(parID, det_id));
-	if(iter != parID_detID_ihit.end()) {
+	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
+	if(iter != trkID_detID_ihit.end()) {
 	  SQHit *hit = _hit_vector->at(iter->second);
 	  if(hit and D3X_hits) {
 	    PHG4Hit* g4hit =  D3X_hits->findHit(hit->get_g4hit_id());
@@ -383,8 +337,8 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
       }
       
       for(int det_id=33; det_id<=34; ++det_id) {
-	auto iter = parID_detID_ihit.find(std::make_tuple(parID, det_id));
-	if(iter != parID_detID_ihit.end()) {
+	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
+	if(iter != trkID_detID_ihit.end()) {
 	  SQHit *hit = _hit_vector->at(iter->second);
 	  if(hit and H1_hits) {
 	    PHG4Hit* g4hit =  H1_hits->findHit(hit->get_g4hit_id());
@@ -412,8 +366,8 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
       }
       
       for(int det_id=35; det_id<=36; ++det_id) {
-	auto iter = parID_detID_ihit.find(std::make_tuple(parID, det_id));
-	if(iter != parID_detID_ihit.end()) {
+	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
+	if(iter != trkID_detID_ihit.end()) {
 	  SQHit *hit = _hit_vector->at(iter->second);
 	  if(hit and H2_hits) {
 	    PHG4Hit* g4hit =  H2_hits->findHit(hit->get_g4hit_id());
@@ -454,8 +408,8 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
           P1Container = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P1X2");
           break;
 
-	auto iter = parID_detID_ihit.find(std::make_tuple(parID, det_id));
-	if(iter != parID_detID_ihit.end()) {
+	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
+	if(iter != trkID_detID_ihit.end()) {
 	  SQHit *hit = _hit_vector->at(iter->second);
 	  if(hit and P1Container) {
 	    PHG4Hit* g4hit =  P1Container->findHit(hit->get_g4hit_id());
@@ -494,8 +448,8 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
           P2Container = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P2Y2");
           break;
         }
-	auto iter = parID_detID_ihit.find(std::make_tuple(parID, det_id));
-        if(iter != parID_detID_ihit.end()) {
+	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
+        if(iter != trkID_detID_ihit.end()) {
           SQHit *hit = _hit_vector->at(iter->second);
           if(hit and P2Container) {
             PHG4Hit* g4hit =  P2Container->findHit(hit->get_g4hit_id());
@@ -516,8 +470,8 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
       //detID 43 and 44 are for H4Y2L, which is the one used in DP tracking.
       PHG4HitContainer *H4Y_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H4Y2L");
       for(int det_id=43; det_id<44; ++det_id) {
-	auto iter = parID_detID_ihit.find(std::make_tuple(parID, det_id));
-	if(iter != parID_detID_ihit.end()) {
+	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
+	if(iter != trkID_detID_ihit.end()) {
 	  SQHit *hit = _hit_vector->at(iter->second);
 	  if(hit and H4Y_hits) {
 	    if(verbosity >= Fun4AllBase::VERBOSITY_A_LOT) {
@@ -546,8 +500,8 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
       
       H4Y_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H4Y2R");
       for(int det_id=44; det_id<45; ++det_id) {
-	auto iter = parID_detID_ihit.find(std::make_tuple(parID, det_id));
-	if(iter != parID_detID_ihit.end()) {
+	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
+	if(iter != trkID_detID_ihit.end()) {
 	  SQHit *hit = _hit_vector->at(iter->second);
 	  if(hit and H4Y_hits) {
 	    PHG4Hit* g4hit =  H4Y_hits->findHit(hit->get_g4hit_id());
@@ -594,8 +548,8 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
 	  
 	}
 	
-	auto iter = parID_detID_ihit.find(std::make_tuple(parID, det_id));
-	if(iter != parID_detID_ihit.end()) {
+	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
+	if(iter != trkID_detID_ihit.end()) {
 	  SQHit *hit = _hit_vector->at(iter->second);
 	  if(hit and DP1Container) {
 	    PHG4Hit* g4hit =  DP1Container->findHit(hit->get_g4hit_id());
@@ -654,8 +608,8 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
 	  break;
 	}
 	
-	auto iter = parID_detID_ihit.find(std::make_tuple(parID, det_id));
-	if(iter != parID_detID_ihit.end()) {
+	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
+	if(iter != trkID_detID_ihit.end()) {
 	  SQHit *hit = _hit_vector->at(iter->second);
 	  if(hit and DP2Container) {
 	    PHG4Hit* g4hit =  DP2Container->findHit(hit->get_g4hit_id());
@@ -693,19 +647,6 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
       }
       if(verbosity>=2) std::cout << "DP2 Truth info done." << std::endl;
 	
-      // total gen hits (except DP)
-      gnhits[n_tracks] = parID_nhits_dc[parID] + parID_nhits_hodo[parID] + parID_nhits_prop[parID];
-      gndc[n_tracks] = parID_nhits_dc[parID];
-      gnhodo[n_tracks] = parID_nhits_hodo[parID];
-      gnprop[n_tracks] = parID_nhits_prop[parID];
-      gnDP[n_tracks] = parID_nhits_dp[parID];
-      gnH4Y[n_tracks] = parID_nhits_H4Y[parID];
-      
-      for(auto detid_elmid : parID_detid_elmid[parID]) {
-	int detID = detid_elmid.first;
-	int elmID = detid_elmid.second;
-	gelmid[n_tracks][detID] = elmID;
-      }
       if(Verbosity() >= Fun4AllBase::VERBOSITY_A_LOT) LogInfo("particle eval finished");
       ++n_tracks;
       if(n_tracks>=1000) break;
@@ -747,7 +688,7 @@ int SimEval::InitEvalTree() {
   _tout_truth->Branch("hit_truthpos",  hit_truthpos,     "hit_truthpos[nHits]/F");
 
   _tout_truth->Branch("n_tracks",      &n_tracks,           "n_tracks/I");
-  _tout_truth->Branch("gparid",        gparid,              "gparid[n_tracks]/I");
+  _tout_truth->Branch("gtrkid",        gtrkid,              "gtrkid[n_tracks]/I");
   _tout_truth->Branch("gpid",          gpid,                "gpid[n_tracks]/I");
   _tout_truth->Branch("gvx",           gvx,                 "gvx[n_tracks]/F");
   _tout_truth->Branch("gvy",           gvy,                 "gvy[n_tracks]/F");
@@ -840,14 +781,6 @@ int SimEval::InitEvalTree() {
   _tout_truth->Branch("gquad_dp1",     gquad_dp1,           "gquad_dp1[n_tracks]/I");
   _tout_truth->Branch("gquad_dp2",     gquad_dp2,           "gquad_dp2[n_tracks]/I");
 
-  _tout_truth->Branch("gnhits",        gnhits,              "gnhits[n_tracks]/I");
-  _tout_truth->Branch("gndc",          gndc,                "gndc[n_tracks]/I");
-  _tout_truth->Branch("gnhodo",        gnhodo,              "gnhodo[n_tracks]/I");
-  _tout_truth->Branch("gnprop",        gnprop,              "gnprop[n_tracks]/I");
-  _tout_truth->Branch("gnDP",          gnDP,                "gnDP[n_tracks]/F");
-  _tout_truth->Branch("gnH4Y",         gnH4Y,               "gnH4Y[n_tracks]/F");
-  _tout_truth->Branch("gelmid",        gelmid,              "gelmid[n_tracks][54]/I");
-
   return 0;
 }
 
@@ -870,7 +803,7 @@ int SimEval::ResetEvalVars() {
 
   n_tracks = 0;
   for(int i=0; i<1000; ++i) {
-    gparid[i]     = std::numeric_limits<int>::max();
+    gtrkid[i]     = std::numeric_limits<int>::max();
     gpid[i]       = std::numeric_limits<int>::max();
     gvx[i]        = std::numeric_limits<float>::max();
     gvy[i]        = std::numeric_limits<float>::max();
@@ -968,17 +901,6 @@ int SimEval::ResetEvalVars() {
     gquad_dp1[i]  = std::numeric_limits<float>::max();
     gquad_dp2[i]  = std::numeric_limits<float>::max();
     gquad_h4y[i]  = std::numeric_limits<float>::max();
-
-    gnhits[i]     = std::numeric_limits<int>::max();
-    gndc[i]       = std::numeric_limits<int>::max();
-    gnhodo[i]     = std::numeric_limits<int>::max();
-    gnprop[i]     = std::numeric_limits<int>::max();
-    gnDP[i]       = std::numeric_limits<float>::max();
-    gnH4Y[i]      = std::numeric_limits<float>::max();
-
-    for(int j=0; j<55; ++j) {
-    	gelmid[i][j] = std::numeric_limits<int>::max();
-    }
 
   }
 

@@ -102,7 +102,7 @@ private:
   float hit_truthpos[10000];
   
   int n_tracks;
-  int gparid[1000];
+  int gtrkid[1000];
   int gpid[1000];
   float gvx[1000];
   float gvy[1000];
@@ -113,6 +113,7 @@ private:
   float gpt[1000];
   float geta[1000];
   float gphi[1000];
+  float ge[1000];
 
   float gx_st1[1000];
   float gy_st1[1000];
