@@ -33,6 +33,8 @@ int Fun4SimHit(
   const bool do_fmag = true;
   const bool do_kmag = true;
   const bool do_absorber = true;
+  const bool do_dphodo = true;
+  const bool do_station1DC = false;       //station-1 drift chamber should be turned off by default
 
   const double target_l = 7.9; //cm
   const double target_z = (7.9-target_l)/2.; //cm
@@ -54,14 +56,14 @@ int Fun4SimHit(
 
   // Make the Server
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(10);
+  se->Verbosity(0);
 
   // HepMC reader
   HepMCNodeReader *hr = new HepMCNodeReader();
   hr->set_particle_filter_on(true);
   hr->insert_particle_filter_pid(idLep);
   hr->insert_particle_filter_pid(idLep*-1);
-  hr->Verbosity(10);
+  hr->Verbosity(0);
   se->registerSubsystem(hr);
 
   // Fun4All G4 module
@@ -84,7 +86,7 @@ int Fun4SimHit(
   g4Reco->SetWorldMaterial("G4_AIR"); //G4_Galactic, G4_AIR
   // Geant4 Physics list to use
   g4Reco->SetPhysicsList("FTFP_BERT");
-  g4Reco->Verbosity(10);
+  g4Reco->Verbosity(0);
 
   // insensitive elements of the spectrometer
   SetupInsensitiveVolumes(g4Reco, do_e1039_shielding, do_fmag, do_kmag, do_absorber);
@@ -96,7 +98,7 @@ int Fun4SimHit(
   }
 
   // sensitive elements of the spectrometer
-  SetupSensitiveDetectors(g4Reco, 0);
+  SetupSensitiveDetectors(g4Reco, do_dphodo, do_station1DC);
 
   se->registerSubsystem(g4Reco);
 
@@ -105,24 +107,22 @@ int Fun4SimHit(
   g4Reco->registerSubsystem(truth);
 
   // digitizer
-  DPDigitizer *digitizer = new DPDigitizer("DPDigitizer", 0);
+  SQDigitizer* digitizer = new SQDigitizer("Digitizer", 0);
+  digitizer->set_enable_st1dc(do_station1DC);    // these two lines need to be in sync with the parameters used
+  digitizer->set_enable_dphodo(do_dphodo);       // in the SetupSensitiveVolumes() function call above
   //digitizer->Verbosity(99);
   se->registerSubsystem(digitizer);
 
   // Trigger Emulator
   gSystem->Load("libdptrigger.so");
   DPTriggerAnalyzer* dptrigger = new DPTriggerAnalyzer();
-  dptrigger->Verbosity(99);
   dptrigger->set_hit_container_choice("Vector");
   dptrigger->set_road_set_file_name(gSystem->ExpandPathName("$E1039_RESOURCE/trigger/trigger_67.txt"));
   se->registerSubsystem(dptrigger);
 
   // Event Filter (not requiring trigger now)
   EvtFilter *evt_filter = new EvtFilter();
-  evt_filter->Verbosity(10);
-  //evt_filter->Verbosity(10);
-  //evt_filter->set_trigger_req(1<<5);
-  //se->registerSubsystem(evt_filter);
+  se->registerSubsystem(evt_filter);
 
   // tracking module
   // gSystem->Load("libktracker.so");
@@ -138,7 +138,7 @@ int Fun4SimHit(
   // evaluation module
   gSystem->Load("libsim_eval.so");
   SimEval *sim_eval = new SimEval();
-  //sim_eval->Verbosity(99);
+  sim_eval->Verbosity(99);
   sim_eval->set_hit_container_choice("Vector");
   stringstream ssout; ssout << "sim_eval_" << ifile << ".root";
   sim_eval->set_out_name(ssout.str().c_str());
@@ -148,10 +148,11 @@ int Fun4SimHit(
   Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
   //in->set_vertex_distribution_mean(0,0,target_coil_pos_z,0);
   se->registerInputManager(in);
-  stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Electrons/" << ifile << ".txt";
+  in->Verbosity(0);
+  stringstream ssin; ssin << ifile << ".txt";
+  //stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Electrons/" << ifile << ".txt";
   //stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Muons/" << ifile << ".txt";
   in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
-  //in->Verbosity(99);
 
   // run
   se->run(nevent);
