@@ -123,7 +123,8 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
       hit_driftdis[n_hits]   = hit->get_drift_distance();
       hit_pos[n_hits]        = hit->get_pos();
       hit_detz[n_hits]       = p_geomSvc->getPlanePosition(hit->get_detector_id());
-      
+      hit_edep[n_hits]       = hit->get_edep();
+
       if(_truth) {
 	int track_id = hit->get_track_id();
 	int det_id = hit->get_detector_id();
@@ -193,10 +194,27 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
       int trkID = par->get_track_id();
       gtrkid[n_tracks] = trkID;
       
-      //PHG4Shower* shower = _truth->GetShower(par->get_primary_id());
-      //gedep[n_tracks] = shower->get_edep();
-
       // The detector ID and names are listed in e1039-core/packages/geom_svc/GeomSvc.cxx.
+      
+      // looping over all hits because do not know detector id for ecal
+      // ecal
+      PHG4HitContainer *ECAL_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_EMCal");
+      for(int ihit=0; ihit<_hit_vector->size(); ++ihit) {
+	SQHit *hit = _hit_vector->at(ihit);
+	if(hit and ECAL_hits) {
+	  PHG4Hit* g4hit =  ECAL_hits->findHit(hit->get_g4hit_id());
+	  if (g4hit) {
+	    std::cout << "g4hit edep " << g4hit->get_edep() << std::endl;
+	    gx_ecal[n_tracks]  = g4hit->get_x(0);
+	    gy_ecal[n_tracks]  = g4hit->get_y(0);
+	    gz_ecal[n_tracks]  = g4hit->get_z(0);
+	    gpx_ecal[n_tracks] = g4hit->get_px(0)/1000.;
+	    gpy_ecal[n_tracks] = g4hit->get_py(0)/1000.;
+	    gpz_ecal[n_tracks] = g4hit->get_pz(0)/1000.;
+	    gedep_ecal[n_tracks] = g4hit->get_edep();
+	  }
+	}
+      }
 
       // st1, 2, 3 are the drift chambers here   
       PHG4HitContainer *D1X_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D0X");
@@ -218,7 +236,6 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
 	      gpy_st1[n_tracks] = g4hit->get_py(0)/1000.;
 	      gpz_st1[n_tracks] = g4hit->get_pz(0)/1000.;
               gedep_st1[n_tracks] = g4hit->get_edep();
-	      std::cout << "edep st1 " << g4hit->get_edep() << std::endl;
 	      if(gpz_st1[n_tracks] <0){
 		std::cout << "WARNING:: Negative z-momentum at Station 1! " << gpz_st1[n_tracks] <<std::endl;
 	      }
@@ -682,6 +699,7 @@ int SimEval::InitEvalTree() {
   _tout_truth->Branch("hit_driftdis",  hit_driftdis,     "hit_driftdis[nHits]/F");
   _tout_truth->Branch("hit_pos",       hit_pos,          "hit_pos[nHits]/F");
   _tout_truth->Branch("hit_detZ",      hit_detz,         "hit_detZ[nHits]/F");
+  _tout_truth->Branch("hit_edep",      hit_edep,         "hit_edep[nHits]/F");
   _tout_truth->Branch("hit_truthx",    hit_truthx,       "hit_truthx[nHits]/F");
   _tout_truth->Branch("hit_truthy",    hit_truthy,       "hit_truthy[nHits]/F");
   _tout_truth->Branch("hit_truthz",    hit_truthz,       "hit_truthz[nHits]/F");
@@ -699,77 +717,94 @@ int SimEval::InitEvalTree() {
   _tout_truth->Branch("gpt",           gpt,                 "gpt[n_tracks]/F");
   _tout_truth->Branch("geta",          geta,                "geta[n_tracks]/F");
   _tout_truth->Branch("gphi",          gphi,                "gphi[n_tracks]/F");
+  _tout_truth->Branch("ge",            ge,                  "ge[n_tracks]/F");
+
+  _tout_truth->Branch("gx_ecal",       gx_ecal,             "gx_ecal[n_tracks]/F");
+  _tout_truth->Branch("gy_ecal",       gy_ecal,             "gy_ecal[n_tracks]/F");
+  _tout_truth->Branch("gz_ecal",       gz_ecal,             "gz_ecal[n_tracks]/F");
+  _tout_truth->Branch("gpx_ecal",      gpx_ecal,            "gpx_ecal[n_tracks]/F");
+  _tout_truth->Branch("gpy_ecal",      gpy_ecal,            "gpy_ecal[n_tracks]/F");
+  _tout_truth->Branch("gpz_ecal",      gpz_ecal,            "gpz_ecal[n_tracks]/F");
+  _tout_truth->Branch("gedep_ecal",    gedep_ecal,          "gedep_ecal[n_tracks]/F");
 
   _tout_truth->Branch("gx_st1",        gx_st1,              "gx_st1[n_tracks]/F");
   _tout_truth->Branch("gy_st1",        gy_st1,              "gy_st1[n_tracks]/F");
   _tout_truth->Branch("gz_st1",        gz_st1,              "gz_st1[n_tracks]/F");
-  _tout_truth->Branch("gx_st2",        gx_st2,              "gx_st2[n_tracks]/F");
-  _tout_truth->Branch("gy_st2",        gy_st2,              "gy_st2[n_tracks]/F");
-  _tout_truth->Branch("gz_st2",        gz_st2,              "gz_st2[n_tracks]/F");
-  _tout_truth->Branch("gx_st3",        gx_st3,              "gx_st3[n_tracks]/F");
-  _tout_truth->Branch("gy_st3",        gy_st3,              "gy_st3[n_tracks]/F");
-  _tout_truth->Branch("gz_st3",        gz_st3,              "gz_st3[n_tracks]/F");
-  _tout_truth->Branch("gx_h1",         gx_h1,               "gx_h1[n_tracks]/F");
-  _tout_truth->Branch("gy_h1",         gy_h1,               "gy_h1[n_tracks]/F");
-  _tout_truth->Branch("gz_h1",         gz_h1,               "gz_h1[n_tracks]/F");
-  _tout_truth->Branch("gx_h2",         gx_h2,               "gx_h2[n_tracks]/F");
-  _tout_truth->Branch("gy_h2",         gy_h2,               "gy_h2[n_tracks]/F");
-  _tout_truth->Branch("gz_h2",         gz_h2,               "gz_h2[n_tracks]/F");
-  _tout_truth->Branch("gx_p1",         gx_p1,               "gx_p1[n_tracks]/F");
-  _tout_truth->Branch("gy_p1",         gy_p1,               "gy_p1[n_tracks]/F");
-  _tout_truth->Branch("gz_p1",         gz_p1,               "gz_p1[n_tracks]/F");
-  _tout_truth->Branch("gx_p2",         gx_p2,               "gx_p2[n_tracks]/F");
-  _tout_truth->Branch("gy_p2",         gy_p2,               "gy_p2[n_tracks]/F");
-  _tout_truth->Branch("gz_p2",         gz_p2,               "gz_p2[n_tracks]/F");
-  _tout_truth->Branch("gx_h4y2l",      gx_h4y2l,            "gx_h4y2l[n_tracks]/F");
-  _tout_truth->Branch("gy_h4y2l",      gy_h4y2l,            "gy_h4y2l[n_tracks]/F");
-  _tout_truth->Branch("gz_h4y2l",      gz_h4y2l,            "gz_h4y2l[n_tracks]/F");
-  _tout_truth->Branch("gx_h4y2r",      gx_h4y2r,            "gx_h4y2r[n_tracks]/F");
-  _tout_truth->Branch("gy_h4y2r",      gy_h4y2r,            "gy_h4y2r[n_tracks]/F");
-  _tout_truth->Branch("gz_h4y2r",      gz_h4y2r,            "gz_h4y2r[n_tracks]/F");
-  _tout_truth->Branch("gx_dp1",        gx_dp1,              "gx_dp1[n_tracks]/F");
-  _tout_truth->Branch("gy_dp1",        gy_dp1,              "gy_dp1[n_tracks]/F");
-  _tout_truth->Branch("gz_dp1",        gz_dp1,              "gz_dp1[n_tracks]/F");
-  _tout_truth->Branch("gx_dp2",        gx_dp2,              "gx_dp2[n_tracks]/F");
-  _tout_truth->Branch("gy_dp2",        gy_dp2,              "gy_dp2[n_tracks]/F");
-  _tout_truth->Branch("gz_dp2",        gz_dp2,              "gz_dp2[n_tracks]/F");
-
   _tout_truth->Branch("gpx_st1",       gpx_st1,             "gpx_st1[n_tracks]/F");
   _tout_truth->Branch("gpy_st1",       gpy_st1,             "gpy_st1[n_tracks]/F");
   _tout_truth->Branch("gpz_st1",       gpz_st1,             "gpz_st1[n_tracks]/F");
+  _tout_truth->Branch("gedep_st1",     gedep_st1,           "gedep_st1[n_tracks]/F");
+
+  _tout_truth->Branch("gx_st2",        gx_st2,              "gx_st2[n_tracks]/F");
+  _tout_truth->Branch("gy_st2",        gy_st2,              "gy_st2[n_tracks]/F");
+  _tout_truth->Branch("gz_st2",        gz_st2,              "gz_st2[n_tracks]/F");
   _tout_truth->Branch("gpx_st2",       gpx_st2,             "gpx_st2[n_tracks]/F");
   _tout_truth->Branch("gpy_st2",       gpy_st2,             "gpy_st2[n_tracks]/F");
   _tout_truth->Branch("gpz_st2",       gpz_st2,             "gpz_st2[n_tracks]/F");
+  _tout_truth->Branch("gedep_st2",     gedep_st2,           "gedep_st2[n_tracks]/F");
+
+  _tout_truth->Branch("gx_st3",        gx_st3,              "gx_st3[n_tracks]/F");
+  _tout_truth->Branch("gy_st3",        gy_st3,              "gy_st3[n_tracks]/F");
+  _tout_truth->Branch("gz_st3",        gz_st3,              "gz_st3[n_tracks]/F");
   _tout_truth->Branch("gpx_st3",       gpx_st3,             "gpx_st3[n_tracks]/F");
   _tout_truth->Branch("gpy_st3",       gpy_st3,             "gpy_st3[n_tracks]/F");
   _tout_truth->Branch("gpz_st3",       gpz_st3,             "gpz_st3[n_tracks]/F");
+  _tout_truth->Branch("gedep_st3",     gedep_st3,           "gedep_st3[n_tracks]/F");
+
+  _tout_truth->Branch("gx_h1",         gx_h1,               "gx_h1[n_tracks]/F");
+  _tout_truth->Branch("gy_h1",         gy_h1,               "gy_h1[n_tracks]/F");
+  _tout_truth->Branch("gz_h1",         gz_h1,               "gz_h1[n_tracks]/F");
   _tout_truth->Branch("gpx_h1",        gpx_h1,              "gpx_h1[n_tracks]/F");
   _tout_truth->Branch("gpy_h1",        gpy_h1,              "gpy_h1[n_tracks]/F");
   _tout_truth->Branch("gpz_h1",        gpz_h1,              "gpz_h1[n_tracks]/F");
+  _tout_truth->Branch("gx_h2",         gx_h2,               "gx_h2[n_tracks]/F");
+  _tout_truth->Branch("gy_h2",         gy_h2,               "gy_h2[n_tracks]/F");
+  _tout_truth->Branch("gz_h2",         gz_h2,               "gz_h2[n_tracks]/F");
   _tout_truth->Branch("gpx_h2",        gpx_h2,              "gpx_h2[n_tracks]/F");
   _tout_truth->Branch("gpy_h2",        gpy_h2,              "gpy_h2[n_tracks]/F");
   _tout_truth->Branch("gpz_h2",        gpz_h2,              "gpz_h2[n_tracks]/F");
+
+  _tout_truth->Branch("gx_p1",         gx_p1,               "gx_p1[n_tracks]/F");
+  _tout_truth->Branch("gy_p1",         gy_p1,               "gy_p1[n_tracks]/F");
+  _tout_truth->Branch("gz_p1",         gz_p1,               "gz_p1[n_tracks]/F");
   _tout_truth->Branch("gpx_p1",        gpx_p1,              "gpx_p1[n_tracks]/F");
   _tout_truth->Branch("gpy_p1",        gpy_p1,              "gpy_p1[n_tracks]/F");
   _tout_truth->Branch("gpz_p1",        gpz_p1,              "gpz_p1[n_tracks]/F");
+  _tout_truth->Branch("gedep_p1",      gedep_p1,            "gedep_p1[n_tracks]/F");
+
+  _tout_truth->Branch("gx_p2",         gx_p2,               "gx_p2[n_tracks]/F");
+  _tout_truth->Branch("gy_p2",         gy_p2,               "gy_p2[n_tracks]/F");
+  _tout_truth->Branch("gz_p2",         gz_p2,               "gz_p2[n_tracks]/F");
   _tout_truth->Branch("gpx_p2",        gpx_p2,              "gpx_p2[n_tracks]/F");
   _tout_truth->Branch("gpy_p2",        gpy_p2,              "gpy_p2[n_tracks]/F");
   _tout_truth->Branch("gpz_p2",        gpz_p2,              "gpz_p2[n_tracks]/F");
+  _tout_truth->Branch("gedep_p2",      gedep_p2,            "gedep_p2[n_tracks]/F");
+
+  _tout_truth->Branch("gx_h4y2l",      gx_h4y2l,            "gx_h4y2l[n_tracks]/F");
+  _tout_truth->Branch("gy_h4y2l",      gy_h4y2l,            "gy_h4y2l[n_tracks]/F");
+  _tout_truth->Branch("gz_h4y2l",      gz_h4y2l,            "gz_h4y2l[n_tracks]/F");
   _tout_truth->Branch("gpx_h4y2l",     gpx_h4y2l,           "gpx_h4y2l[n_tracks]/F");
   _tout_truth->Branch("gpy_h4y2l",     gpy_h4y2l,           "gpy_h4y2l[n_tracks]/F");
   _tout_truth->Branch("gpz_h4y2l",     gpz_h4y2l,           "gpz_h4y2l[n_tracks]/F");
+  _tout_truth->Branch("gx_h4y2r",      gx_h4y2r,            "gx_h4y2r[n_tracks]/F");
+  _tout_truth->Branch("gy_h4y2r",      gy_h4y2r,            "gy_h4y2r[n_tracks]/F");
+  _tout_truth->Branch("gz_h4y2r",      gz_h4y2r,            "gz_h4y2r[n_tracks]/F");
   _tout_truth->Branch("gpx_h4y2r",     gpx_h4y2r,           "gpx_h4y2r[n_tracks]/F");
   _tout_truth->Branch("gpy_h4y2r",     gpy_h4y2r,           "gpy_h4y2r[n_tracks]/F");
   _tout_truth->Branch("gpz_h4y2r",     gpz_h4y2r,           "gpz_h4y2r[n_tracks]/F");
+
+  _tout_truth->Branch("gx_dp1",        gx_dp1,              "gx_dp1[n_tracks]/F");
+  _tout_truth->Branch("gy_dp1",        gy_dp1,              "gy_dp1[n_tracks]/F");
+  _tout_truth->Branch("gz_dp1",        gz_dp1,              "gz_dp1[n_tracks]/F");
   _tout_truth->Branch("gpx_dp1",       gpx_dp1,             "gpx_dp1[n_tracks]/F");
   _tout_truth->Branch("gpy_dp1",       gpy_dp1,             "gpy_dp1[n_tracks]/F");
   _tout_truth->Branch("gpz_dp1",       gpz_dp1,             "gpz_dp1[n_tracks]/F");
+  _tout_truth->Branch("gx_dp2",        gx_dp2,              "gx_dp2[n_tracks]/F");
+  _tout_truth->Branch("gy_dp2",        gy_dp2,              "gy_dp2[n_tracks]/F");
+  _tout_truth->Branch("gz_dp2",        gz_dp2,              "gz_dp2[n_tracks]/F");
   _tout_truth->Branch("gpx_dp2",       gpx_dp2,             "gpx_dp2[n_tracks]/F");
   _tout_truth->Branch("gpy_dp2",       gpy_dp2,             "gpy_dp2[n_tracks]/F");
   _tout_truth->Branch("gpz_dp2",       gpz_dp2,             "gpz_dp2[n_tracks]/F");
-
-  _tout_truth->Branch("gedep_p1",      gedep_p1,            "gedep_p1[n_tracks]/F");
-  _tout_truth->Branch("gedep_p2",      gedep_p2,            "gedep_p2[n_tracks]/F");
 
   _tout_truth->Branch("gbarID_h1",     gbarID_h1,           "gbarID_h1[n_tracks]/I");
   _tout_truth->Branch("gbarID_h2",     gbarID_h2,           "gbarID_h2[n_tracks]/I");
@@ -794,6 +829,7 @@ int SimEval::ResetEvalVars() {
     hit_driftdis[i]     = std::numeric_limits<float>::max();
     hit_pos[i]          = std::numeric_limits<float>::max();
     hit_detz[i]         = std::numeric_limits<float>::max();
+    hit_edep[i]         = std::numeric_limits<float>::max();
 
     hit_truthx[i]       = std::numeric_limits<float>::max();
     hit_truthy[i]       = std::numeric_limits<float>::max();
@@ -814,6 +850,15 @@ int SimEval::ResetEvalVars() {
     gpt[i]        = std::numeric_limits<float>::max();
     geta[i]       = std::numeric_limits<float>::max();
     gphi[i]       = std::numeric_limits<float>::max();
+    ge[i]         = std::numeric_limits<float>::max();
+
+    gx_ecal[i]    = std::numeric_limits<float>::max();
+    gy_ecal[i]    = std::numeric_limits<float>::max();
+    gz_ecal[i]    = std::numeric_limits<float>::max();
+    gpx_ecal[i]   = std::numeric_limits<float>::max();
+    gpy_ecal[i]   = std::numeric_limits<float>::max();
+    gpz_ecal[i]   = std::numeric_limits<float>::max();
+    gedep_ecal[i] = std::numeric_limits<float>::max();
 
     gx_st1[i]     = std::numeric_limits<float>::max();
     gy_st1[i]     = std::numeric_limits<float>::max();
@@ -821,44 +866,49 @@ int SimEval::ResetEvalVars() {
     gpx_st1[i]    = std::numeric_limits<float>::max();
     gpy_st1[i]    = std::numeric_limits<float>::max();
     gpz_st1[i]    = std::numeric_limits<float>::max();
+    gedep_st1[i]  = std::numeric_limits<float>::max();
     gx_st2[i]     = std::numeric_limits<float>::max();
     gy_st2[i]     = std::numeric_limits<float>::max();
     gz_st2[i]     = std::numeric_limits<float>::max();
     gpx_st2[i]    = std::numeric_limits<float>::max();
     gpy_st2[i]    = std::numeric_limits<float>::max();
     gpz_st2[i]    = std::numeric_limits<float>::max();
+    gedep_st2[i]  = std::numeric_limits<float>::max();
     gx_st3[i]     = std::numeric_limits<float>::max();
     gy_st3[i]     = std::numeric_limits<float>::max();
     gz_st3[i]     = std::numeric_limits<float>::max();
     gpx_st3[i]    = std::numeric_limits<float>::max();
     gpy_st3[i]    = std::numeric_limits<float>::max();
     gpz_st3[i]    = std::numeric_limits<float>::max();
+    gedep_st3[i]  = std::numeric_limits<float>::max();
 
-    gx_h1[i]     = std::numeric_limits<float>::max();
-    gy_h1[i]     = std::numeric_limits<float>::max();
-    gz_h1[i]     = std::numeric_limits<float>::max();
-    gpx_h1[i]    = std::numeric_limits<float>::max();
-    gpy_h1[i]    = std::numeric_limits<float>::max();
-    gpz_h1[i]    = std::numeric_limits<float>::max();
-    gx_h2[i]     = std::numeric_limits<float>::max();
-    gy_h2[i]     = std::numeric_limits<float>::max();
-    gz_h2[i]     = std::numeric_limits<float>::max();
-    gpx_h2[i]    = std::numeric_limits<float>::max();
-    gpy_h2[i]    = std::numeric_limits<float>::max();
-    gpz_h2[i]    = std::numeric_limits<float>::max();
+    gx_h1[i]      = std::numeric_limits<float>::max();
+    gy_h1[i]      = std::numeric_limits<float>::max();
+    gz_h1[i]      = std::numeric_limits<float>::max();
+    gpx_h1[i]     = std::numeric_limits<float>::max();
+    gpy_h1[i]     = std::numeric_limits<float>::max();
+    gpz_h1[i]     = std::numeric_limits<float>::max();
+    gx_h2[i]      = std::numeric_limits<float>::max();
+    gy_h2[i]      = std::numeric_limits<float>::max();
+    gz_h2[i]      = std::numeric_limits<float>::max();
+    gpx_h2[i]     = std::numeric_limits<float>::max();
+    gpy_h2[i]     = std::numeric_limits<float>::max();
+    gpz_h2[i]     = std::numeric_limits<float>::max();
 
-    gx_p1[i]     = std::numeric_limits<float>::max();
-    gy_p1[i]     = std::numeric_limits<float>::max();
-    gz_p1[i]     = std::numeric_limits<float>::max();
+    gx_p1[i]      = std::numeric_limits<float>::max();
+    gy_p1[i]      = std::numeric_limits<float>::max();
+    gz_p1[i]      = std::numeric_limits<float>::max();
     gpx_p1[i]     = std::numeric_limits<float>::max();
     gpy_p1[i]     = std::numeric_limits<float>::max();
     gpz_p1[i]     = std::numeric_limits<float>::max();
-    gx_p2[i]     = std::numeric_limits<float>::max();
-    gy_p2[i]     = std::numeric_limits<float>::max();
-    gz_p2[i]     = std::numeric_limits<float>::max();
+    gedep_p1[i]   = std::numeric_limits<float>::max();
+    gx_p2[i]      = std::numeric_limits<float>::max();
+    gy_p2[i]      = std::numeric_limits<float>::max();
+    gz_p2[i]      = std::numeric_limits<float>::max();
     gpx_p2[i]     = std::numeric_limits<float>::max();
     gpy_p2[i]     = std::numeric_limits<float>::max();
     gpz_p2[i]     = std::numeric_limits<float>::max();
+    gedep_p2[i]   = std::numeric_limits<float>::max();
 
     gx_dp1[i]     = std::numeric_limits<float>::max();
     gy_dp1[i]     = std::numeric_limits<float>::max();
@@ -886,12 +936,6 @@ int SimEval::ResetEvalVars() {
     gpy_h4y2r[i]     = std::numeric_limits<float>::max();
     gpz_h4y2r[i]     = std::numeric_limits<float>::max();
 
-    gedep_st1[i]     = std::numeric_limits<float>::max();
-    gedep_st2[i]     = std::numeric_limits<float>::max();
-    gedep_st3[i]     = std::numeric_limits<float>::max();
-    gedep_p1[i]     = std::numeric_limits<float>::max();
-    gedep_p2[i]     = std::numeric_limits<float>::max();
-
     gbarID_h1[i]  = std::numeric_limits<float>::max();
     gbarID_h2[i]  = std::numeric_limits<float>::max();
     gbarID_h4y[i] = std::numeric_limits<float>::max();
@@ -901,7 +945,6 @@ int SimEval::ResetEvalVars() {
     gquad_dp1[i]  = std::numeric_limits<float>::max();
     gquad_dp2[i]  = std::numeric_limits<float>::max();
     gquad_h4y[i]  = std::numeric_limits<float>::max();
-
   }
 
   return 0;

@@ -95,7 +95,7 @@ private:
   float hit_driftdis[10000];
   float hit_pos[10000];
   float hit_detz[10000];
-  
+  float hit_edep[10000];
   float hit_truthx[10000];
   float hit_truthy[10000];
   float hit_truthz[10000];
@@ -115,24 +115,37 @@ private:
   float gphi[1000];
   float ge[1000];
 
+  float gx_ecal[1000];
+  float gy_ecal[1000];
+  float gz_ecal[1000];
+  float gpx_ecal[1000];
+  float gpy_ecal[1000];
+  float gpz_ecal[1000];
+  float gedep_ecal[1000];
+
   float gx_st1[1000];
   float gy_st1[1000];
   float gz_st1[1000];
   float gpx_st1[1000];
   float gpy_st1[1000];
   float gpz_st1[1000];
+  float gedep_st1[1000];
+
   float gx_st2[1000];
   float gy_st2[1000];
   float gz_st2[1000];
   float gpx_st2[1000];
   float gpy_st2[1000];
   float gpz_st2[1000];
+  float gedep_st2[1000];
+
   float gx_st3[1000];
   float gy_st3[1000];
   float gz_st3[1000];
   float gpx_st3[1000];
   float gpy_st3[1000];
   float gpz_st3[1000];
+  float gedep_st3[1000];
 
   float gx_dp1[1000];
   float gy_dp1[1000];
@@ -166,12 +179,14 @@ private:
   float gpx_p1[1000];
   float gpy_p1[1000];
   float gpz_p1[1000];
+  float gedep_p1[1000];
   float gx_p2[1000];
   float gy_p2[1000];
   float gz_p2[1000];
   float gpx_p2[1000];
   float gpy_p2[1000];
   float gpz_p2[1000];
+  float gedep_p2[1000];
 
   float gx_h4y2l[1000];
   float gy_h4y2l[1000];
@@ -186,12 +201,6 @@ private:
   float gpy_h4y2r[1000];
   float gpz_h4y2r[1000];
 
-  float gedep_st1[1000];
-  float gedep_st2[1000];
-  float gedep_st3[1000];
-  float gedep_p1[1000];
-  float gedep_p2[1000];
-
   float gbarID_h1[1000];
   float gbarID_h2[1000];
   float gbarID_h4y[1000];
@@ -201,15 +210,6 @@ private:
   float gquad_dp1[1000];
   float gquad_dp2[1000];
   float gquad_h4y[1000];
-
-  int gnhits[1000];
-  int gndc[1000];
-  int gnhodo[1000];
-  int gnprop[1000];
-  int gnDP[1000];
-  int gnH4Y[1000];
-
-  int gelmid[1000][55];
   
   GeomSvc *p_geomSvc;
 };

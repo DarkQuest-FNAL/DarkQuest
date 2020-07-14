@@ -2,6 +2,7 @@
 #include "G4_SensitiveDetectors.C"
 #include "G4_Beamline.C"
 #include "G4_Target.C"
+#include "G4_EMCal.C"
 R__LOAD_LIBRARY(libfun4all)
 R__LOAD_LIBRARY(libg4detectors)
 R__LOAD_LIBRARY(libg4testbench)
@@ -17,13 +18,13 @@ using namespace std;
 using namespace std;
 
 int Fun4Sim(
-	    const int nevent = 10,
-	    std::string ifile = "Brem_0.06_z500_600_eps_-6.2"
+	    const int nevent = 2000,
+	    std::string ifile = "Brem_1.04_z500_600_eps_-6.4",
+	    const int idLep = 11
     )
 {
   const double target_coil_pos_z = -300;
   const int nmu = 1;
-  const int idLep = 11;
 
   const bool do_collimator = true;
   const bool do_target = true;
@@ -66,30 +67,27 @@ int Fun4Sim(
 
   // Fun4All G4 module
   PHG4Reco *g4Reco = new PHG4Reco();
-  //PHG4Reco::G4Seed(123);
-  //g4Reco->set_field(5.);
   g4Reco->set_field_map(jobopt_svc->m_fMagFile+" "+
 			jobopt_svc->m_kMagFile+" "+
 			Form("%f",FMAGSTR) + " " +
 			Form("%f",KMAGSTR) + " " +
 			"5.0",
 			PHFieldConfig::RegionalConst);
-  // size of the world - every detector has to fit in here
-  g4Reco->SetWorldSizeX(1000);
+  g4Reco->SetWorldSizeX(1000); // size of the world - every detector has to fit in here
   g4Reco->SetWorldSizeY(1000);
   g4Reco->SetWorldSizeZ(5000);
-  // shape of our world - it is a tube
-  g4Reco->SetWorldShape("G4BOX");
-  // this is what our world is filled with
-  g4Reco->SetWorldMaterial("G4_AIR"); //G4_Galactic, G4_AIR
-  // Geant4 Physics list to use
-  g4Reco->SetPhysicsList("FTFP_BERT");
+  g4Reco->SetWorldShape("G4BOX"); // shape of our world - it is a box
+  g4Reco->SetWorldMaterial("G4_AIR"); // this is what our world is filled with G4_Galactic, G4_AIR
+  g4Reco->SetPhysicsList("FTFP_BERT"); // Geant4 Physics list to use
 
   // insensitive elements of the spectrometer
   SetupInsensitiveVolumes(g4Reco, do_e1039_shielding, do_fmag, do_kmag, do_absorber);
 
   // collimator, targer and shielding between target and FMag
   SetupBeamline(g4Reco, do_collimator, target_coil_pos_z - 302.36); // Is the position correct??
+
+  // emcal
+  SetupEMCal(g4Reco);
 
   if (do_target) {
     SetupTarget(g4Reco, target_coil_pos_z, target_l, target_z, use_g4steps);
@@ -108,6 +106,7 @@ int Fun4Sim(
   SQDigitizer* digitizer = new SQDigitizer("Digitizer", 0);
   digitizer->set_enable_st1dc(do_station1DC);
   digitizer->set_enable_dphodo(do_dphodo); 
+  digitizer->registerEMCal("EMCal", 100);
   se->registerSubsystem(digitizer);
 
   // Trigger Emulator

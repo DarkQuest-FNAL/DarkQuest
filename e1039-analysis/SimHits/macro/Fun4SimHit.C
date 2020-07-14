@@ -2,7 +2,7 @@
 #include "G4_SensitiveDetectors.C"
 #include "G4_Beamline.C"
 #include "G4_Target.C"
-
+#include "G4_EMCal.C"
 R__LOAD_LIBRARY(libfun4all)
 R__LOAD_LIBRARY(libg4detectors)
 R__LOAD_LIBRARY(libg4testbench)
@@ -19,8 +19,8 @@ using namespace std;
 using namespace std;
 
 int Fun4SimHit(
-	       const int nevent = 10,
-	       std::string ifile = "Eta_0.055176_z500_600_eps_-6.2",
+	       const int nevent = 2000,
+	       std::string ifile = "Brem_1.04_z500_600_eps_-6.4",
 	       const int idLep = 11
     )
 {
@@ -56,37 +56,29 @@ int Fun4SimHit(
 
   // Make the Server
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(0);
+  se->Verbosity(10);
 
   // HepMC reader
   HepMCNodeReader *hr = new HepMCNodeReader();
   hr->set_particle_filter_on(true);
   hr->insert_particle_filter_pid(idLep);
   hr->insert_particle_filter_pid(idLep*-1);
-  hr->Verbosity(0);
   se->registerSubsystem(hr);
 
   // Fun4All G4 module
   PHG4Reco *g4Reco = new PHG4Reco();
-  //PHG4Reco::G4Seed(123);
-  //g4Reco->set_field(5.);
   g4Reco->set_field_map(jobopt_svc->m_fMagFile+" "+
 			jobopt_svc->m_kMagFile+" "+
 			Form("%f",FMAGSTR) + " " +
 			Form("%f",KMAGSTR) + " " +
 			"5.0",
 			PHFieldConfig::RegionalConst);
-  // size of the world - every detector has to fit in here
-  g4Reco->SetWorldSizeX(1000);
+  g4Reco->SetWorldSizeX(1000); // size of the world - every detector has to fit in here 
   g4Reco->SetWorldSizeY(1000);
   g4Reco->SetWorldSizeZ(5000);
-  // shape of our world - it is a tube
-  g4Reco->SetWorldShape("G4BOX");
-  // this is what our world is filled with
-  g4Reco->SetWorldMaterial("G4_AIR"); //G4_Galactic, G4_AIR
-  // Geant4 Physics list to use
-  g4Reco->SetPhysicsList("FTFP_BERT");
-  g4Reco->Verbosity(0);
+  g4Reco->SetWorldShape("G4BOX");  // shape of our world - it is a box
+  g4Reco->SetWorldMaterial("G4_AIR"); // this is what our world is filled with G4_Galactic, G4_AIR
+  g4Reco->SetPhysicsList("FTFP_BERT"); //Geant4 Physics list to use 
 
   // insensitive elements of the spectrometer
   SetupInsensitiveVolumes(g4Reco, do_e1039_shielding, do_fmag, do_kmag, do_absorber);
@@ -96,9 +88,15 @@ int Fun4SimHit(
   if (do_target) {
     SetupTarget(g4Reco, target_coil_pos_z, target_l, target_z, use_g4steps);
   }
+  
+  // emcal at 1930?
+  SetupEMCal(g4Reco, "EMCal", 0., 0., 1930.);
+  //SetupEMCal(g4Reco);
 
   // sensitive elements of the spectrometer
   SetupSensitiveDetectors(g4Reco, do_dphodo, do_station1DC);
+
+  //g4Reco->Verbosity(99);
 
   se->registerSubsystem(g4Reco);
 
@@ -110,7 +108,8 @@ int Fun4SimHit(
   SQDigitizer* digitizer = new SQDigitizer("Digitizer", 0);
   digitizer->set_enable_st1dc(do_station1DC);    // these two lines need to be in sync with the parameters used
   digitizer->set_enable_dphodo(do_dphodo);       // in the SetupSensitiveVolumes() function call above
-  //digitizer->Verbosity(99);
+  digitizer->registerEMCal("EMCal", 100);
+  digitizer->Verbosity(99); 
   se->registerSubsystem(digitizer);
 
   // Trigger Emulator
@@ -138,17 +137,17 @@ int Fun4SimHit(
   // evaluation module
   gSystem->Load("libsim_eval.so");
   SimEval *sim_eval = new SimEval();
-  sim_eval->Verbosity(99);
   sim_eval->set_hit_container_choice("Vector");
-  stringstream ssout; ssout << "sim_eval_" << ifile << ".root";
-  sim_eval->set_out_name(ssout.str().c_str());
+  stringstream ssout1; ssout1 << "sim_eval_" << ifile << ".root";
+  sim_eval->set_out_name(ssout1.str().c_str());
+  sim_eval->Verbosity(10);
   se->registerSubsystem(sim_eval);
 
   // input 
   Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
   //in->set_vertex_distribution_mean(0,0,target_coil_pos_z,0);
   se->registerInputManager(in);
-  in->Verbosity(0);
+  in->Verbosity(10);
   stringstream ssin; ssin << ifile << ".txt";
   //stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Electrons/" << ifile << ".txt";
   //stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Muons/" << ifile << ".txt";
