@@ -1,7 +1,13 @@
 # SimHits
 Creates simple ROOT TTree with basic g4SimHit information for input HepMC files.
 
-To compile
+To get started:
+```
+git clone https://github.com/cmantill/DarkQuest.git
+cd e1039-analysis/SimHits/
+```
+
+To compile:
 ```
 source /e906/app/software/osg/software/e1039/this-e1039.sh
 mkdir work
@@ -15,9 +21,39 @@ export DIR_TOP=`pwd`
 export LD_LIBRARY_PATH=$DIR_TOP/install/lib/:$LD_LIBRARY_PATH
 ```
 
-Or to setup after code has compiled (every time) in spinquestgpvm01.fnal.gov:
+To setup after code has compiled (every time) in spinquestgpvm01.fnal.gov:
 ```
 source setup.sh
 ```
 
-The main script is `Fun4Sim.C` and is located in `macro`.
+The current version of the code uses a private version of e1039-core located in: https://github.com/liuk/e1039-core.git
+To install it in your spinquest machine you can follow:
+```
+# make directory in your home dir
+cd -
+mkdir mye1039
+
+# clone repo                                                                                                                                                                      
+git clone https://github.com/E1039-Collaboration/e1039-core.git
+
+# add kun's changes                                                                                                                                                              
+git remote add kun https://github.com/liuk/e1039-core.git
+git fetch kun EMCal
+git merge kun/EMCal
+
+# to setup installation
+source /seaquest/users/cmantill/mye1039/core-inst/this-e1039.sh
+
+# build                                                                                                                                                                           
+./build.sh
+
+# When using an new shell environment (i.e. text terminal) you should source this script (change location correspondingly)
+source /seaquest/users/cmantill/mye1039/core-inst/this-e1039.sh
+```
+If you do not want to install your private version of e1039 you can call cmantill's version by sourcing the following scripts
+```
+source /seaquest/users/cmantill/mye1039/core-inst/this-e1039.sh
+source setup.sh
+```
+
+The main scripts are located in `macro`.
