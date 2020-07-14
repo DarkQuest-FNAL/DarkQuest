@@ -24,11 +24,12 @@ int Fun4Sim(
     )
 {
   const double target_coil_pos_z = -300;
+  const double collimator_pos_z = -602.36;
   const int nmu = 1;
 
   const bool do_collimator = true;
   const bool do_target = true;
-  const bool do_e1039_shielding = true;
+  const bool do_shielding = true;
   const bool do_fmag = true;
   const bool do_kmag = true;
   const bool do_absorber = true;
@@ -39,7 +40,6 @@ int Fun4Sim(
   const double target_z = (7.9-target_l)/2.; //cm
   const int use_g4steps = 1;
 
-  const int RUNNUMBER = 1;
   const double FMAGSTR = -1.054;
   const double KMAGSTR = -0.951;
 
@@ -80,22 +80,13 @@ int Fun4Sim(
   g4Reco->SetWorldMaterial("G4_AIR"); // this is what our world is filled with G4_Galactic, G4_AIR
   g4Reco->SetPhysicsList("FTFP_BERT"); // Geant4 Physics list to use
 
-  // insensitive elements of the spectrometer
-  SetupInsensitiveVolumes(g4Reco, do_e1039_shielding, do_fmag, do_kmag, do_absorber);
-
-  // collimator, targer and shielding between target and FMag
-  SetupBeamline(g4Reco, do_collimator, target_coil_pos_z - 302.36); // Is the position correct??
-
-  // emcal
-  SetupEMCal(g4Reco);
-
+  SetupBeamline(g4Reco, do_collimator, collimator_pos_z); // // collimator, target and shielding between target and FMag
   if (do_target) {
-    SetupTarget(g4Reco, target_coil_pos_z, target_l, target_z, use_g4steps);
+    SetupTarget(g4Reco, target_coil_pos_z, target_l, target_z, use_g4steps, 0);
   }
-
-  // sensitive elements of the spectrometer
-  SetupSensitiveDetectors(g4Reco, do_dphodo, do_station1DC);
-
+  SetupInsensitiveVolumes(g4Reco, do_shielding, do_fmag, do_kmag, do_absorber); // insensitive elements of the spectrometer
+  SetupSensitiveDetectors(g4Reco, do_dphodo, do_station1DC); // sensitive elements of the spectrometer
+  SetupEMCal(g4Reco, "EMCal", 0., -110., 1930.); // emcal
   se->registerSubsystem(g4Reco);
 
   // save truth info to the Node Tree
@@ -131,26 +122,15 @@ int Fun4Sim(
   // VertexFit* vertexing = new VertexFit();
   // se->registerSubsystem(vertexing);
 
-  // evaluation module
-  //gSystem->Load("libsim_eval.so");
-  //SimEval *sim_eval = new SimEval();
-  //sim_eval->Verbosity(0);//(3);
-  //sim_eval->set_hit_container_choice("Vector");
-  //stringstream ssout; ssout << "sim_eval_" << ifile << ".root";
-  //sim_eval->set_out_name(ssout.str().c_str());
-  //se->registerSubsystem(sim_eval);
-
   // input 
   Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
   //in->set_vertex_distribution_mean(0,0,target_coil_pos_z,0);
   se->registerInputManager(in);
-  in->Verbosity(10);
   stringstream ssin; ssin << ifile << ".txt";
   in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
 
   // DST output manager
   stringstream ssout; ssout << ifile << "0_dst.root";
-  //std::cout << ssout.str().c_str() << std::endl;
   Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", ssout.str().c_str());
   se->registerOutputManager(out);
 

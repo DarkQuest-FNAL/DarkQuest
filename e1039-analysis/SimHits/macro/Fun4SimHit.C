@@ -12,6 +12,8 @@ R__LOAD_LIBRARY(libdptrigger)
 R__LOAD_LIBRARY(libevt_filter)
 //R__LOAD_LIBRARY(libktracker)
 R__LOAD_LIBRARY(libsim_eval)
+R__LOAD_LIBRARY(libanamodule)
+
 using namespace std;
 
 #include <iostream>
@@ -19,17 +21,18 @@ using namespace std;
 using namespace std;
 
 int Fun4SimHit(
-	       const int nevent = 2000,
+	       const int nevent = 10000,
 	       std::string ifile = "Brem_1.04_z500_600_eps_-6.4",
 	       const int idLep = 11
     )
 {
   const double target_coil_pos_z = -300;
+  const double collimator_pos_z = -602.36;
   const int nmu = 1;
 
   const bool do_collimator = true;
   const bool do_target = true;
-  const bool do_e1039_shielding = true;
+  const bool do_shielding = true;
   const bool do_fmag = true;
   const bool do_kmag = true;
   const bool do_absorber = true;
@@ -56,7 +59,7 @@ int Fun4SimHit(
 
   // Make the Server
   Fun4AllServer *se = Fun4AllServer::instance();
-  se->Verbosity(10);
+  se->Verbosity(0);
 
   // HepMC reader
   HepMCNodeReader *hr = new HepMCNodeReader();
@@ -80,24 +83,14 @@ int Fun4SimHit(
   g4Reco->SetWorldMaterial("G4_AIR"); // this is what our world is filled with G4_Galactic, G4_AIR
   g4Reco->SetPhysicsList("FTFP_BERT"); //Geant4 Physics list to use 
 
-  // insensitive elements of the spectrometer
-  SetupInsensitiveVolumes(g4Reco, do_e1039_shielding, do_fmag, do_kmag, do_absorber);
-
-  // collimator, targer and shielding between target and FMag  
-  SetupBeamline(g4Reco, do_collimator, target_coil_pos_z - 302.36); // Is the position correct??
+  SetupBeamline(g4Reco, do_collimator, collimator_pos_z);
   if (do_target) {
-    SetupTarget(g4Reco, target_coil_pos_z, target_l, target_z, use_g4steps);
+    SetupTarget(g4Reco, target_coil_pos_z, target_l, target_z, use_g4steps, 0);
   }
-  
-  // emcal at 1930?
-  SetupEMCal(g4Reco, "EMCal", 0., 0., 1930.);
-  //SetupEMCal(g4Reco);
-
-  // sensitive elements of the spectrometer
+  SetupInsensitiveVolumes(g4Reco, do_shielding, do_fmag, do_kmag, do_absorber);
   SetupSensitiveDetectors(g4Reco, do_dphodo, do_station1DC);
-
+  SetupEMCal(g4Reco, "EMCal", 0., -110., 1930.);
   //g4Reco->Verbosity(99);
-
   se->registerSubsystem(g4Reco);
 
   // save truth info to the Node Tree
@@ -109,7 +102,7 @@ int Fun4SimHit(
   digitizer->set_enable_st1dc(do_station1DC);    // these two lines need to be in sync with the parameters used
   digitizer->set_enable_dphodo(do_dphodo);       // in the SetupSensitiveVolumes() function call above
   digitizer->registerEMCal("EMCal", 100);
-  digitizer->Verbosity(99); 
+  //digitizer->Verbosity(99); 
   se->registerSubsystem(digitizer);
 
   // Trigger Emulator
@@ -138,16 +131,22 @@ int Fun4SimHit(
   gSystem->Load("libsim_eval.so");
   SimEval *sim_eval = new SimEval();
   sim_eval->set_hit_container_choice("Vector");
-  stringstream ssout1; ssout1 << "sim_eval_" << ifile << ".root";
-  sim_eval->set_out_name(ssout1.str().c_str());
-  sim_eval->Verbosity(10);
+  stringstream ssout; ssout << "sim_eval_" << ifile << ".root";
+  sim_eval->set_out_name(ssout.str().c_str());
+  //sim_eval->Verbosity(10);
   se->registerSubsystem(sim_eval);
+
+  // analyzer module
+  AnaModule* ana = new AnaModule();
+  stringstream ssout_2; ssout_2 << "ana_" << ifile << ".root";
+  ana->set_output_filename(ssout_2.str().c_str());
+  se->registerSubsystem(ana);
 
   // input 
   Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
   //in->set_vertex_distribution_mean(0,0,target_coil_pos_z,0);
   se->registerInputManager(in);
-  in->Verbosity(10);
+  //in->Verbosity(10);
   stringstream ssin; ssin << ifile << ".txt";
   //stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Electrons/" << ifile << ".txt";
   //stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Muons/" << ifile << ".txt";
