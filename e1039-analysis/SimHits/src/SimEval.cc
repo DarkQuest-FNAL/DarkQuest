@@ -134,7 +134,6 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
 	// It indexes by n_hits, starting from 1
 	// Anything indexed by n_tracks starts at 0
 	// Make sure you pay attention what is indexed where. 
-	
 	trkID_detID_ihit[std::make_tuple(track_id, det_id)] = ihit;
 	
 	auto detid_elmid_iter = trkID_detid_elmid.find(track_id);
@@ -151,12 +150,13 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
 	hit_truthx[n_hits] = hit->get_truth_x();
 	hit_truthy[n_hits] = hit->get_truth_y();
 	hit_truthz[n_hits] = hit->get_truth_z();	
-	double uVec[3] = {p_geomSvc->getPlane(hit->get_detector_id()).uVec[0],
-			  p_geomSvc->getPlane(hit->get_detector_id()).uVec[1],
-			  p_geomSvc->getPlane(hit->get_detector_id()).uVec[2]
-	};
-	hit_truthpos[n_hits] = (hit_truthx[n_hits])*uVec[0] + (hit_truthy[n_hits])*uVec[1] + (hit_truthz[n_hits]-p_geomSvc->getPlane(hit->get_detector_id()).zc)*uVec[2];
-	
+	if(hit->get_detector_id()<100){ // something weird is happening here for emcal
+	  double uVec[3] = {p_geomSvc->getPlane(hit->get_detector_id()).uVec[0],
+			    p_geomSvc->getPlane(hit->get_detector_id()).uVec[1],
+			    p_geomSvc->getPlane(hit->get_detector_id()).uVec[2]
+	  };
+	  hit_truthpos[n_hits] = (hit_truthx[n_hits])*uVec[0] + (hit_truthy[n_hits])*uVec[1] + (hit_truthz[n_hits]-p_geomSvc->getPlane(hit->get_detector_id()).zc)*uVec[2];
+	}
       }
       ++n_hits;
       if(n_hits>=10000) break;
@@ -204,7 +204,6 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
 	if(hit and ECAL_hits) {
 	  PHG4Hit* g4hit =  ECAL_hits->findHit(hit->get_g4hit_id());
 	  if (g4hit) {
-	    std::cout << "g4hit edep " << g4hit->get_edep() << std::endl;
 	    gx_ecal[n_tracks]  = g4hit->get_x(0);
 	    gy_ecal[n_tracks]  = g4hit->get_y(0);
 	    gz_ecal[n_tracks]  = g4hit->get_z(0);
