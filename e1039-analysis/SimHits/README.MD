@@ -70,6 +70,7 @@ The main scripts are located in `macro`.
 ## In screen
 To run a process in `screen` (in SimHits directory): 
 ```
+kinit
 cd SimHits/
 export DIR_TOP=`pwd`
 source setup_mye1039.sh
