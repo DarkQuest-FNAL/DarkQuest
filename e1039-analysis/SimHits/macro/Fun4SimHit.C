@@ -22,7 +22,7 @@ using namespace std;
 
 int Fun4SimHit(
 	       const int nevent = 10,
-	       std::string ifile = "Brem_1.04_z500_600_eps_-6.4",
+	       std::string ifile = "Brem_1.041330_z500_600_eps_-6.4",
 	       const int idLep = 11
     )
 {
@@ -137,10 +137,10 @@ int Fun4SimHit(
   se->registerSubsystem(sim_eval);
 
   // analyzer module
-  AnaModule* ana = new AnaModule();
-  stringstream ssout_2; ssout_2 << "ana_" << ifile << ".root";
-  ana->set_output_filename(ssout_2.str().c_str());
-  se->registerSubsystem(ana);
+  //AnaModule* ana = new AnaModule();
+  //stringstream ssout_2; ssout_2 << "ana_" << ifile << ".root";
+  //ana->set_output_filename(ssout_2.str().c_str());
+  //se->registerSubsystem(ana);
 
   // input 
   Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
@@ -148,13 +148,13 @@ int Fun4SimHit(
   se->registerInputManager(in);
   //in->Verbosity(10);
   //stringstream ssin; ssin << ifile << ".txt";
-  stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Electrons/" << ifile << ".txt";
+  stringstream ssin; ssin << "$DIR_CMANTILL/../../lhe/displaced_Aprime_Electrons/" << ifile << ".txt";
   //stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Muons/" << ifile << ".txt";
   in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
 
   // output
-  stringstream ssout; ssout << "$DIR_PWD/macro/output_electrons_emcal/" << ifile << "0_dst.root";
-  Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", ssout.str().c_str());
+  stringstream ssout_3; ssout_3 << "$DIR_PWD/macro/output_electrons_emcal/" << ifile << "0_dst.root";
+  Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", ssout_3.str().c_str());
   se->registerOutputManager(out);
   
   // run

@@ -60,10 +60,10 @@ The main scripts are located in `macro`.
 To run a process in `screen` (in SimHits directory): 
 ```
 screen
-export DIR_PWD=`pwd`
-export DIR_TOP=/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits
+export DIR_TOP=`pwd`
 source setup_mye1039.sh
 export LD_LIBRARY_PATH=$DIR_PWD/install/lib/:$LD_LIBRARY_PATH
+export DIR_CMANTILL=/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits
 cd macro
 root -b -q Fun4SimHit.C
 ```
