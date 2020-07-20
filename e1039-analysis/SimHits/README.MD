@@ -52,8 +52,18 @@ source /seaquest/users/cmantill/mye1039/core-inst/this-e1039.sh
 ```
 If you do not want to install your private version of e1039 you can call cmantill's version by sourcing the following scripts
 ```
-source /seaquest/users/cmantill/mye1039/core-inst/this-e1039.sh
-source setup.sh
+source setup_mye1039.sh
 ```
 
 The main scripts are located in `macro`.
+
+To run a process in `screen` (in SimHits directory): 
+```
+screen
+export DIR_PWD=`pwd`
+export DIR_TOP=/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits
+source setup_mye1039.sh
+export LD_LIBRARY_PATH=$DIR_PWD/install/lib/:$LD_LIBRARY_PATH
+cd macro
+root -b -q Fun4SimHit.C
+```

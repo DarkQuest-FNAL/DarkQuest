@@ -126,11 +126,13 @@ int Fun4Sim(
   Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
   //in->set_vertex_distribution_mean(0,0,target_coil_pos_z,0);
   se->registerInputManager(in);
-  stringstream ssin; ssin << ifile << ".txt";
+  stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Electrons/" << ifile << ".txt";
+  //stringstream ssin; ssin << ifile << ".txt";
   in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
 
   // DST output manager
-  stringstream ssout; ssout << ifile << "0_dst.root";
+  //stringstream ssout; ssout << ifile << "0_dst.root";
+  stringstream ssout; ssout << "$DIR_TOP/macro/output_electrons_emcal/" << ifile << "0_dst.root";
   Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", ssout.str().c_str());
   se->registerOutputManager(out);
 

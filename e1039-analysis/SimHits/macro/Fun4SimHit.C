@@ -21,7 +21,7 @@ using namespace std;
 using namespace std;
 
 int Fun4SimHit(
-	       const int nevent = 10000,
+	       const int nevent = 10,
 	       std::string ifile = "Brem_1.04_z500_600_eps_-6.4",
 	       const int idLep = 11
     )
@@ -147,11 +147,16 @@ int Fun4SimHit(
   //in->set_vertex_distribution_mean(0,0,target_coil_pos_z,0);
   se->registerInputManager(in);
   //in->Verbosity(10);
-  stringstream ssin; ssin << ifile << ".txt";
-  //stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Electrons/" << ifile << ".txt";
+  //stringstream ssin; ssin << ifile << ".txt";
+  stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Electrons/" << ifile << ".txt";
   //stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Muons/" << ifile << ".txt";
   in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
 
+  // output
+  stringstream ssout; ssout << "$DIR_PWD/macro/output_electrons_emcal/" << ifile << "0_dst.root";
+  Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", ssout.str().c_str());
+  se->registerOutputManager(out);
+  
   // run
   se->run(nevent);
   
