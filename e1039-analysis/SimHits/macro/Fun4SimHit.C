@@ -12,7 +12,7 @@ R__LOAD_LIBRARY(libdptrigger)
 R__LOAD_LIBRARY(libevt_filter)
 //R__LOAD_LIBRARY(libktracker)
 R__LOAD_LIBRARY(libsim_eval)
-R__LOAD_LIBRARY(libanamodule)
+//R__LOAD_LIBRARY(libanamodule)
 
 using namespace std;
 
