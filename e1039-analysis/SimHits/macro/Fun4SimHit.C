@@ -147,7 +147,7 @@ int Fun4SimHit(
   in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
 
   // output
-  stringstream ssout_3; ssout_3 << "$DIR_PWD/macro/output_electrons_emcal/" << ifile << "0_dst.root";
+  stringstream ssout_3; ssout_3 << "$DIR_TOP/macro/output_electrons_emcal/" << ifile << "0_dst.root";
   Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", ssout_3.str().c_str());
   se->registerOutputManager(out);
   

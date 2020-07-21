@@ -74,7 +74,7 @@ kinit
 cd SimHits/
 export DIR_TOP=`pwd`
 source setup_mye1039.sh
-export LD_LIBRARY_PATH=$DIR_PWD/install/lib/:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$DIR_TOP/install/lib/:$LD_LIBRARY_PATH
 export DIR_CMANTILL=/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits
 cd macro/
 mkdir -p simeval_electrons_emcal/
