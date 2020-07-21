@@ -130,7 +130,7 @@ int Fun4SimHit(
   gSystem->Load("libsim_eval.so");
   SimEval *sim_eval = new SimEval();
   sim_eval->set_hit_container_choice("Vector");
-  stringstream ssout; ssout << "$DIR_PWD/macro/simeval_electrons_emcal/sim_eval_" << ifile << ".root";
+  stringstream ssout; ssout << "$DIR_TOP/macro/simeval_electrons_emcal/sim_eval_" << ifile << ".root";
   //stringstream ssout; ssout << "sim_eval_" << ifile << ".root";
   sim_eval->set_out_name(ssout.str().c_str());
   //sim_eval->Verbosity(10);
