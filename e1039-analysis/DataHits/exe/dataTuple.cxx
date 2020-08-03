@@ -33,7 +33,8 @@ int main(int argc, char *argv[])
   Int_t triggerBits;
   Int_t nHits;
   Int_t detectorID[15000], elementID[15000];
-  Double_t tdcTime[15000], driftDistance[15000];
+  Double_t tdcTime[15000], driftDistance[15000], pos[15000];
+  
 
   TFile* saveFile = new TFile(argv[2], "recreate");
   TTree* saveTree = new TTree("Events", "Events");
@@ -47,6 +48,7 @@ int main(int argc, char *argv[])
   saveTree->Branch("elementID", elementID, "elementID[nHits]/I");
   saveTree->Branch("tdcTime", tdcTime, "tdcTime[nHits]/D");
   saveTree->Branch("driftDistance", driftDistance, "driftDistance[nHits]/D");
+  saveTree->Branch("pos", pos, "pos[nHits]/D");
 
   for(Int_t i = 0; i < dataTree->GetEntries(); ++i) {
       dataTree->GetEntry(i);
@@ -68,6 +70,7 @@ int main(int argc, char *argv[])
 	    Hit h = rawEvent->getHit(k);
 	    detectorID[k] = h.detectorID; 
 	    elementID[k] = h.elementID;
+	    pos[k] = h.pos;
 	   
 	    // detector ID refers to the detector number as seen here:
 	    // st1-drift chambers| D0: 1-6, D1: 7-12
