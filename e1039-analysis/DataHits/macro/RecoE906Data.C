@@ -13,7 +13,7 @@ This macro takes severl external input files to run:
 3. /pnfs/e906/persistent/users/liuk/darkp/digit/R008/02/83/digit_028300_R008.root is E906 run6 data, can be found at /pnfs/e906/persistent/users/liuk/darkp/digit/R008/02/83/
 */
 
-int RecoE906Data(const int nEvents = 100)
+int RecoE906Data(const int nEvents = 18518)
 {
   const double FMAGSTR = -1.054;
   const double KMAGSTR = -0.951;
@@ -21,18 +21,19 @@ int RecoE906Data(const int nEvents = 100)
   recoConsts* rc = recoConsts::instance();
   rc->set_DoubleFlag("FMAGSTR", FMAGSTR);
   rc->set_DoubleFlag("KMAGSTR", KMAGSTR);
-  rc->set_CharFlag("AlignmentMille", "$E1039_RESOURCE/alignment/run6/align_mille.txt");
-  rc->set_CharFlag("AlignmentHodo", "$E1039_RESOURCE/alignment/run6/alignment_hodo.txt"); 
-  rc->set_CharFlag("AlignmentProp", "$E1039_RESOURCE/alignment/run6/alignment_prop.txt"); 
-  rc->set_CharFlag("Calibration", "$E1039_RESOURCE/alignment/run6/calibration.txt");
-  rc->set_CharFlag("Geometry", "user_liuk_geometry_G8_run5_2");
-  rc->set_CharFlag("MySQLURL", "mysql://e906-db1.fnal.gov:3306");
+  // rc->set_CharFlag("AlignmentMille", "$E1039_RESOURCE/alignment/run6/align_mille.txt");
+  // rc->set_CharFlag("AlignmentHodo", "$E1039_RESOURCE/alignment/run6/alignment_hodo.txt"); 
+  // rc->set_CharFlag("AlignmentProp", "$E1039_RESOURCE/alignment/run6/alignment_prop.txt"); 
+  // rc->set_CharFlag("Calibration", "$E1039_RESOURCE/alignment/run6/calibration.txt");
+  // rc->set_CharFlag("Geometry", "user_liuk_geometry_G8_run5_2");
+  // rc->set_CharFlag("MySQLURL", "mysql://e906-db1.fnal.gov:3306");
   rc->Print();
 
   Fun4AllServer* se = Fun4AllServer::instance();
-  se->Verbosity(100);
+  se->Verbosity(1000);
 
-  GeomSvc::UseDbSvc(false);  //set to true to run E1039 style data
+  GeomSvc::UseDbSvc(true);  //set to true to run E1039 style data
+  //GeomSvc::UseDbSvc(false);
   GeomSvc* geom_svc = GeomSvc::instance();
 
   SQReco* reco = new SQReco();
