@@ -5,6 +5,7 @@ R__LOAD_LIBRARY(libfun4all)
 R__LOAD_LIBRARY(libg4detectors)
 R__LOAD_LIBRARY(libg4eval)
 R__LOAD_LIBRARY(libktracker)
+R__LOAD_LIBRARY(libanamodule)
 
 /*
 This macro takes severl external input files to run:
@@ -31,10 +32,11 @@ int RecoE906Data(const int nEvents = 18518)
 
   Fun4AllServer* se = Fun4AllServer::instance();
   se->Verbosity(1000);
-
+  
   GeomSvc::UseDbSvc(true);  //set to true to run E1039 style data
   //GeomSvc::UseDbSvc(false);
   GeomSvc* geom_svc = GeomSvc::instance();
+  geom_svc->printTable();
 
   SQReco* reco = new SQReco();
   reco->Verbosity(100);
@@ -46,6 +48,10 @@ int RecoE906Data(const int nEvents = 18518)
   reco->set_enable_eval(true);
   reco->set_eval_file_name("eval.root");
   //se->registerSubsystem(reco);
+
+  AnaModule* ana = new AnaModule();
+  ana->set_output_filename("ana.root");
+  se->registerSubsystem(ana);
 
   //Now for a given detectorID, elementID, pos can be obtained by:
   //double pos = geom_svc->getMeasurement(detectorID, elementID);
