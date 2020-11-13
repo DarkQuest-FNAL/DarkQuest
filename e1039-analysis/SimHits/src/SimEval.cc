@@ -8,7 +8,6 @@
 #include <interface_main/SQEvent_v1.h>
 #include <interface_main/SQRun_v1.h>
 
-
 #include <geom_svc/GeomSvc.h>
 
 #include <fun4all/Fun4AllReturnCodes.h>
@@ -20,6 +19,7 @@
 #include <g4main/PHG4TruthInfoContainer.h>
 #include <g4main/PHG4HitContainer.h>
 #include <g4main/PHG4Hit.h>
+#include <g4main/PHG4Shower.h>
 #include <g4main/PHG4Particle.h>
 #include <g4main/PHG4HitDefs.h>
 #include <g4main/PHG4VtxPoint.h>
@@ -79,35 +79,59 @@ int SimEval::process_event(PHCompositeNode* topNode) {
   return ret;
 }
 
-// These Eval functions run per event.
-// They limit on how many hits/tracks are in one single event
+// find g4shower
+PHG4Shower* SimEval::get_primary_shower(PHG4Particle* primary) {
+  PHG4Shower* shower = nullptr;
+  for (auto iter=_truth->GetPrimaryShowerRange().first; iter!=_truth->GetPrimaryShowerRange().second; ++iter) {
+    PHG4Shower* tmpshower = iter->second;
+    if (tmpshower->get_parent_particle_id() == primary->get_track_id()) {
+      shower = tmpshower;
+      break;
+    }
+    std::cout << " not finding shower " << std::endl;
+  }
+  return shower;
+}
+
+// find g4hit
+PHG4Hit* SimEval::FindG4HitAtStation(const int trk_id, const PHG4HitContainer* g4hc) {
+  PHG4Hit* hit = nullptr;
+  PHG4HitContainer::ConstRange range = g4hc->getHits();
+  for (PHG4HitContainer::ConstIterator it = range.first; it != range.second; it++) {
+    PHG4Hit* tmphit = it->second;
+    if (tmphit->get_trkid() == trk_id) {
+      hit = tmphit;
+      break;
+    }
+  }
+  return hit;
+}
+
+// for multiple hits
+std::vector<PHG4Hit*> SimEval::FindG4HitsAtStation(const int trk_id, const PHG4HitContainer* g4hc) {
+  std::vector<PHG4Hit*> vhit;
+  PHG4HitContainer::ConstRange range = g4hc->getHits();
+  for (PHG4HitContainer::ConstIterator it = range.first; it != range.second; it++) {
+    PHG4Hit* tmphit = it->second;
+    if (tmphit->get_trkid() == trk_id) {
+      vhit.push_back(tmphit);
+    }
+  }
+  return vhit;
+}
+
+// per event
 int SimEval::TruthEval(PHCompositeNode* topNode)
 {
-  if(Verbosity() >= Fun4AllBase::VERBOSITY_A_LOT)
-    std::cout << "Entering SimEval::TruthEval: " << _event << std::endl;
-  
   ResetEvalVars();
-
   if(_event_header) {  
     event_id    = _event_header->get_event_id();    
   }
 
-  // map of trackID, detID (detector ID) and element ID (e.g. bars of hodoscopes)
-  std::map<int, std::map<int, int> > trkID_detid_elmid;
-
-  // map of detID (detector ID) and
-  typedef std::tuple<int, int> ParDetPair;
-  std::map<ParDetPair, int> trkID_detID_ihit;
-  std::map<int, int> hitID_ihit;
-  
   if(_hit_vector) {
     n_hits = 0;
 
-    // this is not the PHG4 truth information ("true truth") information.
     // SQHit truth information =/= the information that you give the simulation.
-    // For example, if the information you give says hit 5 should be at 1,1,1
-    // the "truth" information from SQHit might not give 1,1,1 below.
-
     for(int ihit=0; ihit<_hit_vector->size(); ++ihit) {
       SQHit *hit = _hit_vector->at(ihit);
       
@@ -126,27 +150,9 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
       hit_edep[n_hits]       = hit->get_edep();
 
       if(_truth) {
-	int track_id = hit->get_track_id();
+	int track_id = hit->get_track_id(); 
 	int det_id = hit->get_detector_id();
 
-	// NOTE HERE:
-	// trkID is the trackID
-	// It indexes by n_hits, starting from 1
-	// Anything indexed by n_tracks starts at 0
-	// Make sure you pay attention what is indexed where. 
-	trkID_detID_ihit[std::make_tuple(track_id, det_id)] = ihit;
-	
-	auto detid_elmid_iter = trkID_detid_elmid.find(track_id);
-	if(detid_elmid_iter != trkID_detid_elmid.end()) {
-	  detid_elmid_iter->second.insert(std::pair<int, int>(det_id, hit->get_element_id()));
-	} 
-	else {
-	  std::map<int, int> detid_elmid;
-	  detid_elmid.insert(std::pair<int, int>(det_id, hit->get_element_id()));
-	  trkID_detid_elmid[track_id] = detid_elmid;
-	}
-	
-	//PHG4Hit is what has the true truth information.
 	hit_truthx[n_hits] = hit->get_truth_x();
 	hit_truthy[n_hits] = hit->get_truth_y();
 	hit_truthz[n_hits] = hit->get_truth_z();	
@@ -164,513 +170,232 @@ int SimEval::TruthEval(PHCompositeNode* topNode)
   } // end SQ Hit_vector
   if(Verbosity() >= Fun4AllBase::VERBOSITY_A_LOT) LogInfo("ghit eval finished");
 
-  // trackID + detID -> SQHit -> PHG4Hit -> momentum
-  
-  // PHG4Particle is the particle information from geant. This has all the information 
-  // that you put into the simulation and all the information the geant created when 
-  // propogating the particle
+  // Info from PHG4Particle
   if(_truth) {
+
+    // Showers
+    n_showers = 0;
     for(auto iter=_truth->GetPrimaryParticleRange().first; iter!=_truth->GetPrimaryParticleRange().second; ++iter) {
-      if(Verbosity() >= Fun4AllBase::VERBOSITY_A_LOT)
-	std::cout << "looping over phg4particle " << std::endl;
-      PHG4Particle * par = iter->second;
-      gpid[n_tracks] = par->get_pid();
-
-      int vtx_id =  par->get_vtx_id();
-      PHG4VtxPoint* vtx = _truth->GetVtx(vtx_id);
-      gvx[n_tracks] = vtx->get_x();
-      gvy[n_tracks] = vtx->get_y();
-      gvz[n_tracks] = vtx->get_z();
-      
-      TVector3 mom(par->get_px(), par->get_py(), par->get_pz());
-      gpx[n_tracks] = par->get_px();
-      gpy[n_tracks] = par->get_py();
-      gpz[n_tracks] = par->get_pz();
-      gpt[n_tracks] = mom.Pt();
-      geta[n_tracks] = mom.Eta();
-      gphi[n_tracks] = mom.Phi();
-      ge[n_tracks] =  par->get_e();
-      
-      int trkID = par->get_track_id();
-      gtrkid[n_tracks] = trkID;
-      
-      // The detector ID and names are listed in e1039-core/packages/geom_svc/GeomSvc.cxx.
-      
-      // looping over all hits because do not know detector id for ecal
-      // ecal
-      PHG4HitContainer *ECAL_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_EMCal");
-      for(int ihit=0; ihit<_hit_vector->size(); ++ihit) {
-	SQHit *hit = _hit_vector->at(ihit);
-	if(hit and ECAL_hits) {
-	  PHG4Hit* g4hit =  ECAL_hits->findHit(hit->get_g4hit_id());
-	  if (g4hit) {
-	    gx_ecal[n_tracks]  = g4hit->get_x(0);
-	    gy_ecal[n_tracks]  = g4hit->get_y(0);
-	    gz_ecal[n_tracks]  = g4hit->get_z(0);
-	    gpx_ecal[n_tracks] = g4hit->get_px(0)/1000.;
-	    gpy_ecal[n_tracks] = g4hit->get_py(0)/1000.;
-	    gpz_ecal[n_tracks] = g4hit->get_pz(0)/1000.;
-	    gedep_ecal[n_tracks] = g4hit->get_edep();
-	  }
-	}
+      PHG4Particle * primary = iter->second;
+      int ECAL_volume = PHG4HitDefs::get_volume_id("G4HIT_EMCal");
+      PHG4Shower* shower = get_primary_shower(primary);
+      if(shower !=0){
+	std::cout << "if shower " << shower << std::endl;
+	sx_ecal[n_showers] = shower->get_x();
+	sy_ecal[n_showers] = shower->get_y();
+	sz_ecal[n_showers] = shower->get_z();
+	sedep_ecal[n_showers] = shower->get_edep(ECAL_volume);
+	n_showers++;
       }
-
-      // st1, 2, 3 are the drift chambers here   
-      PHG4HitContainer *D1X_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D0X");
-      if (!D1X_hits)
-	D1X_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D1X");
-      
-      // detID 1-6 deal with D0, 7-12 D1
-      for(int det_id=1; det_id<=12; ++det_id) {
-	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
-	if(iter != trkID_detID_ihit.end()) {
-	  SQHit *hit = _hit_vector->at(iter->second);
-	  if(hit and D1X_hits) {
-	    PHG4Hit* g4hit =  D1X_hits->findHit(hit->get_g4hit_id());
-	    if (g4hit) {
-	      gx_st1[n_tracks]  = g4hit->get_x(0);
-	      gy_st1[n_tracks]  = g4hit->get_y(0);
-	      gz_st1[n_tracks]  = g4hit->get_z(0);
-	      gpx_st1[n_tracks] = g4hit->get_px(0)/1000.;
-	      gpy_st1[n_tracks] = g4hit->get_py(0)/1000.;
-	      gpz_st1[n_tracks] = g4hit->get_pz(0)/1000.;
-              gedep_st1[n_tracks] = g4hit->get_edep();
-	      if(gpz_st1[n_tracks] <0){
-		std::cout << "WARNING:: Negative z-momentum at Station 1! " << gpz_st1[n_tracks] <<std::endl;
-	      }
-	      break;
-	    }
-	  }
-	}
-      }// end st1 det id loop  
-      if(verbosity>=2) std::cout << "station 1 truth info done." << std::endl;
-      
-      PHG4HitContainer *D2X_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D2X");
-      if(!D2X_hits){
-	D2X_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D2Xp");
-      }
-      if (!D2X_hits)
-	{
-	  if(Verbosity() >= Fun4AllBase::VERBOSITY_A_LOT)
-	    cout << Name() << " Could not locate g4 hit node " <<  "G4HIT_D2X" << endl;
-	}
-      
-      // detID 13-18 are D2
-      // trackID + detID -> SQHit -> PHG4Hit -> momentum
-      for(int det_id=13; det_id<=18; ++det_id) {
-	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
-	if(iter != trkID_detID_ihit.end()) {
-	  SQHit *hit = _hit_vector->at(iter->second);
-	  if(hit and D2X_hits) {
-	    PHG4Hit* g4hit =  D2X_hits->findHit(hit->get_g4hit_id());
-	    if (g4hit) {
-	      gx_st2[n_tracks]  = g4hit->get_x(0);
-	      gy_st2[n_tracks]  = g4hit->get_y(0);
-	      gz_st2[n_tracks]  = g4hit->get_z(0);
-	      gpx_st2[n_tracks] = g4hit->get_px(0)/1000.;
-	      gpy_st2[n_tracks] = g4hit->get_py(0)/1000.;
-	      gpz_st2[n_tracks] = g4hit->get_pz(0)/1000.;              
-	      gedep_st2[n_tracks] = g4hit->get_edep();
-	      if(gpz_st2[n_tracks] <0){
-		std::cout << "WARNING:: Negative z-momentum at Station 2!" << std::endl;
-	      }
-	      break;
-	    }
-	  }
-	}
-      }// end st2 det id loop  
-      if(verbosity>=2) std::cout << "station 2 truth info done." << std::endl;
-      
-      PHG4HitContainer *D3X_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D3pX");
-      if (!D3X_hits){
-	D3X_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D3pXp");
-      }
-      
-      // detID 19-24 are D3p, 25-30 are D3m
-      for(int det_id=19; det_id<=24; ++det_id) {
-	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
-	if(iter != trkID_detID_ihit.end()) {
-	  SQHit *hit = _hit_vector->at(iter->second);
-	  if(hit and D3X_hits) {
-	    PHG4Hit* g4hit =  D3X_hits->findHit(hit->get_g4hit_id());
-	    if (g4hit) {
-	      gx_st3[n_tracks]  = g4hit->get_x(0);
-	      gy_st3[n_tracks]  = g4hit->get_y(0);
-	      gz_st3[n_tracks]  = g4hit->get_z(0);
-	      gpx_st3[n_tracks] = g4hit->get_px(0)/1000.;
-	      gpy_st3[n_tracks] = g4hit->get_py(0)/1000.;
-	      gpz_st3[n_tracks] = g4hit->get_pz(0)/1000.;
-              gedep_st3[n_tracks] = g4hit->get_edep();
-	      if(gpz_st3[n_tracks] <0){
-		std::cout << "WARNING:: Negative z-momentum at Station 3!" << std::endl;
-	      }
-	      break;
-	    }
-	  }
-	}
-      } // end st3 det id loop
-      
-      D3X_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D3mX"); 
-      if (!D3X_hits){
-	D3X_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D3mXp");
-      }
-      
-      if(!D3X_hits){
-	std::cout << "Could not locate D3X container." << std::endl;
-      }
-      
-      // detID  25-30 are D3m
-      for(int det_id=25; det_id<=30; ++det_id) {
-	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
-	if(iter != trkID_detID_ihit.end()) {
-	  SQHit *hit = _hit_vector->at(iter->second);
-	  if(hit and D3X_hits) {
-	    PHG4Hit* g4hit =  D3X_hits->findHit(hit->get_g4hit_id());
-	    if (g4hit) {
-	      gx_st3[n_tracks]  = g4hit->get_x(0);
-	      gy_st3[n_tracks]  = g4hit->get_y(0);
-	      gz_st3[n_tracks]  = g4hit->get_z(0);
-	      gpx_st3[n_tracks] = g4hit->get_px(0)/1000.;
-	      gpy_st3[n_tracks] = g4hit->get_py(0)/1000.;
-	      gpz_st3[n_tracks] = g4hit->get_pz(0)/1000.;
-              gedep_st3[n_tracks] = g4hit->get_edep();
-	      if(gpz_st3[n_tracks] <0){
-		std::cout << "WARNING:: Negative z-momentum at Station 3!" << std::endl;
-	      }
-	      break;
-	    }
-	  }
-	}
-      }
-      if(verbosity>=2) std::cout << "station 3 truth info done." << std::endl;
-      
-      // H1_H3 are hodoscopes here
-      // detID 33 and 34 are for H1L/R. This is to check possible roads, if comment
-      // out if you do not want this info.
-      PHG4HitContainer *H1_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H1LL");
-      if(!H1_hits){
-	H1_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H1R");
-      }
-      
-      for(int det_id=33; det_id<=34; ++det_id) {
-	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
-	if(iter != trkID_detID_ihit.end()) {
-	  SQHit *hit = _hit_vector->at(iter->second);
-	  if(hit and H1_hits) {
-	    PHG4Hit* g4hit =  H1_hits->findHit(hit->get_g4hit_id());
-	    if (g4hit) {
-	      gx_h1[n_tracks]  = g4hit->get_x(0);
-              gy_h1[n_tracks]  = g4hit->get_y(0);
-              gz_h1[n_tracks]  = g4hit->get_z(0);
-              gpx_h1[n_tracks] = g4hit->get_px(0)/1000.;
-              gpy_h1[n_tracks] = g4hit->get_py(0)/1000.;
-              gpz_h1[n_tracks] = g4hit->get_pz(0)/1000.;
-	      int h1barID = hit->get_element_id();
-	      if(h1barID<11) gbarID_h1[n_tracks] = hit->get_element_id();
-	      if(h1barID>10) gbarID_h1[n_tracks] = hit->get_element_id() - 8;
-	      break;
-	    }
-	  }
-	}
-      }
-      
-      // detID 35 and 36 are for H2L/R. This is to check possible roads, if comment
-      // out if you do not want this info.
-      PHG4HitContainer *H2_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H2LL");
-      if(!H2_hits){
-	H2_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H2R");
-      }
-      
-      for(int det_id=35; det_id<=36; ++det_id) {
-	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
-	if(iter != trkID_detID_ihit.end()) {
-	  SQHit *hit = _hit_vector->at(iter->second);
-	  if(hit and H2_hits) {
-	    PHG4Hit* g4hit =  H2_hits->findHit(hit->get_g4hit_id());
-	    if (g4hit) {
-	      gx_h2[n_tracks]  = g4hit->get_x(0);
-              gy_h2[n_tracks]  = g4hit->get_y(0);
-              gz_h2[n_tracks]  = g4hit->get_z(0);
-              gpx_h2[n_tracks] = g4hit->get_px(0)/1000.;
-              gpy_h2[n_tracks] = g4hit->get_py(0)/1000.;
-              gpz_h2[n_tracks] = g4hit->get_pz(0)/1000.;
-	      int h2barID = hit->get_element_id();
-	      if(h2barID<11) gbarID_h2[n_tracks] = hit->get_element_id();
-	      if(h2barID>9) gbarID_h2[n_tracks] = hit->get_element_id() - 8;
-	      break;
-	    }
-	  }
-	}
-      }
-
-      // detID 47 to 54 are prop tubes
-      // P1
-      PHG4HitContainer* P1Container;
-      for(int det_id = 47; det_id<=50; det_id++){
-        switch(det_id){
-        case 47:
-          P1Container = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P1Y1");
-          break;
-
-        case 48:
-          P1Container = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P1Y2");
-          break;
-
-        case 49:
-          P1Container = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P1X1");
-          break;
-
-        case 50:
-          P1Container = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P1X2");
-          break;
-
-	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
-	if(iter != trkID_detID_ihit.end()) {
-	  SQHit *hit = _hit_vector->at(iter->second);
-	  if(hit and P1Container) {
-	    PHG4Hit* g4hit =  P1Container->findHit(hit->get_g4hit_id());
-	    if (g4hit) {
-	      gx_p1[n_tracks] = g4hit->get_x(0);
-	      gy_p1[n_tracks] = g4hit->get_y(0);
-	      gz_p1[n_tracks] = g4hit->get_z(0);
-	      gpx_p1[n_tracks] = g4hit->get_px(0)/1000.;
-	      gpy_p1[n_tracks] = g4hit->get_py(0)/1000.;
-	      gpz_p1[n_tracks] = g4hit->get_pz(0)/1000.;
-              gedep_p1[n_tracks] = g4hit->get_edep();
-              break;
-	    }
-	  }
-	}
-	}
-      }
-
-      // P2
-      PHG4HitContainer* P2Container;
-      for(int det_id = 51; det_id<=54; det_id++){
-        switch(det_id){
-        case 51:
-          P2Container = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P2X1");
-          break;
-
-        case 52:
-          P2Container = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P2X2");
-          break;
-
-        case 53:
-          P2Container = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P2Y1");
-          break;
-
-        case 54:
-          P2Container = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P2Y2");
-          break;
-        }
-	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
-        if(iter != trkID_detID_ihit.end()) {
-          SQHit *hit = _hit_vector->at(iter->second);
-          if(hit and P2Container) {
-            PHG4Hit* g4hit =  P2Container->findHit(hit->get_g4hit_id());
-            if (g4hit) {
-              gx_p2[n_tracks] = g4hit->get_x(0);
-              gy_p2[n_tracks] = g4hit->get_y(0);
-              gz_p2[n_tracks] = g4hit->get_z(0);
-              gpx_p2[n_tracks] = g4hit->get_px(0)/1000.;
-              gpy_p2[n_tracks] = g4hit->get_py(0)/1000.;
-              gpz_p2[n_tracks] = g4hit->get_pz(0)/1000.;
-	      gedep_p2[n_tracks] = g4hit->get_edep();
-              break;
-            }
-          }
-        }
-      }
-
-      //detID 43 and 44 are for H4Y2L, which is the one used in DP tracking.
-      PHG4HitContainer *H4Y_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H4Y2L");
-      for(int det_id=43; det_id<44; ++det_id) {
-	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
-	if(iter != trkID_detID_ihit.end()) {
-	  SQHit *hit = _hit_vector->at(iter->second);
-	  if(hit and H4Y_hits) {
-	    if(verbosity >= Fun4AllBase::VERBOSITY_A_LOT) {
-	      LogDebug("h4y2lhit: " << iter->second);
-	    }
-	    PHG4Hit* g4hit =  H4Y_hits->findHit(hit->get_g4hit_id());
-	    if (g4hit) {
-	      gx_h4y2l[n_tracks]  = g4hit->get_x(0);
-              gy_h4y2l[n_tracks]  = g4hit->get_y(0);
-              gz_h4y2l[n_tracks]  = g4hit->get_z(0);
-              gpx_h4y2l[n_tracks] = g4hit->get_px(0)/1000.;
-              gpy_h4y2l[n_tracks] = g4hit->get_py(0)/1000.;
-              gpz_h4y2l[n_tracks] = g4hit->get_pz(0)/1000.;
-	      int h4ybarID = hit->get_element_id();
-	      gbarID_h4y[n_tracks] = -hit->get_element_id();
-	      if (h4ybarID > 8) {
-		gquad_h4y[n_tracks] = 8;
-	      } else {
-		gquad_h4y[n_tracks] = 10;
-	      }
-	      break;
-	    }
-	  }
-	}
-      }
-      
-      H4Y_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H4Y2R");
-      for(int det_id=44; det_id<45; ++det_id) {
-	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
-	if(iter != trkID_detID_ihit.end()) {
-	  SQHit *hit = _hit_vector->at(iter->second);
-	  if(hit and H4Y_hits) {
-	    PHG4Hit* g4hit =  H4Y_hits->findHit(hit->get_g4hit_id());
-	    if (g4hit) {
-	      gx_h4y2r[n_tracks]  = g4hit->get_x(0);
-              gy_h4y2r[n_tracks]  = g4hit->get_y(0);
-              gz_h4y2r[n_tracks]  = g4hit->get_z(0);
-              gpx_h4y2r[n_tracks] = g4hit->get_px(0)/1000.;
-              gpy_h4y2r[n_tracks] = g4hit->get_py(0)/1000.;
-              gpz_h4y2r[n_tracks] = g4hit->get_pz(0)/1000.;
-	      int h4ybarID = hit->get_element_id();
-	      gbarID_h4y[n_tracks] = hit->get_element_id();
-	      if (h4ybarID > 8) {
-		gquad_h4y[n_tracks] = 9;
-	      } else {
-		gquad_h4y[n_tracks] = 11;
-	      }
-	      break;
-	    }
-	  }
-	}
-      }
-      if(verbosity>=2) std::cout << "H4Y Truth info done." << std::endl;
-
-      // DP1 
-      PHG4HitContainer* DP1Container;
-      for(int det_id = 55; det_id<=58; det_id++){
-	switch(det_id){
-	case 55:
-	  DP1Container = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_DP1TL");
-	  break;
-	  
-	case 56:
-	  DP1Container = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_DP1TR");
-	  break;
-	  
-	case 57:
-	  DP1Container = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_DP1BL");
-	  break;
-	  
-	case 58:
-	  DP1Container = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_DP1BR");
-	  break;
-	  
-	}
-	
-	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
-	if(iter != trkID_detID_ihit.end()) {
-	  SQHit *hit = _hit_vector->at(iter->second);
-	  if(hit and DP1Container) {
-	    PHG4Hit* g4hit =  DP1Container->findHit(hit->get_g4hit_id());
-	    if (g4hit) {
-	      gx_dp1[n_tracks] = g4hit->get_x(0);
-	      gy_dp1[n_tracks] = g4hit->get_y(0);
-	      gz_dp1[n_tracks] = g4hit->get_z(0);
-              gpx_dp1[n_tracks] = g4hit->get_px(0)/1000.;
-              gpy_dp1[n_tracks] = g4hit->get_py(0)/1000.;
-              gpz_dp1[n_tracks] = g4hit->get_pz(0)/1000.;
-	      if(hit->get_detector_id()==det_id){
-		switch(det_id){
-		case 55:
-		  gbarID_dp1[n_tracks] = hit->get_element_id();
-		  gquad_dp1[n_tracks] = (80+hit->get_element_id())*(-1);
-		  break;
-		case 56:
-		  gbarID_dp1[n_tracks] = hit->get_element_id();
-		  gquad_dp1[n_tracks] = (80+hit->get_element_id());
-		  break;
-		case 57:
-		  gbarID_dp1[n_tracks] = 81-hit->get_element_id();
-		  gquad_dp1[n_tracks] = (hit->get_element_id())*(-1);
-		  break;
-		case 58:
-		  gbarID_dp1[n_tracks] = 81-hit->get_element_id();
-		  gquad_dp1[n_tracks] = hit->get_element_id();
-		  break;
-		}
-	      }
-	      break;
-	    }
-	  }
-	}
-      }
-      if(verbosity>=2) std::cout << "DP1 Truth info done." << std::endl;
-      
-      // DP2
-      PHG4HitContainer* DP2Container;
-      for(int det_id = 59; det_id<=62; det_id++){
-	switch(det_id){
-	case 59:
-	  DP2Container = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_DP2TL");
-	  break;
-	  
-	case 60:
-	  DP2Container = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_DP2TR");
-	  break;
-	  
-	case 61:
-	  DP2Container = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_DP2BL");
-	  break;
-	  
-	case 62:
-	  DP2Container = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_DP2BR");
-	  break;
-	}
-	
-	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
-	if(iter != trkID_detID_ihit.end()) {
-	  SQHit *hit = _hit_vector->at(iter->second);
-	  if(hit and DP2Container) {
-	    PHG4Hit* g4hit =  DP2Container->findHit(hit->get_g4hit_id());
-	    if (g4hit) {
-	      gx_dp2[n_tracks] = g4hit->get_x(0);
-	      gy_dp2[n_tracks] = g4hit->get_y(0);
-	      gz_dp2[n_tracks] = g4hit->get_z(0);
-              gpx_dp2[n_tracks] = g4hit->get_px(0)/1000.;
-              gpy_dp2[n_tracks] = g4hit->get_py(0)/1000.;
-              gpz_dp2[n_tracks] = g4hit->get_pz(0)/1000.;
-	      if(hit->get_detector_id()==det_id){
-		switch(det_id){
-		case 59:
-		  gbarID_dp2[n_tracks] = hit->get_element_id();
-		  gquad_dp2[n_tracks] = (50+hit->get_element_id())*(-1);
-		  break;
-		case 60:
-		  gbarID_dp2[n_tracks] = hit->get_element_id();
-		  gquad_dp2[n_tracks] = (50+hit->get_element_id());
-		  break;
-		case 61:
-		  gbarID_dp2[n_tracks] = 51-hit->get_element_id();
-		  gquad_dp2[n_tracks] = (hit->get_element_id())*(-1);
-		  break;
-		case 62:
-		  gbarID_dp2[n_tracks] = 51-hit->get_element_id();
-		  gquad_dp2[n_tracks] = hit->get_element_id();
-		  break;
-		}
-	      }
-	      break;
-	    }
-	  }
-	}
-      }
-      if(verbosity>=2) std::cout << "DP2 Truth info done." << std::endl;
-	
-      if(Verbosity() >= Fun4AllBase::VERBOSITY_A_LOT) LogInfo("particle eval finished");
-      ++n_tracks;
-      if(n_tracks>=1000) break;
+      if(n_showers>=1000) break;
     }
-  	
-    _tout_truth->Fill();
-    
+    if(Verbosity() >= Fun4AllBase::VERBOSITY_A_LOT) LogInfo("shower eval finished");
+
+    // Primaries
+    n_primaries = 0;
+    for(auto iterp=_truth->GetPrimaryParticleRange().first; iterp!=_truth->GetPrimaryParticleRange().second; ++iterp) {
+      PHG4Particle * primary = iterp->second;
+      gpid[n_primaries] = primary->get_pid();
+
+      int vtx_id =  primary->get_vtx_id();
+      PHG4VtxPoint* vtx = _truth->GetVtx(vtx_id);
+      gvx[n_primaries] = vtx->get_x();
+      gvy[n_primaries] = vtx->get_y();
+      gvz[n_primaries] = vtx->get_z();
+      
+      TVector3 mom(primary->get_px(), primary->get_py(), primary->get_pz());
+      gpx[n_primaries] = primary->get_px();
+      gpy[n_primaries] = primary->get_py();
+      gpz[n_primaries] = primary->get_pz();
+      gpt[n_primaries] = mom.Pt();
+      geta[n_primaries] = mom.Eta();
+      gphi[n_primaries] = mom.Phi();
+      ge[n_primaries] =  primary->get_e();
+      
+      int trkID = primary->get_track_id();
+      gtrkid[n_primaries] = trkID;
+
+      // G4Hits at different stations
+      if(g4hc_ecal){                                                                                                                                            
+	std::vector<PHG4Hit*> g4hits = FindG4HitsAtStation(trkID, g4hc_ecal);                                                                                              
+	nhits_ecal[n_primaries] =0;
+	for(int iecal=0; iecal<g4hits.size(); ++iecal) {     
+	  PHG4Hit* g4hit = g4hits[iecal];
+	  gx_ecal[n_primaries][iecal] = g4hit->get_x(0);
+          gy_ecal[n_primaries][iecal] = g4hit->get_y(0);
+          gz_ecal[n_primaries][iecal] = g4hit->get_z(0);
+          gpx_ecal[n_primaries][iecal] = g4hit->get_px(0)/1000.; 
+          gpy_ecal[n_primaries][iecal] = g4hit->get_py(0)/1000.; 
+          gpz_ecal[n_primaries][iecal] = g4hit->get_pz(0)/1000.; 
+	  gedep_ecal[n_primaries][iecal] = g4hit->get_edep();  
+	  ++nhits_ecal[n_primaries];
+	  if(iecal>=100){
+	    std::cout << "More than 100 hits in EMCAL " << std::endl;
+	    break;
+	  }
+	}
+      }
+
+      PHG4Hit* st1hit = FindG4HitAtStation(trkID, g4hc_d1x);
+      if(st1hit){
+	gx_st1[n_primaries] = st1hit->get_x(0);
+	gy_st1[n_primaries] = st1hit->get_y(0);
+	gz_st1[n_primaries] = st1hit->get_z(0);
+	gpx_st1[n_primaries] = st1hit->get_px(0)/1000.;
+	gpy_st1[n_primaries] = st1hit->get_py(0)/1000.;
+	gpz_st1[n_primaries] = st1hit->get_pz(0)/1000.;
+      }
+      PHG4Hit* st2hit = FindG4HitAtStation(trkID, g4hc_d2xp);
+      if(st2hit){
+	gx_st2[n_primaries] = st2hit->get_x(0);
+	gy_st2[n_primaries] = st2hit->get_y(0);
+        gz_st2[n_primaries] = st2hit->get_z(0);
+	gpx_st2[n_primaries] = st2hit->get_px(0)/1000.;
+	gpy_st2[n_primaries] = st2hit->get_py(0)/1000.;
+	gpz_st2[n_primaries] = st2hit->get_pz(0)/1000.;
+      }
+      PHG4Hit* st3hit = FindG4HitAtStation(trkID, g4hc_d3px);
+      if(!st3hit)
+	PHG4Hit* st3hit = FindG4HitAtStation(trkID, g4hc_d3mx);
+      if(st3hit){
+	gx_st3[n_primaries] = st3hit->get_x(0);
+	gy_st3[n_primaries] = st3hit->get_y(0);
+	gz_st3[n_primaries] = st3hit->get_z(0);
+	gpx_st3[n_primaries] = st3hit->get_px(0)/1000.;
+	gpy_st3[n_primaries] = st3hit->get_py(0)/1000.;
+	gpz_st3[n_primaries] = st3hit->get_pz(0)/1000.;
+      }
+
+      PHG4Hit* h1hit = FindG4HitAtStation(trkID,g4hc_h1t);
+      if(!h1hit)
+	PHG4Hit* h1hit = FindG4HitAtStation(trkID,g4hc_h1b);
+      if(h1hit){
+        gx_h1[n_primaries] = h1hit->get_x(0);
+        gy_h1[n_primaries] = h1hit->get_y(0);
+        gz_h1[n_primaries] = h1hit->get_z(0);
+        gpx_h1[n_primaries] = h1hit->get_px(0)/1000.;
+        gpy_h1[n_primaries] = h1hit->get_py(0)/1000.;
+        gpz_h1[n_primaries] = h1hit->get_pz(0)/1000.;
+      }
+      PHG4Hit* h2hit = FindG4HitAtStation(trkID,g4hc_h2t);
+      if(!h2hit)
+        PHG4Hit* h2hit = FindG4HitAtStation(trkID,g4hc_h2b);
+      if(h2hit){
+        gx_h2[n_primaries] = h2hit->get_x(0);
+        gy_h2[n_primaries] = h2hit->get_y(0);
+        gz_h2[n_primaries] = h2hit->get_z(0);
+        gpx_h2[n_primaries] = h2hit->get_px(0)/1000.;
+        gpy_h2[n_primaries] = h2hit->get_py(0)/1000.;
+        gpz_h2[n_primaries] = h2hit->get_pz(0)/1000.;
+      }
+      PHG4Hit* h3hit = FindG4HitAtStation(trkID,g4hc_h3t);
+      if(!h3hit)
+        PHG4Hit* h3hit = FindG4HitAtStation(trkID,g4hc_h3b);
+      if(h3hit){
+        gx_h3[n_primaries] = h3hit->get_x(0);
+        gy_h3[n_primaries] = h3hit->get_y(0);
+        gz_h3[n_primaries] = h3hit->get_z(0);
+        gpx_h3[n_primaries] = h3hit->get_px(0)/1000.;
+        gpy_h3[n_primaries] = h3hit->get_py(0)/1000.;
+        gpz_h3[n_primaries] = h3hit->get_pz(0)/1000.;
+      }
+      PHG4Hit* h4hit = FindG4HitAtStation(trkID,g4hc_h4t);
+      if(!h4hit)
+        PHG4Hit* h4hit = FindG4HitAtStation(trkID,g4hc_h4b);
+      if(h4hit){
+        gx_h4[n_primaries] = h4hit->get_x(0);
+        gy_h4[n_primaries] = h4hit->get_y(0);
+        gz_h4[n_primaries] = h4hit->get_z(0);
+        gpx_h4[n_primaries] = h4hit->get_px(0)/1000.;
+        gpy_h4[n_primaries] = h4hit->get_py(0)/1000.;
+        gpz_h4[n_primaries] = h4hit->get_pz(0)/1000.;
+      }
+      ++n_primaries;
+    } 
+   
+      
+  // get all hits for shower
+  //auto iter = shower->find_g4hit_id(ECAL_volume);
+  //for(auto iter1=shower->begin_g4hit_id().first; iter!=
+  //GetPrimaryParticleRange().first; iter!=_truth->GetPrimaryParticleRange().second; ++iter) {
+  // PHG4Shower::HitIdIter iter = shower->find_g4hit_id(ECAL_volume);
+  // if (iter != shower->end_g4hit_id()) {
+  //   std::cout << " no hits" << std::endl;
+  // }
+  // else{
+  //   for (std::set<PHG4HitDefs::keytype>::iterator jter = iter->second.begin();
+  //        jter != iter->second.end();
+  //        ++jter)
+  //     {
+  //       PHG4Hit* g4hit = ECAL_hits->findHit(*jter);
+  //       std::cout << "found hit " << g4hit->get_x(0) << " " << g4hit->get_y(0) << " " << g4hit->get_z(0) << std::endl;
+  //     }
+  // }
+  //for(auto iter2=shower->find_g4hit_id(ECAL_volume)->second.begin(); iter2!=shower->find_g4hit_id(ECAL_volume)->second.end(); ++ iter2) {
+  //  PHG4Hit* g4hit = ECAL_hits->findHit(*iter2);
+  //}
+
+          // PHG4HitContainer *H4Y_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H4Y2L");
+      // for(int det_id=43; det_id<44; ++det_id) {
+      // 	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
+      // 	if(iter != trkID_detID_ihit.end()) {
+      // 	  SQHit *hit = _hit_vector->at(iter->second);
+      // 	  if(hit and H4Y_hits) {
+      // 	    if(verbosity >= Fun4AllBase::VERBOSITY_A_LOT) {
+      // 	      LogDebug("h4y2lhit: " << iter->second);
+      // 	    }
+      // 	    PHG4Hit* g4hit =  H4Y_hits->findHit(hit->get_g4hit_id());
+      // 	    if (g4hit) {
+      // 	      gx_h4y2l[n_primaries]  = g4hit->get_x(0);
+      //         gy_h4y2l[n_primaries]  = g4hit->get_y(0);
+      //         gz_h4y2l[n_primaries]  = g4hit->get_z(0);
+      //         gpx_h4y2l[n_primaries] = g4hit->get_px(0)/1000.;
+      //         gpy_h4y2l[n_primaries] = g4hit->get_py(0)/1000.;
+      //         gpz_h4y2l[n_primaries] = g4hit->get_pz(0)/1000.;
+      // 	      int h4ybarID = hit->get_element_id();
+      // 	      gbarID_h4y[n_primaries] = -hit->get_element_id();
+      // 	      if (h4ybarID > 8) {
+      // 		gquad_h4y[n_primaries] = 8;
+      // 	      } else {
+      // 		gquad_h4y[n_primaries] = 10;
+      // 	      }
+      // 	      break;
+      // 	    }
+      // 	  }
+      // 	}
+      // }
+      
+      // H4Y_hits = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H4Y2R");
+      // for(int det_id=44; det_id<45; ++det_id) {
+      // 	auto iter = trkID_detID_ihit.find(std::make_tuple(trkID, det_id));
+      // 	if(iter != trkID_detID_ihit.end()) {
+      // 	  SQHit *hit = _hit_vector->at(iter->second);
+      // 	  if(hit and H4Y_hits) {
+      // 	    PHG4Hit* g4hit =  H4Y_hits->findHit(hit->get_g4hit_id());
+      // 	    if (g4hit) {
+      // 	      gx_h4y2r[n_primaries]  = g4hit->get_x(0);
+      //         gy_h4y2r[n_primaries]  = g4hit->get_y(0);
+      //         gz_h4y2r[n_primaries]  = g4hit->get_z(0);
+      //         gpx_h4y2r[n_primaries] = g4hit->get_px(0)/1000.;
+      //         gpy_h4y2r[n_primaries] = g4hit->get_py(0)/1000.;
+      //         gpz_h4y2r[n_primaries] = g4hit->get_pz(0)/1000.;
+      // 	      int h4ybarID = hit->get_element_id();
+      // 	      gbarID_h4y[n_primaries] = hit->get_element_id();
+      // 	      if (h4ybarID > 8) {
+      // 		gquad_h4y[n_primaries] = 9;
+      // 	      } else {
+      // 		gquad_h4y[n_primaries] = 11;
+      // 	      }
+      // 	      break;
+      // 	    }
+      // 	  }
+      // 	}
+      // }
+      // if(verbosity>=2) std::cout << "H4Y Truth info done." << std::endl;	
   }
+  
+  _tout_truth->Fill();
+
   if(Verbosity() >= Fun4AllBase::VERBOSITY_A_LOT)
     std::cout << "Leaving SimEval::TruthEval: " << _event << std::endl;
   
@@ -692,128 +417,119 @@ int SimEval::InitEvalTree() {
   _tout_truth = new TTree("Truth", "Truth Eval");
   _tout_truth->Branch("eventID",       &event_id,        "eventID/I");
 
-  _tout_truth->Branch("nHits",         &n_hits,          "nHits/I");
-  _tout_truth->Branch("hit_detID",     hit_detid,        "hit_detID[nHits]/I");
-  _tout_truth->Branch("hit_elmID",     hit_elmid,        "hit_elmID[nHits]/I");
-  _tout_truth->Branch("hit_driftdis",  hit_driftdis,     "hit_driftdis[nHits]/F");
-  _tout_truth->Branch("hit_pos",       hit_pos,          "hit_pos[nHits]/F");
-  _tout_truth->Branch("hit_detZ",      hit_detz,         "hit_detZ[nHits]/F");
-  _tout_truth->Branch("hit_edep",      hit_edep,         "hit_edep[nHits]/F");
-  _tout_truth->Branch("hit_truthx",    hit_truthx,       "hit_truthx[nHits]/F");
-  _tout_truth->Branch("hit_truthy",    hit_truthy,       "hit_truthy[nHits]/F");
-  _tout_truth->Branch("hit_truthz",    hit_truthz,       "hit_truthz[nHits]/F");
-  _tout_truth->Branch("hit_truthpos",  hit_truthpos,     "hit_truthpos[nHits]/F");
+  _tout_truth->Branch("n_hits",        &n_hits,          "n_hits/I");
+  _tout_truth->Branch("hit_detID",     hit_detid,        "hit_detID[n_hits]/I");
+  _tout_truth->Branch("hit_elmID",     hit_elmid,        "hit_elmID[n_hits]/I");
+  _tout_truth->Branch("hit_driftdis",  hit_driftdis,     "hit_driftdis[n_hits]/F");
+  _tout_truth->Branch("hit_pos",       hit_pos,          "hit_pos[n_hits]/F");
+  _tout_truth->Branch("hit_detZ",      hit_detz,         "hit_detZ[n_hits]/F");
+  _tout_truth->Branch("hit_edep",      hit_edep,         "hit_edep[n_hits]/F");
+  _tout_truth->Branch("hit_truthx",    hit_truthx,       "hit_truthx[n_hits]/F");
+  _tout_truth->Branch("hit_truthy",    hit_truthy,       "hit_truthy[n_hits]/F");
+  _tout_truth->Branch("hit_truthz",    hit_truthz,       "hit_truthz[n_hits]/F");
+  _tout_truth->Branch("hit_truthpos",  hit_truthpos,     "hit_truthpos[n_hits]/F");
 
-  _tout_truth->Branch("n_tracks",      &n_tracks,           "n_tracks/I");
-  _tout_truth->Branch("gtrkid",        gtrkid,              "gtrkid[n_tracks]/I");
-  _tout_truth->Branch("gpid",          gpid,                "gpid[n_tracks]/I");
-  _tout_truth->Branch("gvx",           gvx,                 "gvx[n_tracks]/F");
-  _tout_truth->Branch("gvy",           gvy,                 "gvy[n_tracks]/F");
-  _tout_truth->Branch("gvz",           gvz,                 "gvz[n_tracks]/F");
-  _tout_truth->Branch("gpx",           gpx,                 "gpx[n_tracks]/F");
-  _tout_truth->Branch("gpy",           gpy,                 "gpy[n_tracks]/F");
-  _tout_truth->Branch("gpz",           gpz,                 "gpz[n_tracks]/F");
-  _tout_truth->Branch("gpt",           gpt,                 "gpt[n_tracks]/F");
-  _tout_truth->Branch("geta",          geta,                "geta[n_tracks]/F");
-  _tout_truth->Branch("gphi",          gphi,                "gphi[n_tracks]/F");
-  _tout_truth->Branch("ge",            ge,                  "ge[n_tracks]/F");
+  _tout_truth->Branch("n_showers",     &n_showers,       "n_showers/I");
+  _tout_truth->Branch("sx_ecal",       &sx_ecal,         "sx_ecal[n_showers]/F");
+  _tout_truth->Branch("sy_ecal",       &sy_ecal,         "sy_ecal[n_showers]/F");
+  _tout_truth->Branch("sz_ecal",       &sz_ecal,         "sz_ecal[n_showers]/F");
+  _tout_truth->Branch("sedep_ecal",    &sedep_ecal,      "sedep_ecal[n_showers]/F");
 
-  _tout_truth->Branch("gx_ecal",       gx_ecal,             "gx_ecal[n_tracks]/F");
-  _tout_truth->Branch("gy_ecal",       gy_ecal,             "gy_ecal[n_tracks]/F");
-  _tout_truth->Branch("gz_ecal",       gz_ecal,             "gz_ecal[n_tracks]/F");
-  _tout_truth->Branch("gpx_ecal",      gpx_ecal,            "gpx_ecal[n_tracks]/F");
-  _tout_truth->Branch("gpy_ecal",      gpy_ecal,            "gpy_ecal[n_tracks]/F");
-  _tout_truth->Branch("gpz_ecal",      gpz_ecal,            "gpz_ecal[n_tracks]/F");
-  _tout_truth->Branch("gedep_ecal",    gedep_ecal,          "gedep_ecal[n_tracks]/F");
+  _tout_truth->Branch("n_primaries",   &n_primaries,        "n_primaries/I");
+  _tout_truth->Branch("gtrkid",        gtrkid,              "gtrkid[n_primaries]/I");
+  _tout_truth->Branch("gpid",          gpid,                "gpid[n_primaries]/I");
+  _tout_truth->Branch("gvx",           gvx,                 "gvx[n_primaries]/F");
+  _tout_truth->Branch("gvy",           gvy,                 "gvy[n_primaries]/F");
+  _tout_truth->Branch("gvz",           gvz,                 "gvz[n_primaries]/F");
+  _tout_truth->Branch("gpx",           gpx,                 "gpx[n_primaries]/F");
+  _tout_truth->Branch("gpy",           gpy,                 "gpy[n_primaries]/F");
+  _tout_truth->Branch("gpz",           gpz,                 "gpz[n_primaries]/F");
+  _tout_truth->Branch("gpt",           gpt,                 "gpt[n_primaries]/F");
+  _tout_truth->Branch("geta",          geta,                "geta[n_primaries]/F");
+  _tout_truth->Branch("gphi",          gphi,                "gphi[n_primaries]/F");
+  _tout_truth->Branch("ge",            ge,                  "ge[n_primaries]/F");
 
-  _tout_truth->Branch("gx_st1",        gx_st1,              "gx_st1[n_tracks]/F");
-  _tout_truth->Branch("gy_st1",        gy_st1,              "gy_st1[n_tracks]/F");
-  _tout_truth->Branch("gz_st1",        gz_st1,              "gz_st1[n_tracks]/F");
-  _tout_truth->Branch("gpx_st1",       gpx_st1,             "gpx_st1[n_tracks]/F");
-  _tout_truth->Branch("gpy_st1",       gpy_st1,             "gpy_st1[n_tracks]/F");
-  _tout_truth->Branch("gpz_st1",       gpz_st1,             "gpz_st1[n_tracks]/F");
-  _tout_truth->Branch("gedep_st1",     gedep_st1,           "gedep_st1[n_tracks]/F");
+  _tout_truth->Branch("nhits_ecal",    nhits_ecal,          "nhits_ecal[n_primaries]/I");
+  _tout_truth->Branch("gx_ecal",       gx_ecal,             "gx_ecal[n_primaries][100]/F"); // not sure how to make this with the right size
+  _tout_truth->Branch("gy_ecal",       gy_ecal,             "gy_ecal[n_primaries][100]/F");
+  _tout_truth->Branch("gz_ecal",       gz_ecal,             "gz_ecal[n_primaries][100]/F");
+  _tout_truth->Branch("gpx_ecal",      gpx_ecal,            "gpx_ecal[n_primaries][100]/F");
+  _tout_truth->Branch("gpy_ecal",      gpy_ecal,            "gpy_ecal[n_primaries][100]/F");
+  _tout_truth->Branch("gpz_ecal",      gpz_ecal,            "gpz_ecal[n_primaries][100]/F");
+  _tout_truth->Branch("gedep_ecal",    gedep_ecal,          "gedep_ecal[n_primaries][100]/F");
 
-  _tout_truth->Branch("gx_st2",        gx_st2,              "gx_st2[n_tracks]/F");
-  _tout_truth->Branch("gy_st2",        gy_st2,              "gy_st2[n_tracks]/F");
-  _tout_truth->Branch("gz_st2",        gz_st2,              "gz_st2[n_tracks]/F");
-  _tout_truth->Branch("gpx_st2",       gpx_st2,             "gpx_st2[n_tracks]/F");
-  _tout_truth->Branch("gpy_st2",       gpy_st2,             "gpy_st2[n_tracks]/F");
-  _tout_truth->Branch("gpz_st2",       gpz_st2,             "gpz_st2[n_tracks]/F");
-  _tout_truth->Branch("gedep_st2",     gedep_st2,           "gedep_st2[n_tracks]/F");
+  _tout_truth->Branch("gx_st1",        gx_st1,              "gx_st1[n_primaries]/F");
+  _tout_truth->Branch("gy_st1",        gy_st1,              "gy_st1[n_primaries]/F");
+  _tout_truth->Branch("gz_st1",        gz_st1,              "gz_st1[n_primaries]/F");
+  _tout_truth->Branch("gpx_st1",       gpx_st1,             "gpx_st1[n_primaries]/F");
+  _tout_truth->Branch("gpy_st1",       gpy_st1,             "gpy_st1[n_primaries]/F");
+  _tout_truth->Branch("gpz_st1",       gpz_st1,             "gpz_st1[n_primaries]/F");
+  _tout_truth->Branch("gx_st2",        gx_st2,              "gx_st2[n_primaries]/F");
+  _tout_truth->Branch("gy_st2",        gy_st2,              "gy_st2[n_primaries]/F");
+  _tout_truth->Branch("gz_st2",        gz_st2,              "gz_st2[n_primaries]/F");
+  _tout_truth->Branch("gpx_st2",       gpx_st2,             "gpx_st2[n_primaries]/F");
+  _tout_truth->Branch("gpy_st2",       gpy_st2,             "gpy_st2[n_primaries]/F");
+  _tout_truth->Branch("gpz_st2",       gpz_st2,             "gpz_st2[n_primaries]/F");
+  _tout_truth->Branch("gx_st3",        gx_st3,              "gx_st3[n_primaries]/F");
+  _tout_truth->Branch("gy_st3",        gy_st3,              "gy_st3[n_primaries]/F");
+  _tout_truth->Branch("gz_st3",        gz_st3,              "gz_st3[n_primaries]/F");
+  _tout_truth->Branch("gpx_st3",       gpx_st3,             "gpx_st3[n_primaries]/F");
+  _tout_truth->Branch("gpy_st3",       gpy_st3,             "gpy_st3[n_primaries]/F");
+  _tout_truth->Branch("gpz_st3",       gpz_st3,             "gpz_st3[n_primaries]/F");
 
-  _tout_truth->Branch("gx_st3",        gx_st3,              "gx_st3[n_tracks]/F");
-  _tout_truth->Branch("gy_st3",        gy_st3,              "gy_st3[n_tracks]/F");
-  _tout_truth->Branch("gz_st3",        gz_st3,              "gz_st3[n_tracks]/F");
-  _tout_truth->Branch("gpx_st3",       gpx_st3,             "gpx_st3[n_tracks]/F");
-  _tout_truth->Branch("gpy_st3",       gpy_st3,             "gpy_st3[n_tracks]/F");
-  _tout_truth->Branch("gpz_st3",       gpz_st3,             "gpz_st3[n_tracks]/F");
-  _tout_truth->Branch("gedep_st3",     gedep_st3,           "gedep_st3[n_tracks]/F");
+  _tout_truth->Branch("gx_h1",         gx_h1,               "gx_h1[n_primaries]/F");
+  _tout_truth->Branch("gy_h1",         gy_h1,               "gy_h1[n_primaries]/F");
+  _tout_truth->Branch("gz_h1",         gz_h1,               "gz_h1[n_primaries]/F");
+  _tout_truth->Branch("gpx_h1",        gpx_h1,              "gpx_h1[n_primaries]/F");
+  _tout_truth->Branch("gpy_h1",        gpy_h1,              "gpy_h1[n_primaries]/F");
+  _tout_truth->Branch("gpz_h1",        gpz_h1,              "gpz_h1[n_primaries]/F");
+  _tout_truth->Branch("gx_h2",         gx_h2,               "gx_h2[n_primaries]/F");
+  _tout_truth->Branch("gy_h2",         gy_h2,               "gy_h2[n_primaries]/F");
+  _tout_truth->Branch("gz_h2",         gz_h2,               "gz_h2[n_primaries]/F");
+  _tout_truth->Branch("gpx_h2",        gpx_h2,              "gpx_h2[n_primaries]/F");
+  _tout_truth->Branch("gpy_h2",        gpy_h2,              "gpy_h2[n_primaries]/F");
+  _tout_truth->Branch("gpz_h2",        gpz_h2,              "gpz_h2[n_primaries]/F");
 
-  _tout_truth->Branch("gx_h1",         gx_h1,               "gx_h1[n_tracks]/F");
-  _tout_truth->Branch("gy_h1",         gy_h1,               "gy_h1[n_tracks]/F");
-  _tout_truth->Branch("gz_h1",         gz_h1,               "gz_h1[n_tracks]/F");
-  _tout_truth->Branch("gpx_h1",        gpx_h1,              "gpx_h1[n_tracks]/F");
-  _tout_truth->Branch("gpy_h1",        gpy_h1,              "gpy_h1[n_tracks]/F");
-  _tout_truth->Branch("gpz_h1",        gpz_h1,              "gpz_h1[n_tracks]/F");
-  _tout_truth->Branch("gx_h2",         gx_h2,               "gx_h2[n_tracks]/F");
-  _tout_truth->Branch("gy_h2",         gy_h2,               "gy_h2[n_tracks]/F");
-  _tout_truth->Branch("gz_h2",         gz_h2,               "gz_h2[n_tracks]/F");
-  _tout_truth->Branch("gpx_h2",        gpx_h2,              "gpx_h2[n_tracks]/F");
-  _tout_truth->Branch("gpy_h2",        gpy_h2,              "gpy_h2[n_tracks]/F");
-  _tout_truth->Branch("gpz_h2",        gpz_h2,              "gpz_h2[n_tracks]/F");
+  _tout_truth->Branch("gx_p1",         gx_p1,               "gx_p1[n_primaries]/F");
+  _tout_truth->Branch("gy_p1",         gy_p1,               "gy_p1[n_primaries]/F");
+  _tout_truth->Branch("gz_p1",         gz_p1,               "gz_p1[n_primaries]/F");
+  _tout_truth->Branch("gpx_p1",        gpx_p1,              "gpx_p1[n_primaries]/F");
+  _tout_truth->Branch("gpy_p1",        gpy_p1,              "gpy_p1[n_primaries]/F");
+  _tout_truth->Branch("gpz_p1",        gpz_p1,              "gpz_p1[n_primaries]/F");
 
-  _tout_truth->Branch("gx_p1",         gx_p1,               "gx_p1[n_tracks]/F");
-  _tout_truth->Branch("gy_p1",         gy_p1,               "gy_p1[n_tracks]/F");
-  _tout_truth->Branch("gz_p1",         gz_p1,               "gz_p1[n_tracks]/F");
-  _tout_truth->Branch("gpx_p1",        gpx_p1,              "gpx_p1[n_tracks]/F");
-  _tout_truth->Branch("gpy_p1",        gpy_p1,              "gpy_p1[n_tracks]/F");
-  _tout_truth->Branch("gpz_p1",        gpz_p1,              "gpz_p1[n_tracks]/F");
-  _tout_truth->Branch("gedep_p1",      gedep_p1,            "gedep_p1[n_tracks]/F");
+  _tout_truth->Branch("gx_h4",         gx_h4,              "gx_h4[n_primaries]/F");
+  _tout_truth->Branch("gy_h4",         gy_h4,              "gy_h4[n_primaries]/F");
+  _tout_truth->Branch("gz_h4",         gz_h4,              "gz_h4[n_primaries]/F");
+  _tout_truth->Branch("gpx_h4",        gpx_h4,             "gpx_h4[n_primaries]/F");
+  _tout_truth->Branch("gpy_h4",        gpy_h4,             "gpy_h4[n_primaries]/F");
+  _tout_truth->Branch("gpz_h4",        gpz_h4,             "gpz_h4[n_primaries]/F");
 
-  _tout_truth->Branch("gx_p2",         gx_p2,               "gx_p2[n_tracks]/F");
-  _tout_truth->Branch("gy_p2",         gy_p2,               "gy_p2[n_tracks]/F");
-  _tout_truth->Branch("gz_p2",         gz_p2,               "gz_p2[n_tracks]/F");
-  _tout_truth->Branch("gpx_p2",        gpx_p2,              "gpx_p2[n_tracks]/F");
-  _tout_truth->Branch("gpy_p2",        gpy_p2,              "gpy_p2[n_tracks]/F");
-  _tout_truth->Branch("gpz_p2",        gpz_p2,              "gpz_p2[n_tracks]/F");
-  _tout_truth->Branch("gedep_p2",      gedep_p2,            "gedep_p2[n_tracks]/F");
+  _tout_truth->Branch("gx_h4y2l",      gx_h4y2l,            "gx_h4y2l[n_primaries]/F");
+  _tout_truth->Branch("gy_h4y2l",      gy_h4y2l,            "gy_h4y2l[n_primaries]/F");
+  _tout_truth->Branch("gz_h4y2l",      gz_h4y2l,            "gz_h4y2l[n_primaries]/F");
+  _tout_truth->Branch("gpx_h4y2l",     gpx_h4y2l,           "gpx_h4y2l[n_primaries]/F");
+  _tout_truth->Branch("gpy_h4y2l",     gpy_h4y2l,           "gpy_h4y2l[n_primaries]/F");
+  _tout_truth->Branch("gpz_h4y2l",     gpz_h4y2l,           "gpz_h4y2l[n_primaries]/F");
+  _tout_truth->Branch("gx_h4y2r",      gx_h4y2r,            "gx_h4y2r[n_primaries]/F");
+  _tout_truth->Branch("gy_h4y2r",      gy_h4y2r,            "gy_h4y2r[n_primaries]/F");
+  _tout_truth->Branch("gz_h4y2r",      gz_h4y2r,            "gz_h4y2r[n_primaries]/F");
+  _tout_truth->Branch("gpx_h4y2r",     gpx_h4y2r,           "gpx_h4y2r[n_primaries]/F");
+  _tout_truth->Branch("gpy_h4y2r",     gpy_h4y2r,           "gpy_h4y2r[n_primaries]/F");
+  _tout_truth->Branch("gpz_h4y2r",     gpz_h4y2r,           "gpz_h4y2r[n_primaries]/F");
 
-  _tout_truth->Branch("gx_h4y2l",      gx_h4y2l,            "gx_h4y2l[n_tracks]/F");
-  _tout_truth->Branch("gy_h4y2l",      gy_h4y2l,            "gy_h4y2l[n_tracks]/F");
-  _tout_truth->Branch("gz_h4y2l",      gz_h4y2l,            "gz_h4y2l[n_tracks]/F");
-  _tout_truth->Branch("gpx_h4y2l",     gpx_h4y2l,           "gpx_h4y2l[n_tracks]/F");
-  _tout_truth->Branch("gpy_h4y2l",     gpy_h4y2l,           "gpy_h4y2l[n_tracks]/F");
-  _tout_truth->Branch("gpz_h4y2l",     gpz_h4y2l,           "gpz_h4y2l[n_tracks]/F");
-  _tout_truth->Branch("gx_h4y2r",      gx_h4y2r,            "gx_h4y2r[n_tracks]/F");
-  _tout_truth->Branch("gy_h4y2r",      gy_h4y2r,            "gy_h4y2r[n_tracks]/F");
-  _tout_truth->Branch("gz_h4y2r",      gz_h4y2r,            "gz_h4y2r[n_tracks]/F");
-  _tout_truth->Branch("gpx_h4y2r",     gpx_h4y2r,           "gpx_h4y2r[n_tracks]/F");
-  _tout_truth->Branch("gpy_h4y2r",     gpy_h4y2r,           "gpy_h4y2r[n_tracks]/F");
-  _tout_truth->Branch("gpz_h4y2r",     gpz_h4y2r,           "gpz_h4y2r[n_tracks]/F");
+  _tout_truth->Branch("gx_dp1",        gx_dp1,              "gx_dp1[n_primaries]/F");
+  _tout_truth->Branch("gy_dp1",        gy_dp1,              "gy_dp1[n_primaries]/F");
+  _tout_truth->Branch("gz_dp1",        gz_dp1,              "gz_dp1[n_primaries]/F");
+  _tout_truth->Branch("gpx_dp1",       gpx_dp1,             "gpx_dp1[n_primaries]/F");
+  _tout_truth->Branch("gpy_dp1",       gpy_dp1,             "gpy_dp1[n_primaries]/F");
+  _tout_truth->Branch("gpz_dp1",       gpz_dp1,             "gpz_dp1[n_primaries]/F");
 
-  _tout_truth->Branch("gx_dp1",        gx_dp1,              "gx_dp1[n_tracks]/F");
-  _tout_truth->Branch("gy_dp1",        gy_dp1,              "gy_dp1[n_tracks]/F");
-  _tout_truth->Branch("gz_dp1",        gz_dp1,              "gz_dp1[n_tracks]/F");
-  _tout_truth->Branch("gpx_dp1",       gpx_dp1,             "gpx_dp1[n_tracks]/F");
-  _tout_truth->Branch("gpy_dp1",       gpy_dp1,             "gpy_dp1[n_tracks]/F");
-  _tout_truth->Branch("gpz_dp1",       gpz_dp1,             "gpz_dp1[n_tracks]/F");
-  _tout_truth->Branch("gx_dp2",        gx_dp2,              "gx_dp2[n_tracks]/F");
-  _tout_truth->Branch("gy_dp2",        gy_dp2,              "gy_dp2[n_tracks]/F");
-  _tout_truth->Branch("gz_dp2",        gz_dp2,              "gz_dp2[n_tracks]/F");
-  _tout_truth->Branch("gpx_dp2",       gpx_dp2,             "gpx_dp2[n_tracks]/F");
-  _tout_truth->Branch("gpy_dp2",       gpy_dp2,             "gpy_dp2[n_tracks]/F");
-  _tout_truth->Branch("gpz_dp2",       gpz_dp2,             "gpz_dp2[n_tracks]/F");
-
-  _tout_truth->Branch("gbarID_h1",     gbarID_h1,           "gbarID_h1[n_tracks]/I");
-  _tout_truth->Branch("gbarID_h2",     gbarID_h2,           "gbarID_h2[n_tracks]/I");
-  _tout_truth->Branch("gbarID_h4y",    gbarID_h4y,          "gbarID_h4y[n_tracks]/I");
-  _tout_truth->Branch("gbarID_dp1",    gbarID_dp1,          "gbarID_dp1[n_tracks]/I");
-  _tout_truth->Branch("gbarID_dp2",    gbarID_dp2,          "gbarID_dp2[n_tracks]/I");
-
-  _tout_truth->Branch("gquad_h4y",     gquad_h4y,           "gquad_h4y[n_tracks]/I");
-  _tout_truth->Branch("gquad_dp1",     gquad_dp1,           "gquad_dp1[n_tracks]/I");
-  _tout_truth->Branch("gquad_dp2",     gquad_dp2,           "gquad_dp2[n_tracks]/I");
+  _tout_truth->Branch("gx_dp2",        gx_dp2,              "gx_dp2[n_primaries]/F");
+  _tout_truth->Branch("gy_dp2",        gy_dp2,              "gy_dp2[n_primaries]/F");
+  _tout_truth->Branch("gz_dp2",        gz_dp2,              "gz_dp2[n_primaries]/F");
+  _tout_truth->Branch("gpx_dp2",       gpx_dp2,             "gpx_dp2[n_primaries]/F");
+  _tout_truth->Branch("gpy_dp2",       gpy_dp2,             "gpy_dp2[n_primaries]/F");
+  _tout_truth->Branch("gpz_dp2",       gpz_dp2,             "gpz_dp2[n_primaries]/F");
 
   return 0;
 }
@@ -836,7 +552,14 @@ int SimEval::ResetEvalVars() {
     hit_truthpos[i]     = std::numeric_limits<float>::max();
   }
 
-  n_tracks = 0;
+  n_showers =0;
+  for(int i=0; i<1000; ++i) {                                                                                                                                                           sx_ecal[i]          = std::numeric_limits<float>::max();
+    sy_ecal[i]          = std::numeric_limits<float>::max();
+    sz_ecal[i]          = std::numeric_limits<float>::max();
+    sedep_ecal[i]       = std::numeric_limits<float>::max();
+  }
+
+  n_primaries = 0;
   for(int i=0; i<1000; ++i) {
     gtrkid[i]     = std::numeric_limits<int>::max();
     gpid[i]       = std::numeric_limits<int>::max();
@@ -851,13 +574,16 @@ int SimEval::ResetEvalVars() {
     gphi[i]       = std::numeric_limits<float>::max();
     ge[i]         = std::numeric_limits<float>::max();
 
-    gx_ecal[i]    = std::numeric_limits<float>::max();
-    gy_ecal[i]    = std::numeric_limits<float>::max();
-    gz_ecal[i]    = std::numeric_limits<float>::max();
-    gpx_ecal[i]   = std::numeric_limits<float>::max();
-    gpy_ecal[i]   = std::numeric_limits<float>::max();
-    gpz_ecal[i]   = std::numeric_limits<float>::max();
-    gedep_ecal[i] = std::numeric_limits<float>::max();
+    nhits_ecal[i] = 0;
+    for(int j=0; j<100; ++j) {
+      gx_ecal[i][j]    = std::numeric_limits<int>::max();
+      gy_ecal[i][j]    = std::numeric_limits<int>::max();
+      gz_ecal[i][j]    = std::numeric_limits<int>::max();
+      gpx_ecal[i][j]   = std::numeric_limits<int>::max();
+      gpy_ecal[i][j]   = std::numeric_limits<int>::max();
+      gpz_ecal[i][j]   = std::numeric_limits<int>::max();
+      gedep_ecal[i][j] = std::numeric_limits<int>::max();
+    }
 
     gx_st1[i]     = std::numeric_limits<float>::max();
     gy_st1[i]     = std::numeric_limits<float>::max();
@@ -865,21 +591,18 @@ int SimEval::ResetEvalVars() {
     gpx_st1[i]    = std::numeric_limits<float>::max();
     gpy_st1[i]    = std::numeric_limits<float>::max();
     gpz_st1[i]    = std::numeric_limits<float>::max();
-    gedep_st1[i]  = std::numeric_limits<float>::max();
     gx_st2[i]     = std::numeric_limits<float>::max();
     gy_st2[i]     = std::numeric_limits<float>::max();
     gz_st2[i]     = std::numeric_limits<float>::max();
     gpx_st2[i]    = std::numeric_limits<float>::max();
     gpy_st2[i]    = std::numeric_limits<float>::max();
     gpz_st2[i]    = std::numeric_limits<float>::max();
-    gedep_st2[i]  = std::numeric_limits<float>::max();
     gx_st3[i]     = std::numeric_limits<float>::max();
     gy_st3[i]     = std::numeric_limits<float>::max();
     gz_st3[i]     = std::numeric_limits<float>::max();
     gpx_st3[i]    = std::numeric_limits<float>::max();
     gpy_st3[i]    = std::numeric_limits<float>::max();
     gpz_st3[i]    = std::numeric_limits<float>::max();
-    gedep_st3[i]  = std::numeric_limits<float>::max();
 
     gx_h1[i]      = std::numeric_limits<float>::max();
     gy_h1[i]      = std::numeric_limits<float>::max();
@@ -900,14 +623,6 @@ int SimEval::ResetEvalVars() {
     gpx_p1[i]     = std::numeric_limits<float>::max();
     gpy_p1[i]     = std::numeric_limits<float>::max();
     gpz_p1[i]     = std::numeric_limits<float>::max();
-    gedep_p1[i]   = std::numeric_limits<float>::max();
-    gx_p2[i]      = std::numeric_limits<float>::max();
-    gy_p2[i]      = std::numeric_limits<float>::max();
-    gz_p2[i]      = std::numeric_limits<float>::max();
-    gpx_p2[i]     = std::numeric_limits<float>::max();
-    gpy_p2[i]     = std::numeric_limits<float>::max();
-    gpz_p2[i]     = std::numeric_limits<float>::max();
-    gedep_p2[i]   = std::numeric_limits<float>::max();
 
     gx_dp1[i]     = std::numeric_limits<float>::max();
     gy_dp1[i]     = std::numeric_limits<float>::max();
@@ -935,15 +650,6 @@ int SimEval::ResetEvalVars() {
     gpy_h4y2r[i]     = std::numeric_limits<float>::max();
     gpz_h4y2r[i]     = std::numeric_limits<float>::max();
 
-    gbarID_h1[i]  = std::numeric_limits<float>::max();
-    gbarID_h2[i]  = std::numeric_limits<float>::max();
-    gbarID_h4y[i] = std::numeric_limits<float>::max();
-    gbarID_dp1[i] = std::numeric_limits<float>::max();
-    gbarID_dp2[i] = std::numeric_limits<float>::max();
-
-    gquad_dp1[i]  = std::numeric_limits<float>::max();
-    gquad_dp2[i]  = std::numeric_limits<float>::max();
-    gquad_h4y[i]  = std::numeric_limits<float>::max();
   }
 
   return 0;
@@ -953,13 +659,13 @@ int SimEval::GetNodes(PHCompositeNode* topNode) {
 
   _event_header = findNode::getClass<SQEvent>(topNode, "SQEvent");
   if (!_event_header) {
-    LogError("!_event_header");
+    cout << "!_event_header" << endl;
   }
 
   if(_hit_container_type.find("Map") != std::string::npos) {
     _hit_map = findNode::getClass<SQHitMap>(topNode, "SQHitMap");
     if (!_hit_map) {
-      LogError("!_hit_map");
+      cout << "!_hit_map" << endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
   }
@@ -967,23 +673,67 @@ int SimEval::GetNodes(PHCompositeNode* topNode) {
   if(_hit_container_type.find("Vector") != std::string::npos) {
     _hit_vector = findNode::getClass<SQHitVector>(topNode, "SQHitVector");
     if (!_hit_vector) {
-      LogError("!_hit_vector");
+      cout << "!_hit_vector" << endl;
       return Fun4AllReturnCodes::ABORTEVENT;
     }
   }
 
   _truth = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
   if (!_truth) {
-    LogError("!_truth");
+    cout << "!_truth" << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  // Drift chambers
+  g4hc_d1x  = findNode::getClass<PHG4HitContainer      >(topNode, "G4HIT_D1X");
+  g4hc_d2xp = findNode::getClass<PHG4HitContainer      >(topNode, "G4HIT_D2Xp");
+  g4hc_d3px = findNode::getClass<PHG4HitContainer      >(topNode, "G4HIT_D3pXp");
+  g4hc_d3mx = findNode::getClass<PHG4HitContainer      >(topNode, "G4HIT_D3mXp");
+  if (! g4hc_d1x) g4hc_d1x = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D0X");
+
+  if ( !g4hc_d1x || !g4hc_d3px || !g4hc_d3mx) {
+    cout << "Failed at getting nodes dc "<< endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  // Hodoscopes
+  g4hc_h1t  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H1T");
+  g4hc_h1b  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H1B");
+  g4hc_h2t  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H2T");
+  g4hc_h2b  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H2B");
+  g4hc_h3t  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H3T");
+  g4hc_h3b  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H3B");
+  g4hc_h4t  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H4T");
+  g4hc_h4b  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H4B");
+  //G4HIT_H4Y2L
+  //G4HIT_H4Y2R
+  if (!g4hc_h1t || !g4hc_h1b || !g4hc_h2t || !g4hc_h2b ||
+      !g4hc_h3t || !g4hc_h3b || !g4hc_h4t || !g4hc_h4b   ) {
+    cout << "Failed at getting nodes hodos" << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  // Prop tubes 
+  g4hc_p1y1  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P1Y1");
+  g4hc_p1y2  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P1Y2");
+  g4hc_p1x1  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P1X1");
+  g4hc_p1x2  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P1X2");
+  g4hc_p2x1  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P2X1");
+  g4hc_p2x2  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P2X2");
+  g4hc_p2y1  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P2Y1");
+  g4hc_p2y2  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P2Y2");
+  if (!g4hc_p1y1 || !g4hc_p1y2 || !g4hc_p1x1 || !g4hc_p1x2 ||
+      !g4hc_p2x1 || !g4hc_p2x2 || !g4hc_p2y1 || !g4hc_p2y2   ) {
+    cout << "Failed at getting nodes prop" << endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  // Ecal
+  g4hc_ecal  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_EMCal");
+  if (!g4hc_ecal) {
+    cout << "Failed at getting nodes ecal " << endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
 }
-
-
-
-
-
-
-
