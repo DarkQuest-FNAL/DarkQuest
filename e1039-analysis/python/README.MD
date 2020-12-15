@@ -5,7 +5,7 @@ Most of them are standalone and just take pre-processed simulation files.
 Input files for different masses and production modes (for 5m displacement), w emcal info:
 ```
 ssh -KXY cmantill@spinquestgpvm01.fnal.gov
-/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits/macro/output_electrons_emcal/*.root
+/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits/macro/simeval_electrons_emcal/*.root
 ```
 
 For most of these notebooks, we only use one data file for Brem/Eta, i.e. one mass point.
