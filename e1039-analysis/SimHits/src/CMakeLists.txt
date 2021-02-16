@@ -1,6 +1,6 @@
 # Setup the project
 cmake_minimum_required(VERSION 2.6 FATAL_ERROR)
-project(sim_eval CXX C)
+project(sim_ana CXX C)
 
 # ROOT dict generation
 file(GLOB dicts "")
@@ -29,12 +29,12 @@ execute_process(COMMAND root-config --libs   OUTPUT_VARIABLE ROOT_LINK    OUTPUT
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x ${ROOT_CFLAGS}")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -lphool -lg4testbench")
-add_library(sim_eval SHARED ${sources} ${dicts})
-target_link_libraries(sim_eval -lgeom_svc -linterface_main -lfun4all -lphool)
+add_library(sim_ana SHARED ${sources} ${dicts})
+target_link_libraries(sim_ana -lgeom_svc -linterface_main -lfun4all -lphool)
 
 message(${CMAKE_PROJECT_NAME} " will be installed to " ${CMAKE_INSTALL_PREFIX})
 
-install(TARGETS sim_eval DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+install(TARGETS sim_ana DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 file(GLOB dist_headers ${PROJECT_SOURCE_DIR}/*.h)
 file(GLOB non_dist_headers ${PROJECT_SOURCE_DIR}/*LinkDef.h)
@@ -46,5 +46,5 @@ execute_process(COMMAND root-config --version OUTPUT_VARIABLE ROOT_VER)
 string(SUBSTRING ${ROOT_VER} 0 1 ROOT_VER)
 if (ROOT_VER GREATER 5)
    add_custom_target(install_pcm ALL COMMAND mkdir -p ${CMAKE_INSTALL_PREFIX}/lib COMMAND cp -up *_rdict.pcm ${CMAKE_INSTALL_PREFIX}/lib)
-   add_dependencies(install_pcm sim_eval)
+   add_dependencies(install_pcm sim_ana)
 endif()

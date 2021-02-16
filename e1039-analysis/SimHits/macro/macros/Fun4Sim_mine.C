@@ -11,18 +11,16 @@ R__LOAD_LIBRARY(libg4dst)
 R__LOAD_LIBRARY(libdptrigger)
 R__LOAD_LIBRARY(libevt_filter)
 //R__LOAD_LIBRARY(libktracker)
-R__LOAD_LIBRARY(libsim_eval)
-
 using namespace std;
 
 #include <iostream>
 #include <sstream>
 using namespace std;
 
-int Fun4SimHit(
-	       const int nevent = 10,
-	       std::string ifile = "Brem_1.041330_z500_600_eps_-6.4",
-	       const int idLep = 11
+int Fun4Sim(
+	    const int nevent = 2000,
+	    std::string ifile = "Brem_1.04_z500_600_eps_-6.4",
+	    const int idLep = 11
     )
 {
   const double target_coil_pos_z = -300;
@@ -75,21 +73,20 @@ int Fun4SimHit(
 			Form("%f",KMAGSTR) + " " +
 			"5.0",
 			PHFieldConfig::RegionalConst);
-  g4Reco->SetWorldSizeX(1000); // size of the world - every detector has to fit in here 
+  g4Reco->SetWorldSizeX(1000); // size of the world - every detector has to fit in here
   g4Reco->SetWorldSizeY(1000);
   g4Reco->SetWorldSizeZ(5000);
-  g4Reco->SetWorldShape("G4BOX");  // shape of our world - it is a box
+  g4Reco->SetWorldShape("G4BOX"); // shape of our world - it is a box
   g4Reco->SetWorldMaterial("G4_AIR"); // this is what our world is filled with G4_Galactic, G4_AIR
-  g4Reco->SetPhysicsList("FTFP_BERT"); //Geant4 Physics list to use 
+  g4Reco->SetPhysicsList("FTFP_BERT"); // Geant4 Physics list to use
 
-  SetupBeamline(g4Reco, do_collimator, collimator_pos_z);
+  SetupBeamline(g4Reco, do_collimator, collimator_pos_z); // // collimator, target and shielding between target and FMag
   if (do_target) {
     SetupTarget(g4Reco, target_coil_pos_z, target_l, target_z, use_g4steps, 0);
   }
-  SetupInsensitiveVolumes(g4Reco, do_shielding, do_fmag, do_kmag, do_absorber);
-  SetupSensitiveDetectors(g4Reco, do_dphodo, do_station1DC);
-  SetupEMCal(g4Reco, "EMCal", 0., -110., 1930.);
-  //g4Reco->Verbosity(99);
+  SetupInsensitiveVolumes(g4Reco, do_shielding, do_fmag, do_kmag, do_absorber); // insensitive elements of the spectrometer
+  SetupSensitiveDetectors(g4Reco, do_dphodo, do_station1DC); // sensitive elements of the spectrometer
+  SetupEMCal(g4Reco, "EMCal", 0., -110., 1930.); // emcal
   se->registerSubsystem(g4Reco);
 
   // save truth info to the Node Tree
@@ -98,10 +95,9 @@ int Fun4SimHit(
 
   // digitizer
   SQDigitizer* digitizer = new SQDigitizer("Digitizer", 0);
-  digitizer->set_enable_st1dc(do_station1DC);    // these two lines need to be in sync with the parameters used
-  digitizer->set_enable_dphodo(do_dphodo);       // in the SetupSensitiveVolumes() function call above
+  digitizer->set_enable_st1dc(do_station1DC);
+  digitizer->set_enable_dphodo(do_dphodo); 
   digitizer->registerEMCal("EMCal", 100);
-  //digitizer->Verbosity(99); 
   se->registerSubsystem(digitizer);
 
   // Trigger Emulator
@@ -111,7 +107,7 @@ int Fun4SimHit(
   dptrigger->set_road_set_file_name(gSystem->ExpandPathName("$E1039_RESOURCE/trigger/trigger_67.txt"));
   se->registerSubsystem(dptrigger);
 
-  // Event Filter (not requiring trigger now)
+  // Event Filter
   EvtFilter *evt_filter = new EvtFilter();
   se->registerSubsystem(evt_filter);
 
@@ -126,38 +122,25 @@ int Fun4SimHit(
   // VertexFit* vertexing = new VertexFit();
   // se->registerSubsystem(vertexing);
 
-  // evaluation module
-  gSystem->Load("libsim_eval.so");
-  SimEval *sim_eval = new SimEval();
-  sim_eval->set_hit_container_choice("Vector");
-  stringstream ssout; ssout << "$DIR_TOP/macro/simeval_electrons_emcal/sim_eval_" << ifile << ".root";
-  //stringstream ssout; ssout << "sim_eval_" << ifile << ".root";
-  sim_eval->set_out_name(ssout.str().c_str());
-  //sim_eval->Verbosity(10);
-  se->registerSubsystem(sim_eval);
-
   // input 
   Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
   //in->set_vertex_distribution_mean(0,0,target_coil_pos_z,0);
   se->registerInputManager(in);
-  //in->Verbosity(10);
+  stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Electrons/" << ifile << ".txt";
   //stringstream ssin; ssin << ifile << ".txt";
-  stringstream ssin; ssin << "$DIR_CMANTILL/../../lhe/displaced_Aprime_Electrons/" << ifile << ".txt";
-  //stringstream ssin; ssin << "$DIR_TOP/../../lhe/displaced_Aprime_Muons/" << ifile << ".txt";
   in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
 
-  // output
-  stringstream ssout_3; ssout_3 << "$DIR_TOP/macro/output_electrons_emcal/" << ifile << "0_dst.root";
-  Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", ssout_3.str().c_str());
+  // DST output manager
+  //stringstream ssout; ssout << ifile << "0_dst.root";
+  stringstream ssout; ssout << "$DIR_TOP/macro/output_electrons_emcal/" << ifile << "0_dst.root";
+  Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", ssout.str().c_str());
   se->registerOutputManager(out);
-  
-  // run
+
   se->run(nevent);
-  
+
   // finish job - close and save output files
   se->End();
   se->PrintTimer();
-  std::cout << "All done" << std::endl;
 
   // cleanup - delete the server and exit
   delete se;

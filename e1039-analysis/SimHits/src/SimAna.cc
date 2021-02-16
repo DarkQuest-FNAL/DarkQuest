@@ -84,12 +84,25 @@ int SimAna::Init(PHCompositeNode* topNode)
     gpx_st2[i]    = std::numeric_limits<float>::max();
     gpy_st2[i]    = std::numeric_limits<float>::max();
     gpz_st2[i]    = std::numeric_limits<float>::max();
-    gx_st3[i]     = std::numeric_limits<float>::max();
-    gy_st3[i]     = std::numeric_limits<float>::max();
-    gz_st3[i]     = std::numeric_limits<float>::max();
-    gpx_st3[i]    = std::numeric_limits<float>::max();
-    gpy_st3[i]    = std::numeric_limits<float>::max();
-    gpz_st3[i]    = std::numeric_limits<float>::max();
+
+    gx_h1[i]     = std::numeric_limits<float>::max();
+    gy_h1[i]     = std::numeric_limits<float>::max();
+    gz_h1[i]     = std::numeric_limits<float>::max();
+    gpx_h1[i]    = std::numeric_limits<float>::max();
+    gpy_h1[i]    = std::numeric_limits<float>::max();
+    gpz_h1[i]    = std::numeric_limits<float>::max();
+    gx_h2[i]     = std::numeric_limits<float>::max();
+    gy_h2[i]     = std::numeric_limits<float>::max();
+    gz_h2[i]     = std::numeric_limits<float>::max();
+    gpx_h2[i]    = std::numeric_limits<float>::max();
+    gpy_h2[i]    = std::numeric_limits<float>::max();
+    gpz_h2[i]    = std::numeric_limits<float>::max();
+    gx_h4[i]     = std::numeric_limits<float>::max();
+    gy_h4[i]     = std::numeric_limits<float>::max();
+    gz_h4[i]     = std::numeric_limits<float>::max();
+    gpx_h4[i]    = std::numeric_limits<float>::max();
+    gpy_h4[i]    = std::numeric_limits<float>::max();
+    gpz_h4[i]    = std::numeric_limits<float>::max();
   }
 
   return Fun4AllReturnCodes::EVENT_OK;
@@ -135,118 +148,206 @@ std::vector<PHG4Hit*> SimAna::FindG4HitsAtStation(const int trk_id, const PHG4Hi
 PHG4Shower* SimAna::get_primary_shower(PHG4Particle* primary) {
   PHG4Shower* shower = nullptr;
 
-  PHG4TruthInfoContainer::ShowerRange range = _truth->GetSecondaryShowerRange();
-  for (PHG4TruthInfoContainer::ShowerIterator iter = range.first;
-       iter != range.second;
-       ++iter)
-    {
-      PHG4Shower* tmpshower = iter->second;
-      std::cout << "secshower z " << tmpshower->get_z() << " parent id " << tmpshower->get_parent_particle_id() << " shower parent " << tmpshower->get_parent_shower_id()<<  std::endl;
-    }
-
   for (auto iter=_truth->GetPrimaryShowerRange().first; iter!=_truth->GetPrimaryShowerRange().second; ++iter) {
     PHG4Shower* tmpshower = iter->second;
     if (tmpshower->get_parent_particle_id() == primary->get_track_id()) {
       shower = tmpshower;
-      int ECAL_volume = PHG4HitDefs::get_volume_id("G4HIT_EMCal");
-
-      int h1t_volume = PHG4HitDefs::get_volume_id("G4HIT_H1T");
-      int h1b_volume = PHG4HitDefs::get_volume_id("G4HIT_H1B");
-      int h1l_volume = PHG4HitDefs::get_volume_id("G4HIT_H1L");
-      int h1r_volume = PHG4HitDefs::get_volume_id("G4HIT_H1R");
-      int h2t_volume = PHG4HitDefs::get_volume_id("G4HIT_H2T");
-      int h2b_volume = PHG4HitDefs::get_volume_id("G4HIT_H2B");
-      int h2l_volume = PHG4HitDefs::get_volume_id("G4HIT_H2L");
-      int h2r_volume = PHG4HitDefs::get_volume_id("G4HIT_H2R");
-      int h3t_volume = PHG4HitDefs::get_volume_id("G4HIT_H3T");
-      int h3b_volume = PHG4HitDefs::get_volume_id("G4HIT_H3B");
-      int h3l_volume = PHG4HitDefs::get_volume_id("G4HIT_H3L");
-      int h3r_volume = PHG4HitDefs::get_volume_id("G4HIT_H3R");
-      int h4t_volume = PHG4HitDefs::get_volume_id("G4HIT_H4T");
-      int h4b_volume = PHG4HitDefs::get_volume_id("G4HIT_H4B");
-
-      int d1x_volume = PHG4HitDefs::get_volume_id("G4HIT_D1X");
-      int d0x_volume = PHG4HitDefs::get_volume_id("G4HIT_D0X");
-      int d2xp_volume = PHG4HitDefs::get_volume_id("G4HIT_D2Xp");
-      int d3pxp_volume = PHG4HitDefs::get_volume_id("G4HIT_D3pXp");
-      int d3mxp_volume = PHG4HitDefs::get_volume_id("G4HIT_D3mXp");
-
-      int abs_volume = PHG4HitDefs::get_volume_id("MUID_absorber");
-
-      std::cout << "primary shower z " << shower->get_z() << " shower id " << tmpshower->get_id() << " pz " << primary->get_pz() << " e " << primary->get_e() << std::endl;
-      std::cout << "edep emcal " <<  shower->get_edep(ECAL_volume) << std::endl;
-      std::cout << " h1t " << shower->get_edep(h1t_volume) << " h1b " << shower->get_edep(h1b_volume) << " h1r " <<  shower->get_edep(h1r_volume) << " h1l " << shower->get_edep(h1l_volume);
-      std::cout << " h2t " << shower->get_edep(h2t_volume) << " h2b " << shower->get_edep(h2b_volume) << " h2r " <<  shower->get_edep(h2r_volume) << " h2l " << shower->get_edep(h2l_volume);
-      std::cout << " h3t " << shower->get_edep(h3t_volume) << " h3b " << shower->get_edep(h3b_volume) << std::endl;
-      std::cout << " d0x " << shower->get_edep(d0x_volume) << " d1x " << shower->get_edep(d1x_volume);
-      std::cout << " d2xp " << shower->get_edep(d2xp_volume) << " d3pxp " << shower->get_edep(d3pxp_volume) << " d3mxp " << shower->get_edep(d3mxp_volume) << std::endl;
-      std::cout << " absorber " << shower->get_edep(abs_volume) << std::endl;
-
-      double fmag_maxkick = 2.9; //GeV/c
-      double fmag_minz = 0.0;
-      double fmag_maxz = 500.0;
-      double kmag_maxkick = 0.414; //GeV/c
-      //center of KMag is at z=1041.8
-      double kmag_minz = 891.8;
-      double kmag_maxz = 1191.8;
-
-      double fmag_kick, kmag_kick;
-      double fmag_center, kmag_center;
-      if (vx[2]>fmag_maxz) {
-	fmag_kick = 0.0;
-	fmag_center = 0.0;
-      } else if (vx[2]>fmag_minz) {
-	fmag_kick = fmag_maxkick*(fmag_maxz-vx[2])/(fmag_maxz-fmag_minz);
-	fmag_center = (fmag_maxz+vx[2])/2.0;
-      } else {
-	fmag_kick = fmag_maxkick;
-	fmag_center = (fmag_maxz+fmag_minz)/2.0;
-      }
-
-      int vtx_id =  primary->get_vtx_id();
-      PHG4VtxPoint* vtx = _truth->GetVtx(vtx_id);
-      double gvx = vtx->get_x();
-      double gvy = vtx->get_y();
-      double gvz = vtx->get_z();
-
-      PHG4Hit* st1hit = FindG4HitAtStation(trkID, g4hc_d1x);
-      if(st1hit){
-	std::cout << "st1 x " << st1hit->get_x(0) << " y " << st1hit->get_y(0) <<" z " << st1hit->get_z(0) << std::endl;                                                                                 
-	std::cout << "    px " << st1hit->get_px(0) << " py " << st1hit->get_py(0) << " pz " << st1hit->get_pz(0) << std::endl;
-
-	double tx1_st1 = (primary->get_px() + fmag_kick)/primary->get_pz();
-	double x1_st1 = gvx + (fmag_center-gvz)*(primary->get_px()/primary->get_pz()) - fmag_center*tx1_st1;
-
-	std::cout << "cal px " <<   
-      }
-      
-      PHG4Hit* h2hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h2t);
-      if(!h2hit)
-	PHG4Hit* h2hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h2b);
-      if(h2hit){
-	std::cout << "h2y t/b x " << h2hit->get_x(0) << " y " << h2hit->get_y(0) <<" z " << h2hit->get_z(0) << " pz " << h2hit->get_pz(0) << std::endl;
-      }
-
-      PHG4Hit* h3hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h3t);
-      if(!h3hit)
-	PHG4Hit* h3hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h3b);
-      if(h3hit){
-	std::cout << "h3y t/b x " << h3hit->get_x(0) << " y " << h3hit->get_y(0) <<" z " << h3hit->get_z(0) << std::endl;
-      }
-
-      PHG4Hit* h4hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h4t);
-      if(!h4hit)
-	PHG4Hit* h4hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h4b);
-      if(h4hit){
-	std::cout << "h4y t/b x " << h4hit->get_x(0) << " y " << h4hit->get_y(0) <<" z " << h4hit->get_z(0) << std::endl; 
-      }
       break;
     }
   }
   return shower;
+
 }
 
+// check showers 
+void SimAna::checkKinematics(PHG4Particle* primary) {
+  PHG4Shower* shower = nullptr;
 
+  // define volumes
+  int ECAL_volume = PHG4HitDefs::get_volume_id("G4HIT_EMCal");
+
+  int h1t_volume = PHG4HitDefs::get_volume_id("G4HIT_H1T");
+  int h1b_volume = PHG4HitDefs::get_volume_id("G4HIT_H1B");
+  int h1l_volume = PHG4HitDefs::get_volume_id("G4HIT_H1L");
+  int h1r_volume = PHG4HitDefs::get_volume_id("G4HIT_H1R");
+  int h2t_volume = PHG4HitDefs::get_volume_id("G4HIT_H2T");
+  int h2b_volume = PHG4HitDefs::get_volume_id("G4HIT_H2B");
+  int h2l_volume = PHG4HitDefs::get_volume_id("G4HIT_H2L");
+  int h2r_volume = PHG4HitDefs::get_volume_id("G4HIT_H2R");
+  int h3t_volume = PHG4HitDefs::get_volume_id("G4HIT_H3T");
+  int h3b_volume = PHG4HitDefs::get_volume_id("G4HIT_H3B");
+  int h3l_volume = PHG4HitDefs::get_volume_id("G4HIT_H3L");
+  int h3r_volume = PHG4HitDefs::get_volume_id("G4HIT_H3R");
+  int h4t_volume = PHG4HitDefs::get_volume_id("G4HIT_H4T");
+  int h4b_volume = PHG4HitDefs::get_volume_id("G4HIT_H4B");
+
+  int d1x_volume = PHG4HitDefs::get_volume_id("G4HIT_D1X");
+  int d0x_volume = PHG4HitDefs::get_volume_id("G4HIT_D0X");
+  int d2xp_volume = PHG4HitDefs::get_volume_id("G4HIT_D2Xp");
+  int d3pxp_volume = PHG4HitDefs::get_volume_id("G4HIT_D3pXp");
+  int d3mxp_volume = PHG4HitDefs::get_volume_id("G4HIT_D3mXp");
+
+  int abs_volume = PHG4HitDefs::get_volume_id("MUID_absorber");
+
+  // first let's find shower
+  bool printPrimary=false;
+  for (auto iter=_truth->GetPrimaryShowerRange().first; iter!=_truth->GetPrimaryShowerRange().second; ++iter) {
+    PHG4Shower* tmpshower = iter->second;
+    if (tmpshower->get_parent_particle_id() == primary->get_track_id()) {
+      shower = tmpshower;
+
+      // if shower edep in EMCAL is zero then print
+      if(shower->get_edep(ECAL_volume) == 0) printPrimary=true;
+      
+      break;
+    }
+  }
+  if(printPrimary){
+    std::cout << "primary shower z " << shower->get_z() << " shower id " << shower->get_id() << " pz " << primary->get_pz() << " e " << primary->get_e() << std::endl;
+    std::cout << "edep emcal " <<  shower->get_edep(ECAL_volume) << std::endl;
+    std::cout << " h1t " << shower->get_edep(h1t_volume) << " h1b " << shower->get_edep(h1b_volume) << " h1r " <<  shower->get_edep(h1r_volume) << " h1l " << shower->get_edep(h1l_volume);
+    std::cout << " h2t " << shower->get_edep(h2t_volume) << " h2b " << shower->get_edep(h2b_volume) << " h2r " <<  shower->get_edep(h2r_volume) << " h2l " << shower->get_edep(h2l_volume);
+    std::cout << " h3t " << shower->get_edep(h3t_volume) << " h3b " << shower->get_edep(h3b_volume) << std::endl;
+    std::cout << " d0x " << shower->get_edep(d0x_volume) << " d1x " << shower->get_edep(d1x_volume);
+    std::cout << " d2xp " << shower->get_edep(d2xp_volume) << " d3pxp " << shower->get_edep(d3pxp_volume) << " d3mxp " << shower->get_edep(d3mxp_volume) << std::endl;
+    std::cout << " absorber " << shower->get_edep(abs_volume) << std::endl;
+
+    // constants
+    double kmag_maxkick = 0.414; //GeV/c                                                                                                                                                                  
+    //center of KMag is at z=1041.8- 1064.26
+    double kmag_minz = 891.8;
+    double kmag_maxz = 1191.8;
+    
+    // primary
+    int vtx_id =  primary->get_vtx_id();
+    PHG4VtxPoint* vtx = _truth->GetVtx(vtx_id);
+    double gvx = vtx->get_x();
+    double gvy = vtx->get_y();
+    double gvz = vtx->get_z();
+    std::cout << "Primary " << primary->get_pid() << " vx " << gvx << " vy " << gvy << " vz " << gvz << std::endl;
+    std::cout << " E " << primary->get_e() << std::endl;
+    std::cout << " px " <<  primary->get_px() << " py " << primary->get_py() << " pz " << primary->get_pz() << std::endl;
+    
+    bool posel = false;
+    if(primary->get_pid()==-11) posel = true;
+    
+    // no fmag kick because vertex > 500 cm
+    
+    // look for hits in stations
+    PHG4Hit* st1hit = FindG4HitAtStation(primary->get_track_id(), g4hc_d1x);
+    double x_st1 = 0;
+    double px_st1 = 0;
+    double pz_st1 = 0;
+    // px/pz = cos(phi)
+    // py/pz = sin(phi)
+    // px = ptcos(phi)
+    // dpx = dpt px/pz
+    if(st1hit){
+      std::cout << "st1 x " << st1hit->get_x(0) << " y " << st1hit->get_y(0) <<" z " << st1hit->get_z(0) << std::endl;
+      std::cout << "    px " << st1hit->get_px(0) << " py " << st1hit->get_py(0) << " pz " << st1hit->get_pz(0) << " px/pz " << st1hit->get_px(0)/st1hit->get_pz(0) << std::endl;
+      px_st1 = st1hit->get_px(0);
+      pz_st1 = st1hit->get_pz(0);
+      // z: 616.956
+
+      double tx_st1 = (primary->get_px())/primary->get_pz();
+      x_st1 = gvx + (st1hit->get_z(0)-gvz)*(primary->get_px()/primary->get_pz());	
+      std::cout << "   calculated x " << x_st1 << " px/pz " << tx_st1 << std::endl;
+
+    }
+    
+    // hodoscopes
+    // h1tb: 669.091 
+    // h1lr: 655.807
+    PHG4Hit* h1hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h1t);
+    if(!h1hit)
+      PHG4Hit* h1hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h1b);
+    if(h1hit){
+      std::cout << "h1y t/b x " << h1hit->get_x(0) << " y " << h1hit->get_y(0) <<" z " << h1hit->get_z(0) << " pz " << h1hit->get_pz(0) << std::endl;
+    }
+    
+    PHG4Hit* h1xhit = FindG4HitAtStation(primary->get_track_id(),g4hc_h1l);
+    if(!h1xhit)
+      PHG4Hit* h1xhit = FindG4HitAtStation(primary->get_track_id(),g4hc_h1r);
+    if(h1xhit){
+      std::cout << "h1x l/r x " << h1xhit->get_x(0) << " y " << h1xhit->get_y(0) <<" z " << h1xhit->get_z(0) << " pz " << h1xhit->get_pz(0) << std::endl;
+    }
+    
+    // st2: 1339.27
+    // h2lr 1404.76
+    // h2tb: 1420.95
+    PHG4Hit* st2hit = FindG4HitAtStation(primary->get_track_id(), g4hc_d2xp);
+    double px_st2 = 0;
+    double pz_st2 = 0;
+    double z_st2 = 0;
+    double x_st2 = 0;
+    if(st2hit){
+      std::cout << "st2 x " << st2hit->get_x(0) << " y " << st2hit->get_y(0) <<" z " << st2hit->get_z(0) << std::endl;
+      std::cout << "    px " << st2hit->get_px(0) << " py " << st2hit->get_py(0) << " pz " << st2hit->get_pz(0) << " px/pz " << st2hit->get_px(0)/st2hit->get_pz(0) << std::endl;
+      
+      px_st2 = st2hit->get_px(0);
+      pz_st2 = st2hit->get_pz(0);
+      z_st2 = st2hit->get_z(0);
+      x_st2 = st2hit->get_x(0);
+      double kmag_kick, kmag_center;
+      kmag_kick = kmag_maxkick;
+      kmag_center = (kmag_maxz+kmag_minz)/2.0;
+
+      std::cout << "   kmag kick " << kmag_kick << " center " << kmag_center << std::endl;
+      if(posel){
+	double tx_st2 = (px_st1 + kmag_kick)/pz_st1;
+	double x_st2 = x_st1 + (st2hit->get_z(0)-1064.26)*tx_st2;
+	std::cout << "   calculated x " << x_st2 << " px/pz " << tx_st2 << " pxst1 " << px_st1 << std::endl;
+      }
+      else{
+        double tx_st2 = (px_st1 - kmag_kick)/pz_st1;
+	double x_st2 = x_st1 + (st2hit->get_z(0)-1064.26)*tx_st2;
+	std::cout << "   calculated x " << x_st2 << " px/pz " << tx_st2 << std::endl;
+      }
+
+    }
+    
+    PHG4Hit* h2xhit = FindG4HitAtStation(primary->get_track_id(),g4hc_h2l);
+    if(!h2xhit)
+      PHG4Hit* h2xhit = FindG4HitAtStation(primary->get_track_id(),g4hc_h2r);
+    if(h2xhit){
+      std::cout << "h2x l/r x " << h2xhit->get_x(0) << " y " << h2xhit->get_y(0) <<" z " << h2xhit->get_z(0) << " pz " << h2xhit->get_pz(0) << std::endl;
+    }
+    
+    PHG4Hit* h2hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h2t);
+    if(!h2hit)
+      PHG4Hit* h2hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h2b);
+    if(h2hit){
+      std::cout << "h2y t/b x " << h2hit->get_x(0) << " y " << h2hit->get_y(0) <<" z " << h2hit->get_z(0) << " pz " << h2hit->get_pz(0) << std::endl;
+      std::cout << "    px " << h2hit->get_px(0) << " py " << h2hit->get_py(0) << " pz " << h2hit->get_pz(0) << " px/pz " << h2hit->get_px(0)/h2hit->get_pz(0) << std::endl;
+      
+      double tx_h2 = (px_st2)/pz_st2;
+      double x_h2 = x_st2 + (h2hit->get_z(0)-z_st2)*tx_h2;
+      std::cout << "   calculated x " << x_h2 << " px/pz " << tx_h2 << std::endl;
+    }
+    
+    PHG4Hit* h3hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h3t);
+    if(!h3hit)
+      PHG4Hit* h3hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h3b);
+    if(h3hit){
+      std::cout << "h3y t/b x " << h3hit->get_x(0) << " y " << h3hit->get_y(0) <<" z " << h3hit->get_z(0) << " pz " << h3hit->get_pz(0) << std::endl;
+    }
+    
+    PHG4Hit* h4hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h4t);
+    if(!h4hit)
+      PHG4Hit* h4hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h4b);
+    if(h4hit){
+      std::cout << "h4y t/b x " << h4hit->get_x(0) << " y " << h4hit->get_y(0) <<" z " << h4hit->get_z(0) << " pz " << h4hit->get_pz(0) << std::endl;
+      std::cout << "    px " << h4hit->get_px(0) << " py " << h4hit->get_py(0) << " pz " << h4hit->get_pz(0) << " px/pz " << h4hit->get_px(0)/h4hit->get_pz(0) << std::endl;
+
+      double tx_h4 = (px_st2)/pz_st2;
+      double x_h4 = x_st2 + (h4hit->get_z(0)-z_st2)*tx_h4;
+      std::cout << "   calculated x " << x_h4 << " px/pz " << tx_h4 << std::endl;
+    }
+    
+  } // end printing
+
+}
+  
 int SimAna::process_event(PHCompositeNode* topNode)
 {
   //std::cout << "new event " <<std::endl;
@@ -264,9 +365,9 @@ int SimAna::process_event(PHCompositeNode* topNode)
     hit_truthz[n_hits] = hit->get_truth_z();
     ++n_hits;
     if(n_hits>=10000) break;
-    if(hit->get_detector_id() == 100){
-      std::cout << "emcal hit edep " << hit->get_edep() << std::endl;
-    }
+    //if(hit->get_detector_id() == 100){
+    //std::cout << "emcal hit edep " << hit->get_edep() << std::endl;
+    //}
   }
 
   n_showers = 0;
@@ -309,6 +410,9 @@ int SimAna::process_event(PHCompositeNode* topNode)
 
     int trkID = primary->get_track_id();
     gtrkid[n_primaries] = trkID;
+
+    // check kinematics
+    checkKinematics(primary);
 
     // G4Hits at different stations                                                                                                                                                                       
     if(g4hc_ecal){
@@ -450,8 +554,12 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
 
   g4hc_h1t  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H1T");
   g4hc_h1b  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H1B");
+  g4hc_h1l  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H1L");
+  g4hc_h1r  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H1R");
   g4hc_h2t  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H2T");
   g4hc_h2b  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H2B");
+  g4hc_h2l  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H2L");
+  g4hc_h2r  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H2R");
   g4hc_h3t  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H3T");
   g4hc_h3b  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H3B");
   g4hc_h4t  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H4T");
@@ -534,18 +642,13 @@ void SimAna::MakeTree()
   saveTree->Branch("gpx_st1",       gpx_st1,             "gpx_st1[n_primaries]/F");
   saveTree->Branch("gpy_st1",       gpy_st1,             "gpy_st1[n_primaries]/F");
   saveTree->Branch("gpz_st1",       gpz_st1,             "gpz_st1[n_primaries]/F");
+
   saveTree->Branch("gx_st2",        gx_st2,              "gx_st2[n_primaries]/F");
   saveTree->Branch("gy_st2",        gy_st2,              "gy_st2[n_primaries]/F");
   saveTree->Branch("gz_st2",        gz_st2,              "gz_st2[n_primaries]/F");
   saveTree->Branch("gpx_st2",       gpx_st2,             "gpx_st2[n_primaries]/F");
   saveTree->Branch("gpy_st2",       gpy_st2,             "gpy_st2[n_primaries]/F");
   saveTree->Branch("gpz_st2",       gpz_st2,             "gpz_st2[n_primaries]/F");
-  saveTree->Branch("gx_st3",        gx_st3,              "gx_st3[n_primaries]/F");
-  saveTree->Branch("gy_st3",        gy_st3,              "gy_st3[n_primaries]/F");
-  saveTree->Branch("gz_st3",        gz_st3,              "gz_st3[n_primaries]/F");
-  saveTree->Branch("gpx_st3",       gpx_st3,             "gpx_st3[n_primaries]/F");
-  saveTree->Branch("gpy_st3",       gpy_st3,             "gpy_st3[n_primaries]/F");
-  saveTree->Branch("gpz_st3",       gpz_st3,             "gpz_st3[n_primaries]/F");
 
   saveTree->Branch("gx_h1",         gx_h1,               "gx_h1[n_primaries]/F");
   saveTree->Branch("gy_h1",         gy_h1,               "gy_h1[n_primaries]/F");
@@ -553,6 +656,7 @@ void SimAna::MakeTree()
   saveTree->Branch("gpx_h1",        gpx_h1,              "gpx_h1[n_primaries]/F");
   saveTree->Branch("gpy_h1",        gpy_h1,              "gpy_h1[n_primaries]/F");
   saveTree->Branch("gpz_h1",        gpz_h1,              "gpz_h1[n_primaries]/F");
+
   saveTree->Branch("gx_h2",         gx_h2,               "gx_h2[n_primaries]/F");
   saveTree->Branch("gy_h2",         gy_h2,               "gy_h2[n_primaries]/F");
   saveTree->Branch("gz_h2",         gz_h2,               "gz_h2[n_primaries]/F");
@@ -560,18 +664,18 @@ void SimAna::MakeTree()
   saveTree->Branch("gpy_h2",        gpy_h2,              "gpy_h2[n_primaries]/F");
   saveTree->Branch("gpz_h2",        gpz_h2,              "gpz_h2[n_primaries]/F");
 
+  saveTree->Branch("gx_h4",         gx_h4,               "gx_h4[n_primaries]/F");
+  saveTree->Branch("gy_h4",         gy_h4,               "gy_h4[n_primaries]/F");
+  saveTree->Branch("gz_h4",         gz_h4,               "gz_h4[n_primaries]/F");
+  saveTree->Branch("gpx_h4",        gpx_h4,              "gpx_h4[n_primaries]/F");
+  saveTree->Branch("gpy_h4",        gpy_h4,              "gpy_h4[n_primaries]/F");
+  saveTree->Branch("gpz_h4",        gpz_h4,              "gpz_h4[n_primaries]/F");
+
   saveTree->Branch("gx_p1",         gx_p1,               "gx_p1[n_primaries]/F");
   saveTree->Branch("gy_p1",         gy_p1,               "gy_p1[n_primaries]/F");
   saveTree->Branch("gz_p1",         gz_p1,               "gz_p1[n_primaries]/F");
   saveTree->Branch("gpx_p1",        gpx_p1,              "gpx_p1[n_primaries]/F");
   saveTree->Branch("gpy_p1",        gpy_p1,              "gpy_p1[n_primaries]/F");
   saveTree->Branch("gpz_p1",        gpz_p1,              "gpz_p1[n_primaries]/F");
-
-  saveTree->Branch("gx_h4",         gx_h4,              "gx_h4[n_primaries]/F");
-  saveTree->Branch("gy_h4",         gy_h4,              "gy_h4[n_primaries]/F");
-  saveTree->Branch("gz_h4",         gz_h4,              "gz_h4[n_primaries]/F");
-  saveTree->Branch("gpx_h4",        gpx_h4,             "gpx_h4[n_primaries]/F");
-  saveTree->Branch("gpy_h4",        gpy_h4,             "gpy_h4[n_primaries]/F");
-  saveTree->Branch("gpz_h4",        gpz_h4,             "gpz_h4[n_primaries]/F");
 
 }
