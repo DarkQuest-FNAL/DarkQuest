@@ -20,11 +20,11 @@ R__LOAD_LIBRARY(libsim_ana)
 #include <sstream>
 using namespace std;
 
-int Fun4Sim(const int nevent = 10000,
-	    //std::string ifile = "Brem_0.011603_z500_600_eps_-6",
+int Fun4Sim(const int nevent = 100,
+	    std::string ifile = "Brem_0.011603_z500_600_eps_-6",
 	    //std::string ifile = "Brem_2.302710_z500_600_eps_-6",
 	    //std::string ifile = "Eta_0.012922_z500_600_eps_-6",
-	    std::string ifile = "Eta_0.540000_z500_600_eps_-6",
+	    //std::string ifile = "Eta_0.540000_z500_600_eps_-6",
 	    const int idLep = 11)
 {
   const double target_coil_pos_z = -300;
@@ -51,6 +51,8 @@ int Fun4Sim(const int nevent = 10000,
   rc->set_DoubleFlag("FMAGSTR", FMAGSTR);
   rc->set_DoubleFlag("KMAGSTR", KMAGSTR);
   rc->set_CharFlag("AlignmentMille", "$DIR_CMANTILL/macro/align_mille.txt");  
+  rc->set_CharFlag("fMagFile", "$E1039_RESOURCE/geometry/magnetic_fields/tab.Fmag");
+  rc->set_CharFlag("kMagFile", "$E1039_RESOURCE/geometry/magnetic_fields/tab.Kmag");
   rc->Print();
 
   GeomSvc::UseDbSvc(true);
@@ -96,7 +98,8 @@ int Fun4Sim(const int nevent = 10000,
   }
   // sensitive elements of the spectrometer
   SetupSensitiveDetectors(g4Reco, do_dphodo, do_station1DC);
-  SetupEMCal(g4Reco, "EMCal", 0., -110., 1930.);
+  //SetupEMCal(g4Reco, "EMCal", 0., -110., 1930.);
+  SetupEMCal(g4Reco, "EMCal", 0., 0., 1930.);
   se->registerSubsystem(g4Reco);
 
   if (save_in_acc) se->registerSubsystem(new RequireParticlesInAcc());
@@ -170,8 +173,8 @@ int Fun4Sim(const int nevent = 10000,
   ///////////////////////////////////////////
 
   // DST output manager
-  Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", "DST.root");
-  se->registerOutputManager(out);
+  //Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", "DST.root");
+  //se->registerOutputManager(out);
 
   se->run(nevent);
 

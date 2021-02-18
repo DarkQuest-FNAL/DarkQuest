@@ -197,12 +197,21 @@ void SimAna::checkKinematics(PHG4Particle* primary) {
       shower = tmpshower;
 
       // if shower edep in EMCAL is zero then print
-      if(shower->get_edep(ECAL_volume) == 0) printPrimary=true;
+      //if(shower->get_edep(ECAL_volume) == 0) printPrimary=true;
       
       break;
     }
   }
-  if(printPrimary){
+
+  bool printh4 =false;
+  PHG4Hit* h4hit1 = FindG4HitAtStation(primary->get_track_id(),g4hc_h4t);
+  if(!h4hit1)
+    PHG4Hit* h4hit1 = FindG4HitAtStation(primary->get_track_id(),g4hc_h4b);
+  //if(h4hit1){
+  //printh4 = true;
+  // }
+
+  if(printPrimary && printh4){
     std::cout << "primary shower z " << shower->get_z() << " shower id " << shower->get_id() << " pz " << primary->get_pz() << " e " << primary->get_e() << std::endl;
     std::cout << "edep emcal " <<  shower->get_edep(ECAL_volume) << std::endl;
     std::cout << " h1t " << shower->get_edep(h1t_volume) << " h1b " << shower->get_edep(h1b_volume) << " h1r " <<  shower->get_edep(h1r_volume) << " h1l " << shower->get_edep(h1l_volume);
@@ -336,7 +345,7 @@ void SimAna::checkKinematics(PHG4Particle* primary) {
     if(!h4hit)
       PHG4Hit* h4hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h4b);
     if(h4hit){
-      std::cout << "h4y t/b x " << h4hit->get_x(0) << " y " << h4hit->get_y(0) <<" z " << h4hit->get_z(0) << " pz " << h4hit->get_pz(0) << std::endl;
+      std::cout << "h4 t/b x " << h4hit->get_x(0) << " y " << h4hit->get_y(0) <<" z " << h4hit->get_z(0) << " pz " << h4hit->get_pz(0) << std::endl;
       std::cout << "    px " << h4hit->get_px(0) << " py " << h4hit->get_py(0) << " pz " << h4hit->get_pz(0) << " px/pz " << h4hit->get_px(0)/h4hit->get_pz(0) << std::endl;
 
       double tx_h4 = (px_st2)/pz_st2;
@@ -505,14 +514,22 @@ int SimAna::process_event(PHCompositeNode* topNode)
       gpy_h3[n_primaries] = h3hit->get_py(0);
       gpz_h3[n_primaries] = h3hit->get_pz(0);
     }
+    //PHG4Hit* h4hit_t = FindG4HitAtStation(trkID,g4hc_h4t);
+    //if(h4hit_t) {
+    //std::cout << "h4y t x " << h4hit_t->get_x(0) << " y " << h4hit_t->get_y(0) <<" z " << h4hit_t->get_z(0) << std::endl; 
+    // }
+    PHG4Hit* h4hit_b = FindG4HitAtStation(trkID,g4hc_h4b);
+    if(h4hit_b){
+      std::cout << "h4y b x " << h4hit_b->get_x(0) << " y " << h4hit_b->get_y(0) <<" z " << h4hit_b->get_z(0) << std::endl;
+    }
     PHG4Hit* h4hit = FindG4HitAtStation(trkID,g4hc_h4t);
     if(!h4hit)
       PHG4Hit* h4hit = FindG4HitAtStation(trkID,g4hc_h4b);
     if(h4hit){
+      std::cout << "h4y x "  << h4hit->get_x(0) << " y " << h4hit->get_y(0) <<" z " << h4hit->get_z(0) << std::endl;
       gx_h4[n_primaries] = h4hit->get_x(0);
       gy_h4[n_primaries] = h4hit->get_y(0);
       gz_h4[n_primaries] = h4hit->get_z(0);
-      //std::cout << "h4y t/b x " << h4hit->get_x(0) << " y " << h4hit->get_y(0) <<" z " << h4hit->get_z(0) << std::endl;
       gpx_h4[n_primaries] = h4hit->get_px(0);
       gpy_h4[n_primaries] = h4hit->get_py(0);
       gpz_h4[n_primaries] = h4hit->get_pz(0);
