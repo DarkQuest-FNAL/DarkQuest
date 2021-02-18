@@ -14,7 +14,7 @@ This macro takes severl external input files to run:
 3. /pnfs/e906/persistent/users/liuk/darkp/digit/R008/02/83/digit_028300_R008.root is E906 run6 data, can be found at /pnfs/e906/persistent/users/liuk/darkp/digit/R008/02/83/
 */
 
-int RecoE906Data(const int nEvents = 18518)
+int RecoE906Data(const int nEvents = 1) //8518)
 {
   const double FMAGSTR = -1.054;
   const double KMAGSTR = -0.951;
