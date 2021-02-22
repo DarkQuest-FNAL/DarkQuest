@@ -284,7 +284,6 @@ void SimAna::checkKinematics(PHG4Particle* primary) {
 int SimAna::process_event(PHCompositeNode* topNode)
 {
   //std::cout << "new event " <<std::endl;
-  n_hits = 0;
   for(int i=0; i<10000; ++i) {
     hit_detid[i]        = std::numeric_limits<short>::max();
     hit_elmid[i]        = std::numeric_limits<short>::max();
@@ -372,7 +371,6 @@ int SimAna::process_event(PHCompositeNode* topNode)
   n_hits = 0;
   for(int ihit=0; ihit<hitVector->size(); ++ihit) {
     SQHit *hit = hitVector->at(ihit);
-    
     int hitID = hit->get_hit_id();
     hit_detid[n_hits]      = hit->get_detector_id();
     hit_elmid[n_hits]      = hit->get_element_id();
@@ -399,7 +397,7 @@ int SimAna::process_event(PHCompositeNode* topNode)
       sy_ecal[n_showers] = shower->get_y();
       sz_ecal[n_showers] = shower->get_z();
       sedep_ecal[n_showers] = shower->get_edep(ECAL_volume);
-      std::cout << "shower " << shower->get_x() << " y " << shower->get_y() <<" z " << shower->get_z() << " id " << shower->get_id() << " parent particle " << shower->get_parent_particle_id() << " nhits " << shower->get_nhits(ECAL_volume) << " edep " << shower->get_edep(ECAL_volume) << std::endl;
+      //std::cout << "shower " << shower->get_x() << " y " << shower->get_y() <<" z " << shower->get_z() << " id " << shower->get_id() << " parent particle " << shower->get_parent_particle_id() << " nhits " << shower->get_nhits(ECAL_volume) << " edep " << shower->get_edep(ECAL_volume) << std::endl;
       n_showers++;
     }
     if(n_showers>=1000) break;
