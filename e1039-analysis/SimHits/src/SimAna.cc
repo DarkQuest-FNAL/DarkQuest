@@ -526,15 +526,15 @@ int SimAna::process_event(PHCompositeNode* topNode)
     //if(h4hit_t) {
     //std::cout << "h4y t x " << h4hit_t->get_x(0) << " y " << h4hit_t->get_y(0) <<" z " << h4hit_t->get_z(0) << std::endl; 
     // }
-    PHG4Hit* h4hit_b = FindG4HitAtStation(trkID,g4hc_h4b);
-    if(h4hit_b){
-      std::cout << "h4y b x " << h4hit_b->get_x(0) << " y " << h4hit_b->get_y(0) <<" z " << h4hit_b->get_z(0) << std::endl;
-    }
+    //PHG4Hit* h4hit_b = FindG4HitAtStation(trkID,g4hc_h4b);
+    //if(h4hit_b){
+    //  std::cout << "h4y b x " << h4hit_b->get_x(0) << " y " << h4hit_b->get_y(0) <<" z " << h4hit_b->get_z(0) << std::endl;
+    //}
     PHG4Hit* h4hit = FindG4HitAtStation(trkID,g4hc_h4t);
     if(!h4hit)
       PHG4Hit* h4hit = FindG4HitAtStation(trkID,g4hc_h4b);
     if(h4hit){
-      std::cout << "h4y x "  << h4hit->get_x(0) << " y " << h4hit->get_y(0) <<" z " << h4hit->get_z(0) << std::endl;
+      //std::cout << "h4y x "  << h4hit->get_x(0) << " y " << h4hit->get_y(0) <<" z " << h4hit->get_z(0) << std::endl;
       gx_h4[n_primaries] = h4hit->get_x(0);
       gy_h4[n_primaries] = h4hit->get_y(0);
       gz_h4[n_primaries] = h4hit->get_z(0);
