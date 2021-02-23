@@ -1,1 +1,0 @@
-/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits/installAna/lib/libanamodule.so

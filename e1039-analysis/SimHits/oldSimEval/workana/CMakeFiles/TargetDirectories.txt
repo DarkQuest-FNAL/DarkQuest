@@ -1,8 +1,0 @@
-/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits/workana/CMakeFiles/install/strip.dir
-/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits/workana/CMakeFiles/install/local.dir
-/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits/workana/CMakeFiles/rebuild_cache.dir
-/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits/workana/CMakeFiles/edit_cache.dir
-/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits/workana/CMakeFiles/install.dir
-/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits/workana/CMakeFiles/list_install_components.dir
-/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits/workana/CMakeFiles/install_pcm.dir
-/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits/workana/CMakeFiles/anamodule.dir
