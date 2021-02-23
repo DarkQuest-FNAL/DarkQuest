@@ -40,24 +40,20 @@ If you want to install the private e1039-core version in your spinquest machine 
 ```
 # make directory in your home dir
 cd 
-mkdir mye1039
 
 # clone repo                                                                                                                                                                      
-git clone https://github.com/E1039-Collaboration/e1039-core.git
-
-# add kun's changes                                                                                                                                                              
-git remote add kun https://github.com/liuk/e1039-core.git
-git fetch kun EMCal
-git merge kun/EMCal
+git clone https://github.com/cmantill/e1039-core.git # (or your fork)
 
 # to setup installation
-source /seaquest/users/cmantill/mye1039/core-inst/this-e1039.sh
+cd /path/to/directory_where_you_download_e1039-core
+./script/setup-install.sh auto
+source ../core-inst/this-e1039.sh
 
-# build                                                                                                                                                                           
+# build (takes 5-10min)
 ./build.sh
 
 # When using an new shell environment (i.e. text terminal) you should source this script (change location correspondingly)
-source /seaquest/users/cmantill/mye1039/core-inst/this-e1039.sh
+source /seaquest/users/cmantill/core-inst/this-e1039.sh
 ```
 
 If you do not want to install your private version of e1039 you can call cmantill's version by sourcing the following scripts

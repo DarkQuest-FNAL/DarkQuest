@@ -21,9 +21,6 @@ R__LOAD_LIBRARY(libsim_ana)
 using namespace std;
 
 int Fun4Sim(const int nevent = 100,
-	    //std::string ifile = "Brem_0.011603_z500_600_eps_-6",
-	    //std::string ifile = "Brem_2.302710_z500_600_eps_-6",
-	    //std::string ifile = "Eta_0.012922_z500_600_eps_-6",
 	    std::string ifile = "Eta_0.540000_z500_600_eps_-6",
 	    const int idLep = 11)
 {
@@ -53,17 +50,17 @@ int Fun4Sim(const int nevent = 100,
   rc->set_CharFlag("AlignmentMille", "$DIR_CMANTILL/macro/align_mille.txt");  
   rc->set_CharFlag("fMagFile", "$E1039_RESOURCE/geometry/magnetic_fields/tab.Fmag");
   rc->set_CharFlag("kMagFile", "$E1039_RESOURCE/geometry/magnetic_fields/tab.Kmag");
-  rc->Print();
+  //rc->Print();
 
   GeomSvc::UseDbSvc(true);
   GeomSvc *geom_svc = GeomSvc::instance();
-  std::cout << "print geometry information" << std::endl;
+  //std::cout << "print geometry information" << std::endl;
   geom_svc->printWirePosition();
-  std::cout << " align printing " << std::endl;
+  //std::cout << " align printing " << std::endl;
   geom_svc->printAlignPar();
-  std::cout << " table printing" << std::endl;
+  //std::cout << " table printing" << std::endl;
   geom_svc->printTable();
-  std::cout << "done geometry printing" << std::endl;
+  //std::cout << "done geometry printing" << std::endl;
 
   ///////////////////////////////////////////
   // Make the Server
@@ -105,7 +102,6 @@ int Fun4Sim(const int nevent = 100,
   }
   // sensitive elements of the spectrometer
   SetupSensitiveDetectors(g4Reco, do_dphodo, do_station1DC, "SQ_ArCO2", "SQ_Scintillator", 1);
-  //SetupEMCal(g4Reco, "EMCal", 0., -110., 1930.);
   SetupEMCal(g4Reco, "EMCal", 0., 0., 1930.);
   se->registerSubsystem(g4Reco);
 
@@ -156,14 +152,10 @@ int Fun4Sim(const int nevent = 100,
   //VertexFit* vertexing = new VertexFit();
   //se->registerSubsystem(vertexing);
 
-  //// Trim minor data nodes (to reduce the DST file size)
-  //se->registerSubsystem(new SimDstTrimmer());
-
   gSystem->Load("libsim_ana.so");
   SimAna *sim_ana = new SimAna();  
   stringstream ssout; ssout << "$DIR_TOP/macro/simeval_electrons_emcal/sim_eval_" << ifile << ".root"; 
   std::cout << "output " << gSystem->ExpandPathName(ssout.str().c_str()) << std::endl;   
-  //sim_ana->set_output_filename(gSystem->ExpandPathName(ssout.str().c_str()));  
   //sim_ana->Verbosity(99); 
   se->registerSubsystem(sim_ana);    
 
@@ -175,17 +167,9 @@ int Fun4Sim(const int nevent = 100,
   //in->Verbosity(99);
   se->registerInputManager(in);
 
-  ///////////////////////////////////////////
-  // Output
-  ///////////////////////////////////////////
-
-  // DST output manager
-  //Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", "DST.root");
-  //se->registerOutputManager(out);
-
   se->run(nevent);
 
-  PHGeomUtility::ExportGeomtry(se->topNode(),"geom.root");
+  //PHGeomUtility::ExportGeomtry(se->topNode(),"geom.root");
   
   // finish job - close and save output files
   se->End();
