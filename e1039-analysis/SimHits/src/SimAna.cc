@@ -26,85 +26,6 @@ SimAna::~SimAna()
 
 int SimAna::Init(PHCompositeNode* topNode)
 {
-  n_hits = 0;
-  for(int i=0; i<10000; ++i) {
-    hit_detid[i]        = std::numeric_limits<short>::max();
-    hit_elmid[i]        = std::numeric_limits<short>::max();
-    hit_driftdis[i]     = std::numeric_limits<float>::max();
-    hit_pos[i]          = std::numeric_limits<float>::max();
-    hit_edep[i]         = std::numeric_limits<float>::max();
-    hit_truthx[i]       = std::numeric_limits<float>::max();
-    hit_truthy[i]       = std::numeric_limits<float>::max();
-    hit_truthz[i]       = std::numeric_limits<float>::max();
-  }
-
-  n_showers =0;
-  for(int i=0; i<1000; ++i) {
-    sx_ecal[i]          = std::numeric_limits<float>::max();
-    sy_ecal[i]          = std::numeric_limits<float>::max();
-    sz_ecal[i]          = std::numeric_limits<float>::max();
-    sedep_ecal[i]       = std::numeric_limits<float>::max();
-  }
-
-  n_primaries = 0;
-  for(int i=0; i<1000; ++i) {
-    gtrkid[i]     = std::numeric_limits<int>::max();
-    gpid[i]       = std::numeric_limits<int>::max();
-    gvx[i]        = std::numeric_limits<float>::max();
-    gvy[i]        = std::numeric_limits<float>::max();
-    gvz[i]        = std::numeric_limits<float>::max();
-    gpx[i]        = std::numeric_limits<float>::max();
-    gpy[i]        = std::numeric_limits<float>::max();
-    gpz[i]        = std::numeric_limits<float>::max();
-    gpt[i]        = std::numeric_limits<float>::max();
-    geta[i]       = std::numeric_limits<float>::max();
-    gphi[i]       = std::numeric_limits<float>::max();
-    ge[i]         = std::numeric_limits<float>::max();
-
-    nhits_ecal[i] = 0;
-    for(int j=0; j<100; ++j) {
-      gx_ecal[i][j]    = std::numeric_limits<int>::max();
-      gy_ecal[i][j]    = std::numeric_limits<int>::max();
-      gz_ecal[i][j]    = std::numeric_limits<int>::max();
-      gpx_ecal[i][j]   = std::numeric_limits<int>::max();
-      gpy_ecal[i][j]   = std::numeric_limits<int>::max();
-      gpz_ecal[i][j]   = std::numeric_limits<int>::max();
-      gedep_ecal[i][j] = std::numeric_limits<int>::max();
-    }
-
-    gx_st1[i]     = std::numeric_limits<float>::max();
-    gy_st1[i]     = std::numeric_limits<float>::max();
-    gz_st1[i]     = std::numeric_limits<float>::max();
-    gpx_st1[i]    = std::numeric_limits<float>::max();
-    gpy_st1[i]    = std::numeric_limits<float>::max();
-    gpz_st1[i]    = std::numeric_limits<float>::max();
-    gx_st2[i]     = std::numeric_limits<float>::max();
-    gy_st2[i]     = std::numeric_limits<float>::max();
-    gz_st2[i]     = std::numeric_limits<float>::max();
-    gpx_st2[i]    = std::numeric_limits<float>::max();
-    gpy_st2[i]    = std::numeric_limits<float>::max();
-    gpz_st2[i]    = std::numeric_limits<float>::max();
-
-    gx_h1[i]     = std::numeric_limits<float>::max();
-    gy_h1[i]     = std::numeric_limits<float>::max();
-    gz_h1[i]     = std::numeric_limits<float>::max();
-    gpx_h1[i]    = std::numeric_limits<float>::max();
-    gpy_h1[i]    = std::numeric_limits<float>::max();
-    gpz_h1[i]    = std::numeric_limits<float>::max();
-    gx_h2[i]     = std::numeric_limits<float>::max();
-    gy_h2[i]     = std::numeric_limits<float>::max();
-    gz_h2[i]     = std::numeric_limits<float>::max();
-    gpx_h2[i]    = std::numeric_limits<float>::max();
-    gpy_h2[i]    = std::numeric_limits<float>::max();
-    gpz_h2[i]    = std::numeric_limits<float>::max();
-    gx_h4[i]     = std::numeric_limits<float>::max();
-    gy_h4[i]     = std::numeric_limits<float>::max();
-    gz_h4[i]     = std::numeric_limits<float>::max();
-    gpx_h4[i]    = std::numeric_limits<float>::max();
-    gpy_h4[i]    = std::numeric_limits<float>::max();
-    gpz_h4[i]    = std::numeric_limits<float>::max();
-  }
-
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -211,7 +132,10 @@ void SimAna::checkKinematics(PHG4Particle* primary) {
   //printh4 = true;
   // }
 
-  if(printPrimary && printh4){
+  //if(printPrimary && printh4){
+  if(printPrimary){
+    shower->identify(std::cout);
+    std::cout << "start printing " << std::endl;
     std::cout << "primary shower z " << shower->get_z() << " shower id " << shower->get_id() << " pz " << primary->get_pz() << " e " << primary->get_e() << std::endl;
     std::cout << "edep emcal " <<  shower->get_edep(ECAL_volume) << std::endl;
     std::cout << " h1t " << shower->get_edep(h1t_volume) << " h1b " << shower->get_edep(h1b_volume) << " h1r " <<  shower->get_edep(h1r_volume) << " h1l " << shower->get_edep(h1l_volume);
@@ -360,6 +284,90 @@ void SimAna::checkKinematics(PHG4Particle* primary) {
 int SimAna::process_event(PHCompositeNode* topNode)
 {
   //std::cout << "new event " <<std::endl;
+  for(int i=0; i<10000; ++i) {
+    hit_detid[i]        = std::numeric_limits<short>::max();
+    hit_elmid[i]        = std::numeric_limits<short>::max();
+    hit_driftdis[i]     = std::numeric_limits<float>::max();
+    hit_pos[i]          = std::numeric_limits<float>::max();
+    hit_edep[i]         = std::numeric_limits<float>::max();
+    hit_truthx[i]       = std::numeric_limits<float>::max();
+    hit_truthy[i]       = std::numeric_limits<float>::max();
+    hit_truthz[i]       = std::numeric_limits<float>::max();
+  }
+
+  n_showers =0;
+  for(int i=0; i<1000; ++i) {
+    sx_ecal[i]          = std::numeric_limits<float>::max();
+    sy_ecal[i]          = std::numeric_limits<float>::max();
+    sz_ecal[i]          = std::numeric_limits<float>::max();
+    sedep_ecal[i]       = std::numeric_limits<float>::max();
+  }
+
+  n_primaries = 0;
+  for(int i=0; i<1000; ++i) {
+    gtrkid[i]     = std::numeric_limits<int>::max();
+    gpid[i]       = std::numeric_limits<int>::max();
+    gvx[i]        = std::numeric_limits<float>::max();
+    gvy[i]        = std::numeric_limits<float>::max();
+    gvz[i]        = std::numeric_limits<float>::max();
+    gpx[i]        = std::numeric_limits<float>::max();
+    gpy[i]        = std::numeric_limits<float>::max();
+    gpz[i]        = std::numeric_limits<float>::max();
+    gpt[i]        = std::numeric_limits<float>::max();
+    geta[i]       = std::numeric_limits<float>::max();
+    gphi[i]       = std::numeric_limits<float>::max();
+    ge[i]         = std::numeric_limits<float>::max();
+
+    nhits_ecal[i] = 0;
+    for(int j=0; j<100; ++j) {
+      gx_ecal[i][j]    = std::numeric_limits<int>::max();
+      gy_ecal[i][j]    = std::numeric_limits<int>::max();
+      gz_ecal[i][j]    = std::numeric_limits<int>::max();
+      gpx_ecal[i][j]   = std::numeric_limits<int>::max();
+      gpy_ecal[i][j]   = std::numeric_limits<int>::max();
+      gpz_ecal[i][j]   = std::numeric_limits<int>::max();
+      gedep_ecal[i][j] = std::numeric_limits<int>::max();
+    }
+
+    gx_st1[i]     = std::numeric_limits<float>::max();
+    gy_st1[i]     = std::numeric_limits<float>::max();
+    gz_st1[i]     = std::numeric_limits<float>::max();
+    gpx_st1[i]    = std::numeric_limits<float>::max();
+    gpy_st1[i]    = std::numeric_limits<float>::max();
+    gpz_st1[i]    = std::numeric_limits<float>::max();
+    gx_st2[i]     = std::numeric_limits<float>::max();
+    gy_st2[i]     = std::numeric_limits<float>::max();
+    gz_st2[i]     = std::numeric_limits<float>::max();
+    gpx_st2[i]    = std::numeric_limits<float>::max();
+    gpy_st2[i]    = std::numeric_limits<float>::max();
+    gpz_st2[i]    = std::numeric_limits<float>::max();
+
+    gx_h1[i]     = std::numeric_limits<float>::max();
+    gy_h1[i]     = std::numeric_limits<float>::max();
+    gz_h1[i]     = std::numeric_limits<float>::max();
+    gpx_h1[i]    = std::numeric_limits<float>::max();
+    gpy_h1[i]    = std::numeric_limits<float>::max();
+    gpz_h1[i]    = std::numeric_limits<float>::max();
+    gx_h2[i]     = std::numeric_limits<float>::max();
+    gy_h2[i]     = std::numeric_limits<float>::max();
+    gz_h2[i]     = std::numeric_limits<float>::max();
+    gpx_h2[i]    = std::numeric_limits<float>::max();
+    gpy_h2[i]    = std::numeric_limits<float>::max();
+    gpz_h2[i]    = std::numeric_limits<float>::max();
+    gx_h3[i]     = std::numeric_limits<float>::max();
+    gy_h3[i]     = std::numeric_limits<float>::max();
+    gz_h3[i]     = std::numeric_limits<float>::max();
+    gpx_h3[i]    = std::numeric_limits<float>::max();
+    gpy_h3[i]    = std::numeric_limits<float>::max();
+    gpz_h3[i]    = std::numeric_limits<float>::max();
+    gx_h4[i]     = std::numeric_limits<float>::max();
+    gy_h4[i]     = std::numeric_limits<float>::max();
+    gz_h4[i]     = std::numeric_limits<float>::max();
+    gpx_h4[i]    = std::numeric_limits<float>::max();
+    gpy_h4[i]    = std::numeric_limits<float>::max();
+    gpz_h4[i]    = std::numeric_limits<float>::max();
+  }
+
   n_hits = 0;
   for(int ihit=0; ihit<hitVector->size(); ++ihit) {
     SQHit *hit = hitVector->at(ihit);
@@ -389,7 +397,7 @@ int SimAna::process_event(PHCompositeNode* topNode)
       sy_ecal[n_showers] = shower->get_y();
       sz_ecal[n_showers] = shower->get_z();
       sedep_ecal[n_showers] = shower->get_edep(ECAL_volume);
-      //std::cout << "shower " << shower->get_x() << " y " << shower->get_y() <<" z " << shower->get_z() << " edep " << shower->get_edep(ECAL_volume) << std::endl;
+      //std::cout << "shower " << shower->get_x() << " y " << shower->get_y() <<" z " << shower->get_z() << " id " << shower->get_id() << " parent particle " << shower->get_parent_particle_id() << " nhits " << shower->get_nhits(ECAL_volume) << " edep " << shower->get_edep(ECAL_volume) << std::endl;
       n_showers++;
     }
     if(n_showers>=1000) break;
@@ -680,6 +688,13 @@ void SimAna::MakeTree()
   saveTree->Branch("gpx_h2",        gpx_h2,              "gpx_h2[n_primaries]/F");
   saveTree->Branch("gpy_h2",        gpy_h2,              "gpy_h2[n_primaries]/F");
   saveTree->Branch("gpz_h2",        gpz_h2,              "gpz_h2[n_primaries]/F");
+
+  saveTree->Branch("gx_h3",         gx_h3,               "gx_h3[n_primaries]/F");
+  saveTree->Branch("gy_h3",         gy_h3,               "gy_h3[n_primaries]/F");
+  saveTree->Branch("gz_h3",         gz_h3,               "gz_h3[n_primaries]/F");
+  saveTree->Branch("gpx_h3",        gpx_h3,              "gpx_h3[n_primaries]/F");
+  saveTree->Branch("gpy_h3",        gpy_h3,              "gpy_h3[n_primaries]/F");
+  saveTree->Branch("gpz_h3",        gpz_h3,              "gpz_h3[n_primaries]/F");
 
   saveTree->Branch("gx_h4",         gx_h4,               "gx_h4[n_primaries]/F");
   saveTree->Branch("gy_h4",         gy_h4,               "gy_h4[n_primaries]/F");
