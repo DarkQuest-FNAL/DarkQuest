@@ -9,9 +9,12 @@
 class TFile;
 class TTree;
 class SQHitVector;
+class SQTrackVector;
 
 class PHG4TruthInfoContainer;
 class PHG4HitContainer;
+class SRecEvent;
+class SRecTrack;
 class PHG4Hit;
 class PHG4Shower;
 class PHG4Particle;
@@ -40,6 +43,7 @@ private:
   void MakeTree();
 
   SQHitVector* hitVector;
+  SRecEvent* _recEvent;
   PHG4TruthInfoContainer* _truth;
 
   PHG4HitContainer *g4hc_d1x;
@@ -91,6 +95,23 @@ private:
   float hit_truthy[10000];
   float hit_truthz[10000];
   float hit_truthpos[10000];
+
+  int n_tracks;
+  int track_charge[100];
+  int track_nhits[100];
+  float track_x[100];
+  float track_y[100];
+  float track_z[100];
+  float track_px[100];
+  float track_py[100];
+  float track_pz[100];
+  float track_m[100];
+  float track_chisq[100];
+  float track_prob[100];
+  float track_quality[100];
+  int track_nhits_st1[100];
+  int track_nhits_st2[100];
+  int track_nhits_st3[100];
 
   int n_showers;
   float sx_ecal[1000];
