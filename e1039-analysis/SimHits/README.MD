@@ -1,15 +1,62 @@
 # SimHits
-Creates simple ROOT TTree with basic g4SimHit information for input HepMC files.
+Collection of code to run e1039-simulation.
 
-To get started:
+## Getting started
+
+### Connecting to cluster
+
+### Downloading code
 ```
-git clone https://github.com/cmantill/DarkQuest.git
+git clone git@github.com:cmantill/DarkQuest.git
 cd DarkQuest/e1039-analysis/SimHits/
 ```
 
-To compile:
+You will want to install e1039-core privately (or call the already installed official simulation).
+
+### Installing e1039-core 
+
+<details><summary>Private installation in the spinquest machine</summary>
+<p>
+  
+  ```bash
+  # make directory in your home dir
+  cd 
+  mkdir mye1039
+  
+  # clone repo
+  git clone git@github.com:cmantill/e1039-core.git
+  
+  # build and install
+  cd /path/to/directory_where_you_download_e1039-core
+  ./script/setup-install.sh auto
+  source ../core-inst/this-e1039.sh
+  ./build.sh
+  ```
+</p>
+</details>
+
+### Setting up e1039-core
+When using an new shell environment (i.e. text terminal) you should source the `this-e1039.sh` script.
+You can change the location correspondingly.
 ```
-source /e906/app/software/osg/software/e1039/this-e1039.sh
+source /seaquest/users/cmantill/mye1039/core-inst/this-e1039.sh
+```
+
+If you do not want to install your private version of e1039 you can call cmantill's version by sourcing the following scripts
+```
+source setup_mye1039.sh
+```
+
+To call the official e1039-core version do:
+```
+source setup.sh
+```
+
+### Compiling SimAna
+The main scripts are located in `macro`.
+
+To compile (after `setup_mye1039.sh`):
+```
 mkdir work
 mkdir install
 cd work
@@ -27,62 +74,26 @@ cd work
 make
 make install
 ```
+### To run
 
-To re-setup after code has compiled (every time) in spinquestgpvm01.fnal.gov:
+The main script `Fun4Sim.C` depends on the location of signal files that depends on `DIR_CMANTILL` so make sure to setup that variable as indicated below.
+
+To setup the environment variables (after compiling):
 ```
-source setup.sh # (or setup_mye1039.sh - if using private version of code)
-```
-
-## Current private version 
-The current version of the code uses a private version of e1039-core located in: https://github.com/liuk/e1039-core.git
-
-If you want to install the private e1039-core version in your spinquest machine follow:
-```
-# make directory in your home dir
-cd 
-
-# clone repo                                                                                                                                                                      
-git clone https://github.com/cmantill/e1039-core.git # (or your fork)
-
-# to setup installation
-cd /path/to/directory_where_you_download_e1039-core
-./script/setup-install.sh auto
-source ../core-inst/this-e1039.sh
-
-# build (takes 5-10min)
-./build.sh
-
-# When using an new shell environment (i.e. text terminal) you should source this script (change location correspondingly)
-source /seaquest/users/cmantill/core-inst/this-e1039.sh
-```
-
-If you do not want to install your private version of e1039 you can call cmantill's version by sourcing the following scripts
-```
-source setup_mye1039.sh
-```
-
-The main scripts are located in `macro`.
-
-## In screen
-To run a process in `screen` (in SimHits directory): 
-```
-kinit
 cd SimHits/
 export DIR_TOP=`pwd`
 source setup_mye1039.sh
 export LD_LIBRARY_PATH=$DIR_TOP/install/lib/:$LD_LIBRARY_PATH
 export DIR_CMANTILL=/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits
 cd macro/
-mkdir -p simeval_electrons_emcal/
-mkdir -p output_electrons_emcal/
 ```
 
 To test
 ```
-root -b -q Fun4SimHit.C 
+root -b -q Fun4Sim.C 
 ```
 
-to run over a number of files `source run_electrons.sh $MECH $NEVENTS` e.g.
+To run over a number of signal files, do `source run_electrons.sh $MECH $NEVENTS` e.g.
 ```
 source run_electrons.sh Brem 10000
 ```
