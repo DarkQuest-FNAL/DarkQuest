@@ -21,7 +21,11 @@ R__LOAD_LIBRARY(libsim_ana)
 using namespace std;
 
 int Fun4Sim(const int nevent = 100,
-	    std::string ifile = "Eta_0.540000_z500_600_eps_-6",
+	    //std::string ifile = "Brem_0.011603_z500_600_eps_-6",
+	    std::string ifile = "Brem_2.302710_z500_600_eps_-6",
+	    //std::string ifile = "Eta_0.012922_z500_600_eps_-6",
+	    //std::string ifile = "Eta_0.540000_z500_600_eps_-6",
+	    const bool doEMCal = true,
 	    const int idLep = 11)
 {
   const double target_coil_pos_z = -300;
@@ -50,7 +54,13 @@ int Fun4Sim(const int nevent = 100,
   rc->set_CharFlag("AlignmentMille", "$DIR_CMANTILL/macro/align_mille.txt");  
   rc->set_CharFlag("fMagFile", "$E1039_RESOURCE/geometry/magnetic_fields/tab.Fmag");
   rc->set_CharFlag("kMagFile", "$E1039_RESOURCE/geometry/magnetic_fields/tab.Kmag");
-  //rc->Print();
+  //rc->set_BoolFlag("COARSE_MODE", true);
+  rc->set_DoubleFlag("TX_MAX", 0.32);
+  rc->set_DoubleFlag("TY_MAX", 0.2);
+  rc->set_DoubleFlag("X0_MAX", 500.0);
+  rc->set_DoubleFlag("Y0_MAX", 400.0);
+  rc->set_DoubleFlag("INVP_MAX", 0.5);
+  rc->Print();
 
   GeomSvc::UseDbSvc(true);
   GeomSvc *geom_svc = GeomSvc::instance();
@@ -102,7 +112,9 @@ int Fun4Sim(const int nevent = 100,
   }
   // sensitive elements of the spectrometer
   SetupSensitiveDetectors(g4Reco, do_dphodo, do_station1DC, "SQ_ArCO2", "SQ_Scintillator", 1);
-  SetupEMCal(g4Reco, "EMCal", 0., 0., 1930.);
+  if (doEMCal) {
+    SetupEMCal(g4Reco, "EMCal", 0., 0., 1930.);
+  }
   se->registerSubsystem(g4Reco);
 
   if (save_in_acc) se->registerSubsystem(new RequireParticlesInAcc());
@@ -116,7 +128,9 @@ int Fun4Sim(const int nevent = 100,
   //digitizer->Verbosity(99);
   digitizer->set_enable_st1dc(do_station1DC);    // these two lines need to be in sync with the parameters used
   digitizer->set_enable_dphodo(do_dphodo);       // in the SetupSensitiveVolumes() function call above
-  digitizer->registerEMCal("EMCal", 100);
+  if (doEMCal) {
+    digitizer->registerEMCal("EMCal", 100);
+  }
   se->registerSubsystem(digitizer);
 
   // Make SQ nodes for truth info
@@ -134,20 +148,23 @@ int Fun4Sim(const int nevent = 100,
   //se->registerSubsystem(evt_filter);
 
   // Tracking module
+  std::cout << "*********** Start SQReco step now..." << std::endl;
   SQReco* reco = new SQReco();
   reco->Verbosity(0);
   //reco->set_geom_file_name("support/geom.root"); //not needed as it's created on the fly
   reco->set_enable_KF(true);           //Kalman filter not needed for the track finding, disabling KF saves a lot of initialization time
   reco->setInputTy(SQReco::E1039);     //options are SQReco::E906 and SQReco::E1039
   reco->setFitterTy(SQReco::KFREF);    //not relavant for the track finding
+  //reco->setFitterTy(SQReco::LEGACY);
   reco->set_evt_reducer_opt("none");   //if not provided, event reducer will be using JobOptsSvc to intialize; to turn off, set it to "none", for normal tracking, set to something like "aoc"
   reco->set_enable_eval(true);          //set to true to generate evaluation file which includes final track candidates 
   reco->set_eval_file_name("eval.root");
   reco->set_enable_eval_dst(false);     //set to true to include final track cnadidates in the DST tree
-  //reco->add_eval_list(3);             //include back partial tracks in eval tree for debuging
-  //reco->add_eval_list(2);             //include station-3+/- in eval tree for debuging
-  //reco->add_eval_list(1);             //include station-2 in eval tree for debugging
-  //se->registerSubsystem(reco);
+  reco->add_eval_list(3);             //include back partial tracks in eval tree for debuging
+  reco->add_eval_list(2);             //include station-3+/- in eval tree for debuging
+  reco->add_eval_list(1);             //include station-2 in eval tree for debugging
+  //reco->set_legacy_rec_container(false);
+  se->registerSubsystem(reco);
 
   //VertexFit* vertexing = new VertexFit();
   //se->registerSubsystem(vertexing);

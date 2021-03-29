@@ -7,6 +7,10 @@
 #include <phool/getClass.h>
 #include <interface_main/SQHitVector_v1.h>
 #include <interface_main/SQHit.h>
+#include <interface_main/SQTrackVector_v1.h>
+
+#include <ktracker/SRecEvent.h>
+
 
 #include <g4main/PHG4TruthInfoContainer.h>
 #include <g4main/PHG4HitContainer.h>
@@ -17,6 +21,10 @@
 #include <g4main/PHG4VtxPoint.h>
 
 #include "SimAna.h"
+
+#define LogDebug(exp)       std::cout<<"DEBUG: "  <<__FILE__<<": "<<__LINE__<<": "<< exp << std::endl
+#define LogError(exp)       std::cout<<"ERROR: "  <<__FILE__<<": "<<__LINE__<<": "<< exp << std::endl
+#define LogWarning(exp)     std::cout<<"WARNING: "<<__FILE__<<": "<<__LINE__<<": "<< exp << std::endl
 
 SimAna::SimAna(const std::string& name): SubsysReco(name)
 {}
@@ -295,6 +303,24 @@ int SimAna::process_event(PHCompositeNode* topNode)
     hit_truthz[i]       = std::numeric_limits<float>::max();
   }
 
+  for(int i=0; i<100; ++i) {
+    track_charge[i]      = std::numeric_limits<int>::max();
+    track_nhits[i]       = std::numeric_limits<int>::max();
+    track_x[i]           = std::numeric_limits<float>::max();
+    track_y[i]           = std::numeric_limits<float>::max();
+    track_z[i]           = std::numeric_limits<float>::max();
+    track_px[i]          = std::numeric_limits<float>::max();
+    track_py[i]          = std::numeric_limits<float>::max();
+    track_pz[i]          = std::numeric_limits<float>::max();
+    track_m[i]           = std::numeric_limits<float>::max();
+    track_chisq[i]       = std::numeric_limits<float>::max();
+    track_prob[i]       = std::numeric_limits<float>::max();
+    track_quality[i]       = std::numeric_limits<float>::max();
+    track_nhits_st1[i]       = std::numeric_limits<float>::max();
+    track_nhits_st2[i]       = std::numeric_limits<float>::max();
+    track_nhits_st3[i]       = std::numeric_limits<float>::max();
+  }
+
   n_showers =0;
   for(int i=0; i<1000; ++i) {
     sx_ecal[i]          = std::numeric_limits<float>::max();
@@ -385,6 +411,30 @@ int SimAna::process_event(PHCompositeNode* topNode)
     //if(hit->get_detector_id() == 100){
     //std::cout << "emcal hit edep " << hit->get_edep() << std::endl;
     //}
+  }
+
+  SRecTrack* Best_recTrack = NULL;
+  int n_recTracks = _recEvent->getNTracks();
+  n_tracks = 0;
+  for(int itrk = 0; itrk < n_recTracks; ++itrk) {
+    SRecTrack *trk = &_recEvent->getTrack(itrk);
+    std::cout << "******************** (trk->getTargetMom()).Px() " << (trk->getTargetMom()).Px() << std::endl;
+    track_charge[n_tracks] = trk->getCharge();
+    track_nhits[n_tracks] = trk->getNHits();
+    track_x[n_tracks] = (trk->getTargetPos()).X();
+    track_y[n_tracks] = (trk->getTargetPos()).Y();
+    track_z[n_tracks] = (trk->getTargetPos()).Z();
+    track_px[n_tracks] = (trk->getTargetMom()).Px();
+    track_py[n_tracks] = (trk->getTargetMom()).Py();
+    track_pz[n_tracks] = (trk->getTargetMom()).Pz();
+    track_chisq[n_tracks] = trk->getChisq();
+    track_prob[n_tracks] = trk->getProb();
+    track_quality[n_tracks] = trk->getQuality();
+    track_nhits_st1[n_tracks] = trk->getNHitsInStation(1);
+    track_nhits_st2[n_tracks] = trk->getNHitsInStation(2);
+    track_nhits_st3[n_tracks] = trk->getNHitsInStation(3);
+    ++n_tracks;
+    if(n_tracks >= 100) break;
   }
 
   n_showers = 0;
@@ -564,6 +614,17 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
   hitVector    = findNode::getClass<SQHitVector>(topNode, "SQHitVector");
   if(!hitVector) return Fun4AllReturnCodes::ABORTEVENT;
 
+  //trackVector = findNode::getClass<SQTrackVector>(topNode, "SQRecTrackVector");
+  //if(!trackVector) {
+  //  std::cout << "did not find SQTrackVector" << std::endl;
+  //  return Fun4AllReturnCodes::ABORTEVENT;
+  //}
+  _recEvent = findNode::getClass<SRecEvent>(topNode, "SRecEvent");
+  if (!_recEvent) {
+    LogError("!_recEvent");
+    //return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
   _truth = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
   if (!_truth) return Fun4AllReturnCodes::ABORTEVENT;
 
@@ -612,7 +673,7 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
   g4hc_ecal  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_EMCal");
   if (!g4hc_ecal) {
     std::cout << "didnt get ecal node " << std::endl;
-    return Fun4AllReturnCodes::ABORTEVENT;
+    //return Fun4AllReturnCodes::ABORTEVENT;
   }
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -631,6 +692,24 @@ void SimAna::MakeTree()
   saveTree->Branch("hit_truthx",    hit_truthx,       "hit_truthx[n_hits]/F");
   saveTree->Branch("hit_truthy",    hit_truthy,       "hit_truthy[n_hits]/F");
   saveTree->Branch("hit_truthz",    hit_truthz,       "hit_truthz[n_hits]/F");
+
+  saveTree->Branch("n_tracks",         &n_tracks,         "n_tracks/I");
+  saveTree->Branch("track_charge",     track_charge,      "track_charge[n_tracks]/I");
+  saveTree->Branch("track_nhits",      track_nhits,       "track_nhits[n_tracks]/I");
+  saveTree->Branch("track_x",          track_x,           "track_x[n_tracks]/F");
+  saveTree->Branch("track_y",          track_y,           "track_y[n_tracks]/F");
+  saveTree->Branch("track_z",          track_z,           "track_z[n_tracks]/F");
+  saveTree->Branch("track_px",         track_px,          "track_px[n_tracks]/F");
+  saveTree->Branch("track_py",         track_py,          "track_py[n_tracks]/F");
+  saveTree->Branch("track_pz",         track_pz,          "track_pz[n_tracks]/F");
+  saveTree->Branch("track_m",          track_m,           "track_m[n_tracks]/F");
+  saveTree->Branch("track_chisq",      track_chisq,       "track_chisq[n_tracks]/F");
+  saveTree->Branch("track_prob",       track_prob,        "track_prob[n_tracks]/F");
+  saveTree->Branch("track_quality",    track_quality,     "track_quality[n_tracks]/F");
+  saveTree->Branch("track_nhits_st1",    track_nhits_st1,     "track_nhits_st1[n_tracks]/I");
+  saveTree->Branch("track_nhits_st2",    track_nhits_st2,     "track_nhits_st2[n_tracks]/I");
+  saveTree->Branch("track_nhits_st3",    track_nhits_st3,     "track_nhits_st3[n_tracks]/I");
+
 
   saveTree->Branch("n_showers",     &n_showers,       "n_showers/I");
   saveTree->Branch("sx_ecal",       &sx_ecal,         "sx_ecal[n_showers]/F");
@@ -674,6 +753,13 @@ void SimAna::MakeTree()
   saveTree->Branch("gpx_st2",       gpx_st2,             "gpx_st2[n_primaries]/F");
   saveTree->Branch("gpy_st2",       gpy_st2,             "gpy_st2[n_primaries]/F");
   saveTree->Branch("gpz_st2",       gpz_st2,             "gpz_st2[n_primaries]/F");
+
+  saveTree->Branch("gx_st3",        gx_st3,              "gx_st3[n_primaries]/F");
+  saveTree->Branch("gy_st3",        gy_st3,              "gy_st3[n_primaries]/F");
+  saveTree->Branch("gz_st3",        gz_st3,              "gz_st3[n_primaries]/F");
+  saveTree->Branch("gpx_st3",       gpx_st3,             "gpx_st3[n_primaries]/F");
+  saveTree->Branch("gpy_st3",       gpy_st3,             "gpy_st3[n_primaries]/F");
+  saveTree->Branch("gpz_st3",       gpz_st3,             "gpz_st3[n_primaries]/F");
 
   saveTree->Branch("gx_h1",         gx_h1,               "gx_h1[n_primaries]/F");
   saveTree->Branch("gy_h1",         gy_h1,               "gy_h1[n_primaries]/F");
