@@ -20,13 +20,20 @@ R__LOAD_LIBRARY(libsim_ana)
 #include <sstream>
 using namespace std;
 
-int Fun4Sim(const int nevent = 100,
+/*
+ * macro used to analyze Aprime decaying to dimuons, 
+ * Heavily based on Fun4Sim.C with small modification
+ * for muons. 
+ * Can be merged together with Fun4Sim.C
+ */
+
+int Fun4Sim_Ap2Muons(const int nevent = 10000,
 	    //std::string ifile = "Brem_0.011603_z500_600_eps_-6",
-	    std::string ifile = "Brem_2.302710_z500_600_eps_-6",
+	    std::string ifile = "Brem_2.750000_z500_600_eps_-6.4",
 	    //std::string ifile = "Eta_0.012922_z500_600_eps_-6",
 	    //std::string ifile = "Eta_0.540000_z500_600_eps_-6",
 	    const bool doEMCal = true,
-	    const int idLep = 11)
+	    const int idLep = 13)
 {
   const double target_coil_pos_z = -300;
 
@@ -181,7 +188,7 @@ int Fun4Sim(const int nevent = 100,
   // input - we need a dummy to drive the event loop
   Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
   se->registerInputManager(in);
-  stringstream ssin; ssin << "$DIR_CMANTILL/../../lhe/displaced_Aprime_Electrons/" << ifile << ".txt";
+  stringstream ssin; ssin << "$DIR_CMANTILL/../../lhe/displaced_Aprime_Muons/" << ifile << ".txt";
   in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
   //in->Verbosity(99);
   se->registerInputManager(in);
