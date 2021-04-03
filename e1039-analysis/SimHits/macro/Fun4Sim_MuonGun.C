@@ -21,7 +21,7 @@ R__LOAD_LIBRARY(libsim_ana)
 #include <sstream>
 using namespace std;
 
-int Fun4Sim_Muon(const int nevent = 1000) {
+int Fun4Sim_MuonGun(const int nevent = 20) {
   const double target_coil_pos_z = -300;
 
   const bool do_collimator = true;
@@ -89,7 +89,9 @@ int Fun4Sim_Muon(const int nevent = 1000) {
     genp->set_vertex_distribution_function(PHG4SimpleEventGenerator::Uniform,
                                            PHG4SimpleEventGenerator::Uniform,
                                            PHG4SimpleEventGenerator::Uniform);
-    genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z);
+    //genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z);
+    //genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z+150.0);
+    genp->set_vertex_distribution_mean(0.0, 0.0, 500.0);
     genp->set_vertex_distribution_width(0.0, 0.0, 0.0);
     genp->set_vertex_size_function(PHG4SimpleEventGenerator::Uniform);
     genp->set_vertex_size_parameters(0.0, 0.0);
@@ -117,11 +119,11 @@ int Fun4Sim_Muon(const int nevent = 1000) {
   SetupInsensitiveVolumes(g4Reco, do_e1039_shielding, do_fmag, do_kmag,
                           do_absorber);
   // collimator, targer and shielding between target and FMag
-  SetupBeamline(g4Reco, do_collimator,
-                target_coil_pos_z - 302.36);  // Is the position correct??
-  if (do_target) {
-    SetupTarget(g4Reco, target_coil_pos_z, target_l, target_z, use_g4steps);
-  }
+  //SetupBeamline(g4Reco, do_collimator,
+  //              target_coil_pos_z - 302.36);  // Is the position correct??
+  //if (do_target) {
+  //  SetupTarget(g4Reco, target_coil_pos_z, target_l, target_z, use_g4steps);
+  //}
   // sensitive elements of the spectrometer
   // SetupSensitiveDetectors(g4Reco, do_dphodo, do_station1DC, "SQ_ArCO2",
   // "SQ_Scintillator", 1);

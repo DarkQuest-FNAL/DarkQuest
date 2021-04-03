@@ -10,7 +10,7 @@ ssh -KXY cmantill@spinquestgpvm01.fnal.gov
 
 To run jupternote book interactively,
 ```
-ssh -L -KXY localhost:9999:localhost:9999 yfeng@spinquestgpvm01.fnal.gov
+ssh -KXY -L localhost:9999:localhost:9999 yfeng@spinquestgpvm01.fnal.gov
 ```
 After login, run
 ```
