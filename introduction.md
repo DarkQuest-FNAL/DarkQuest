@@ -8,11 +8,17 @@ It proposes a few low-cost upgrades to existing detectors from the SeaQuest/Spin
 ## Dark sector signatures
 
 DarkQuest will directly search for the decays of unstable mediators and dark states to visible Standard Model particles.
-It does so by shooting protons into a nuclear target. 
-When protons collide with a nucleus, a new dark photon might be produced
+It can produce these dark sector particles by shooting protons into a nuclear target. 
+When protons collide with a nucleus, a new dark sector particle might be produced.
 
 DarkQuest distinguishes itself from other experimental initiatives in that it can cover a unique parameter space 
 of dark matter scenarios as a compact beam dump spectrometer detector.
+
+<p align="left">
+  <img src="/images/brem_production.png" width="300" alt="NM4 Location">
+  <img src="/images/eta_production.png" width="300" alt="NM4 Location">
+  <img src="/images/sipm_production.png" width="300" alt="NM4 Location">
+</p>
 
 ## DarkQuest experimental setup
 
@@ -37,6 +43,10 @@ Here is the schematic of the DarkQuest experiment with the Ecal in red.
 
 Here:
 * `DP` stands for `Dark Photon Hodoscope`. There are two 
+
+Find more on this [blog post by Duc](https://medium.com/darkquest/the-darkquest-experiment-1b8e46de1e40).
+
+## Bibliography
 
 
 # Computing 
