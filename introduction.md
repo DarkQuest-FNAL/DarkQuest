@@ -81,6 +81,11 @@ kinit username@FNAL.GOV
 ```
 ssh -KXY username@spinquestgpvm01.fnal.gov
 ```    
+or if jupyter notebook is needed to run plotting code interactively, one can connect to the cluster via
+```
+ssh -KXY -L localhost:9999:localhost:9999 username@spinquestgpvm01.fnal.gov
+```
+where `9999` can be replaced with other port number.
 
 If you already have a Fermilab Kerberos account and want to obtain access to the SpinQuest experiment:
 
