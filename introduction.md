@@ -1,7 +1,7 @@
 # Introduction to DarkQuest
 
 <p align="left">
-  <img src="/images/darkquest.png" width="100" alt="DarkQuest">
+  <img src="/images/darkquest.png" width="200" alt="DarkQuest">
 </p>
 
 DarkQuest is a proton fixed-target experiment especially sensitive to visible dark sector signatures in MeV-GeV mass range. 
@@ -53,8 +53,11 @@ Find more on this [blog post by Duc](https://medium.com/darkquest/the-darkquest-
 ## Bibliography
 
 \[1\]. Dark Sectors at the Fermilab SeaQuest Experiment: [Arxiv.1804.00661](https://arxiv.org/pdf/1804.00661.pdf)
+
 \[2\]. Dark Scalars and Heavy Neutral Leptons at DarkQuest: [Arxiv.2008.08108](https://arxiv.org/pdf/2008.08108.pdf)
+
 \[3\]. DarkQuest Snowmass LOI: [Link](https://www.snowmass21.org/docs/files/summaries/RF/SNOWMASS21-RF6_RF0_Nhan_Tran-025.pdf)
+
 \[4\]. Phenix calorimeter: [Link](https://www.sciencedirect.com/science/article/pii/S016890020201954X)
 
 
