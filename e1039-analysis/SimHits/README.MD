@@ -1,9 +1,9 @@
 # SimHits
-Collection of code to run e1039-simulation.
+Collection of code to run e1039-simulation, where 
+- `src` is the directory that controls information to be saved in the output root file
+- `macro` is the directory that contains some config files that specify the geometry setup and reconstruction steps
 
 ## Getting started
-
-### Connecting to cluster
 
 ### Downloading code
 ```
@@ -15,7 +15,7 @@ You will want to install e1039-core privately (or call the already installed off
 
 ### Installing e1039-core 
 
-<details><summary>Private installation in the spinquest machine</summary>
+<details><summary>Private installation in the spinquest machine (needed for the displaced tracking)</summary>
 <p>
   
   ```bash
@@ -36,26 +36,22 @@ You will want to install e1039-core privately (or call the already installed off
 </details>
 
 ### Setting up e1039-core
-When using an new shell environment (i.e. text terminal) you should source the `this-e1039.sh` script.
-You can change the location correspondingly.
-```
-source /seaquest/users/cmantill/mye1039/core-inst/this-e1039.sh
-```
+If you have the private version of e1039 installed, change the `MY_E1039` in `setup_mye1039.sh` to your directory; if not, you can leave it unchaged - the default will be
+cmantill's version. Then source the script:
 
-If you do not want to install your private version of e1039 you can call cmantill's version by sourcing the following scripts
 ```
 source setup_mye1039.sh
 ```
 
-To call the official e1039-core version do:
+Or to call the official e1039-core version do:
 ```
 source setup.sh
 ```
 
-### Compiling SimAna
-The main scripts are located in `macro`.
+The source has to be done everytime you log in.
 
-To compile (after `setup_mye1039.sh`):
+### Compiling SimAna
+To compile the analysis code under `SimAna` (after `setup_mye1039.sh`):
 ```
 mkdir work
 mkdir install
@@ -64,34 +60,26 @@ cmake ../src/ -DCMAKE_INSTALL_PREFIX=../install
 make
 make install
 cd ../
-export DIR_TOP=`pwd`
-export LD_LIBRARY_PATH=$DIR_TOP/install/lib/:$LD_LIBRARY_PATH
 ```
 
-To recompile after changes:
+Later to recompile if you have made changes:
 ```
 cd work
 make
 make install
 ```
+
 ### To run
 
-The main script `Fun4Sim.C` depends on the location of signal files that depends on `DIR_CMANTILL` so make sure to setup that variable as indicated below.
-
-To setup the environment variables (after compiling):
-```
-cd SimHits/
-export DIR_TOP=`pwd`
-source setup_mye1039.sh
-export LD_LIBRARY_PATH=$DIR_TOP/install/lib/:$LD_LIBRARY_PATH
-export DIR_CMANTILL=/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits
-cd macro/
-```
+The main script `Fun4Sim.C` depends on the location of signal files that depends on `DIR_CMANTILL`, which has been setup in the source script.
 
 To test
 ```
+cd macro
 root -b -q Fun4Sim.C 
 ```
+
+The `Fun4Sim.C` runs on the Aprime to dielectron signal samples; `Fun4Sim_Ap2Muons.C` runs on the Aprime to dimuon signal samples.
 
 To run over a number of signal files, do `source run_electrons.sh $MECH $NEVENTS` e.g.
 ```
