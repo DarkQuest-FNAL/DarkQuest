@@ -11,7 +11,7 @@ git clone git@github.com:cmantill/DarkQuest.git
 cd DarkQuest/e1039-analysis/SimHits/
 ```
 
-You will want to install e1039-core privately (or call the already installed official simulation).
+SimHits depends on [e1039-core](https://github.com/E1039-Collaboration/e1039-core), and we have our customized version [here](https://github.com/cmantill/e1039-core). You will want to install e1039-core privately (or call the already installed official simulation).
 
 ### Installing e1039-core 
 
