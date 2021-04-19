@@ -1,5 +1,9 @@
 # Introduction to DarkQuest
 
+<p align="left">
+  <img src="/images/darkquest.png" width="100" alt="DarkQuest">
+</p>
+
 DarkQuest is a proton fixed-target experiment especially sensitive to visible dark sector signatures in MeV-GeV mass range. 
 It proposes a few low-cost upgrades to existing detectors from the SeaQuest/SpinQuest (E-1039) Fermilab fixed target beam-dump experiment.
 
@@ -33,7 +37,7 @@ The next figure shows the location of the experiment in the Fermilab beam-line.
 
 The DarkQuest detector
 The detector setup would be a version of the SeaQuest/SpinQuest spectrometer, but with an added Electromagnetic Calorimeter (Ecal).
-The spectrometer is made of hodoscopes (scintillator planes) and drift chambers.
+The spectrometer is made of magnets, hodoscopes (scintillator planes) and drift chambers.
 
 Here is the schematic of the DarkQuest experiment with the Ecal in red.
 
@@ -47,6 +51,11 @@ Here:
 Find more on this [blog post by Duc](https://medium.com/darkquest/the-darkquest-experiment-1b8e46de1e40).
 
 ## Bibliography
+
+\[1\]. Dark Sectors at the Fermilab SeaQuest Experiment: [Arxiv.1804.00661](https://arxiv.org/pdf/1804.00661.pdf)
+\[2\]. Dark Scalars and Heavy Neutral Leptons at DarkQuest: [Arxiv.2008.08108](https://arxiv.org/pdf/2008.08108.pdf)
+\[3\]. DarkQuest Snowmass LOI: [Link](https://www.snowmass21.org/docs/files/summaries/RF/SNOWMASS21-RF6_RF0_Nhan_Tran-025.pdf)
+\[4\]. Phenix calorimeter: [Link](https://www.sciencedirect.com/science/article/pii/S016890020201954X)
 
 
 # Computing 
@@ -67,7 +76,7 @@ For point-of-contact please put your supervisor who is associated/user w. Fermil
 
 Contact the Service Desk (630-840-2345) to get your default passwords. Follow these links 
 to change the [Kerberos password](https://fermi.servicenowservices.com/kb_view.do?sysparm_article=KB0010628) 
-and the (Services password)[https://fermi.servicenowservices.com/kb_view.do?sysparm_article=KB0010542].
+and the [Services password](https://fermi.servicenowservices.com/kb_view.do?sysparm_article=KB0010542).
 
 3. Setting up the Kerberos configuration and connecting to the cluster:
 
@@ -86,6 +95,7 @@ or if jupyter notebook is needed to run plotting code interactively, one can con
 ssh -KXY -L localhost:9999:localhost:9999 username@spinquestgpvm01.fnal.gov
 ```
 where `9999` can be replaced with other port number.
+
 
 If you already have a Fermilab Kerberos account and want to obtain access to the SpinQuest experiment:
 
