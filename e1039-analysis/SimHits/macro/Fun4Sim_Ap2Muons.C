@@ -27,7 +27,7 @@ using namespace std;
  * Can be merged together with Fun4Sim.C
  */
 
-int Fun4Sim_Ap2Muons(const int nevent = 10000,
+int Fun4Sim_Ap2Muons(const int nevent = 10,
 	    //std::string ifile = "Brem_0.011603_z500_600_eps_-6",
 	    std::string ifile = "Brem_2.750000_z500_600_eps_-6.4",
 	    //std::string ifile = "Eta_0.012922_z500_600_eps_-6",
@@ -175,8 +175,8 @@ int Fun4Sim_Ap2Muons(const int nevent = 10000,
   //reco->set_legacy_rec_container(false);
   se->registerSubsystem(reco);
 
-  //VertexFit* vertexing = new VertexFit();
-  //se->registerSubsystem(vertexing);
+  VertexFit* vertexing = new VertexFit();
+  se->registerSubsystem(vertexing);
 
   gSystem->Load("libsim_ana.so");
   SimAna *sim_ana = new SimAna();  

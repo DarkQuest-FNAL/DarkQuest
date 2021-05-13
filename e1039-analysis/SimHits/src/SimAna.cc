@@ -318,6 +318,9 @@ int SimAna::process_event(PHCompositeNode* topNode)
     track_px_st1[i]          = std::numeric_limits<float>::max();
     track_py_st1[i]          = std::numeric_limits<float>::max();
     track_pz_st1[i]          = std::numeric_limits<float>::max();
+    track_x_vtx[i]           = std::numeric_limits<float>::max();
+    track_y_vtx[i]           = std::numeric_limits<float>::max();
+    track_z_vtx[i]           = std::numeric_limits<float>::max();
     track_m[i]           = std::numeric_limits<float>::max();
     track_chisq[i]       = std::numeric_limits<float>::max();
     track_prob[i]       = std::numeric_limits<float>::max();
@@ -439,6 +442,9 @@ int SimAna::process_event(PHCompositeNode* topNode)
     track_px_st1[n_tracks] = (trk->getMomentumVecSt1()).Px();
     track_py_st1[n_tracks] = (trk->getMomentumVecSt1()).Py();
     track_pz_st1[n_tracks] = (trk->getMomentumVecSt1()).Pz();
+    track_x_vtx[n_tracks] = (trk->getVertexPos()).X();
+    track_y_vtx[n_tracks] = (trk->getVertexPos()).Y();
+    track_z_vtx[n_tracks] = (trk->getVertexPos()).Z();
     
     track_chisq[n_tracks] = trk->getChisq();
     track_prob[n_tracks] = trk->getProb();
@@ -721,6 +727,9 @@ void SimAna::MakeTree()
   saveTree->Branch("track_px_st1",         track_px_st1,          "track_px_st1[n_tracks]/F");
   saveTree->Branch("track_py_st1",         track_py_st1,          "track_py_st1[n_tracks]/F");
   saveTree->Branch("track_pz_st1",         track_pz_st1,          "track_pz_st1[n_tracks]/F");
+  saveTree->Branch("track_x_vtx",          track_x_vtx,           "track_x_vtx[n_tracks]/F");
+  saveTree->Branch("track_y_vtx",          track_y_vtx,           "track_y_vtx[n_tracks]/F");
+  saveTree->Branch("track_z_vtx",          track_z_vtx,           "track_z_vtx[n_tracks]/F");
   saveTree->Branch("track_m",          track_m,           "track_m[n_tracks]/F");
   saveTree->Branch("track_chisq",      track_chisq,       "track_chisq[n_tracks]/F");
   saveTree->Branch("track_prob",       track_prob,        "track_prob[n_tracks]/F");

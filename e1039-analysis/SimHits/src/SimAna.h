@@ -111,6 +111,9 @@ private:
   float track_px_st1[100];
   float track_py_st1[100];
   float track_pz_st1[100];
+  float track_x_vtx[100];
+  float track_y_vtx[100];
+  float track_z_vtx[100];
   float track_m[100];
   float track_chisq[100];
   float track_prob[100];
