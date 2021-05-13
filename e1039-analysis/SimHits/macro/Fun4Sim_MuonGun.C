@@ -90,8 +90,7 @@ int Fun4Sim_MuonGun(const int nevent = 20) {
                                            PHG4SimpleEventGenerator::Uniform,
                                            PHG4SimpleEventGenerator::Uniform);
     //genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z);
-    //genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z+150.0);
-    genp->set_vertex_distribution_mean(0.0, 0.0, 500.0);
+    genp->set_vertex_distribution_mean(0.0, 0.0, 500.);
     genp->set_vertex_distribution_width(0.0, 0.0, 0.0);
     genp->set_vertex_size_function(PHG4SimpleEventGenerator::Uniform);
     genp->set_vertex_size_parameters(0.0, 0.0);
@@ -128,8 +127,6 @@ int Fun4Sim_MuonGun(const int nevent = 20) {
   // SetupSensitiveDetectors(g4Reco, do_dphodo, do_station1DC, "SQ_ArCO2",
   // "SQ_Scintillator", 1);
   SetupSensitiveDetectors(g4Reco);
-  // SetupEMCal(g4Reco, "EMCal", 0., -110., 1930.);
-  // SetupEMCal(g4Reco, "EMCal", 0., 0., 1930.);
   se->registerSubsystem(g4Reco);
 
   // if (save_in_acc) se->registerSubsystem(new RequireParticlesInAcc());
@@ -192,23 +189,11 @@ int Fun4Sim_MuonGun(const int nevent = 20) {
   // VertexFit* vertexing = new VertexFit();
   // se->registerSubsystem(vertexing);
 
-  //// Trim minor data nodes (to reduce the DST file size)
-  // se->registerSubsystem(new SimDstTrimmer());
-
   gSystem->Load("libsim_ana.so");
   SimAna *sim_ana = new SimAna();
-  // sim_ana->set_output_filename(gSystem->ExpandPathName(ssout.str().c_str()));
-  // sim_ana->Verbosity(99);
   se->registerSubsystem(sim_ana);
 
   // input - we need a dummy to drive the event loop
-  // Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
-  // se->registerInputManager(in);
-  // stringstream ssin; ssin <<
-  // "$DIR_CMANTILL/../../lhe/displaced_Aprime_Electrons/" << ifile << ".txt";
-  // in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
-  ////in->Verbosity(99);
-  // se->registerInputManager(in);
   Fun4AllInputManager *in = new Fun4AllDummyInputManager("DUMMY");
   se->registerInputManager(in);
 

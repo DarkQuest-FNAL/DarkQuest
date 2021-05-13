@@ -497,11 +497,9 @@ int SimAna::process_event(PHCompositeNode* topNode)
     int trkID = primary->get_track_id();
     gtrkid[n_primaries] = trkID;
 
-    // check kinematics
-    checkKinematics(primary);
-
     // G4Hits at different stations                                                                                                                                                                       
     if(g4hc_ecal){
+      // checkKinematics(primary);
       std::vector<PHG4Hit*> g4hits = FindG4HitsAtStation(trkID, g4hc_ecal);
       nhits_ecal[n_primaries] =0;
       //std::cout << "nhits in EMCAL " << g4hits.size() << std::endl;
@@ -653,7 +651,7 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
   g4hc_d3mx = findNode::getClass<PHG4HitContainer      >(topNode, "G4HIT_D3mXp");
   if (! g4hc_d1x) g4hc_d1x = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D0X");
   if ( !g4hc_d1x || !g4hc_d3px || !g4hc_d3mx) {
-    std::cout << "didnt get d node " << std::endl;
+    std::cout << "SimAna::GetNode No drift chamber node " << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
@@ -671,7 +669,7 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
   g4hc_h4b  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H4B");
   if (!g4hc_h1t || !g4hc_h1b || !g4hc_h2t || !g4hc_h2b ||
       !g4hc_h3t || !g4hc_h3b || !g4hc_h4t || !g4hc_h4b ) {
-    std::cout << "didnt get h node  " << std::endl;
+    std::cout << "SimAna::GetNode No hodoscope node " << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
@@ -685,13 +683,13 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
   g4hc_p2y2  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P2Y2");
   if (!g4hc_p1y1 || !g4hc_p1y2 || !g4hc_p1x1 || !g4hc_p1x2 ||
       !g4hc_p2x1 || !g4hc_p2x2 || !g4hc_p2y1 || !g4hc_p2y2   ) {
-    std::cout << "didnt get p node " << std::endl;
+    std::cout << "SimAna::GetNode No prototubes node " << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
   g4hc_ecal  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_EMCal");
   if (!g4hc_ecal) {
-    std::cout << "didnt get ecal node " << std::endl;
+    std::cout << "SimAna::GetNode No EMCAL node " << std::endl;
     //return Fun4AllReturnCodes::ABORTEVENT;
   }
   return Fun4AllReturnCodes::EVENT_OK;
