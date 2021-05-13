@@ -81,7 +81,7 @@ root -b -q Fun4Sim.C
 
 The `Fun4Sim.C` runs on the Aprime to dielectron signal samples; `Fun4Sim_Ap2Muons.C` runs on the Aprime to dimuon signal samples.
 
-To run over a number of signal files, do `source run_electrons.sh $MECH $NEVENTS` e.g.
+To run over a number of signal files, do (assuming that you are still in the `macro\` directory) `source run_electrons.sh $MECH $NEVENTS` e.g.
 ```
 source run_electrons.sh Brem 10000
 ```
