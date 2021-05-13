@@ -43,6 +43,6 @@ mkdir logs
 source gridsub.sh Eta_0.54_z500_600_eps_-6.2-10000 1 1 10000 Eta_0.54_z500_600_eps_-6.2 > logs/Eta_0.54_z500_600_eps_-6.2.log
 ```
 
-A submission for all files is summarized in `submit_electrons.sh`.
+A submission for all files is summarized in `submit_electrons.sh` (which is in the `grid\` folder).
 
 You can run `jobsub_q --user=$USER` (or its alias jobsub_q_mine) to check the status of your jobs.
