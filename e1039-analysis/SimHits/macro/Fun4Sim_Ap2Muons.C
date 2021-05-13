@@ -27,7 +27,7 @@ using namespace std;
  * Can be merged together with Fun4Sim.C
  */
 
-int Fun4Sim_Ap2Muons(const int nevent = 10,
+int Fun4Sim_Ap2Muons(const int nevent = 10000,
 	    //std::string ifile = "Brem_0.011603_z500_600_eps_-6",
 	    std::string ifile = "Brem_2.750000_z500_600_eps_-6.4",
 	    //std::string ifile = "Eta_0.012922_z500_600_eps_-6",
