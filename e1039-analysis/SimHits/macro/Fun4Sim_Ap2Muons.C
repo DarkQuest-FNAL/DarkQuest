@@ -175,8 +175,8 @@ int Fun4Sim_Ap2Muons(const int nevent = 10000,
   //reco->set_legacy_rec_container(false);
   se->registerSubsystem(reco);
 
-  //VertexFit* vertexing = new VertexFit();
-  //se->registerSubsystem(vertexing);
+  VertexFit* vertexing = new VertexFit();
+  se->registerSubsystem(vertexing);
 
   gSystem->Load("libsim_ana.so");
   SimAna *sim_ana = new SimAna();  

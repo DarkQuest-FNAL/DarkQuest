@@ -37,13 +37,13 @@ SimHits depends on [e1039-core](https://github.com/E1039-Collaboration/e1039-cor
 
 ### Setting up e1039-core
 If you have the private version of e1039 installed, change the `MY_E1039` in `setup_mye1039.sh` to your directory; if not, you can leave it unchaged - the default will be
-cmantill's version. Then source the script:
+yfeng's version. Then source the script:
 
 ```
 source setup_mye1039.sh
 ```
 
-Or to call the official e1039-core version do:
+Or just to call the official e1039-core version do:
 ```
 source setup.sh
 ```

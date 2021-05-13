@@ -1,4 +1,4 @@
-export MY_E1039=/seaquest/users/cmantill/mye1039/e1039-core/this-e1039.sh
+export MY_E1039=/seaquest/users/yfeng/mye1039/e1039-core/this-e1039.sh
 export DIR_TOP=$(dirname $(readlink -f $BASH_SOURCE))
 echo $DIR_TOP
 source $MY_E1039
