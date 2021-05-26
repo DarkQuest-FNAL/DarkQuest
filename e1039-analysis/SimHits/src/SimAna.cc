@@ -11,7 +11,6 @@
 
 #include <ktracker/SRecEvent.h>
 
-
 #include <g4main/PHG4TruthInfoContainer.h>
 #include <g4main/PHG4HitContainer.h>
 #include <g4main/PHG4Hit.h>
@@ -292,15 +291,19 @@ void SimAna::checkKinematics(PHG4Particle* primary) {
 int SimAna::process_event(PHCompositeNode* topNode)
 {
   //std::cout << "new event " <<std::endl;
-  for(int i=0; i<10000; ++i) {
+  for(int i=0; i<1000; ++i) {
     hit_detid[i]        = std::numeric_limits<short>::max();
     hit_elmid[i]        = std::numeric_limits<short>::max();
+    hit_trkid[i]        = std::numeric_limits<short>::max();
     hit_driftdis[i]     = std::numeric_limits<float>::max();
     hit_pos[i]          = std::numeric_limits<float>::max();
     hit_edep[i]         = std::numeric_limits<float>::max();
     hit_truthx[i]       = std::numeric_limits<float>::max();
     hit_truthy[i]       = std::numeric_limits<float>::max();
     hit_truthz[i]       = std::numeric_limits<float>::max();
+    hit_truthpx[i]      = std::numeric_limits<float>::max();
+    hit_truthpy[i]      = std::numeric_limits<float>::max();
+    hit_truthpz[i]      = std::numeric_limits<float>::max();
   }
 
   for(int i=0; i<100; ++i) {
@@ -328,6 +331,14 @@ int SimAna::process_event(PHCompositeNode* topNode)
     track_nhits_st1[i]       = std::numeric_limits<float>::max();
     track_nhits_st2[i]       = std::numeric_limits<float>::max();
     track_nhits_st3[i]       = std::numeric_limits<float>::max();
+  }
+
+  for(int i=0; i<100; ++i) {
+    dimuon_mass[i] = std::numeric_limits<float>::max();
+    dimuon_vtx_x[i] = std::numeric_limits<float>::max();
+    dimuon_vtx_y[i] = std::numeric_limits<float>::max();
+    dimuon_vtx_z[i] = std::numeric_limits<float>::max();
+    dimuon_chisq[i] = std::numeric_limits<float>::max();
   }
 
   n_showers =0;
@@ -409,25 +420,29 @@ int SimAna::process_event(PHCompositeNode* topNode)
     int hitID = hit->get_hit_id();
     hit_detid[n_hits]      = hit->get_detector_id();
     hit_elmid[n_hits]      = hit->get_element_id();
+    hit_trkid[n_hits]      = hit->get_track_id();
     hit_driftdis[n_hits]   = hit->get_drift_distance();
     hit_pos[n_hits]        = hit->get_pos();
     hit_edep[n_hits]       = hit->get_edep();
     hit_truthx[n_hits] = hit->get_truth_x();
     hit_truthy[n_hits] = hit->get_truth_y();
     hit_truthz[n_hits] = hit->get_truth_z();
+    hit_truthpx[n_hits] = hit->get_truth_px();
+    hit_truthpy[n_hits] = hit->get_truth_py();
+    hit_truthpz[n_hits] = hit->get_truth_pz();
     ++n_hits;
-    if(n_hits>=10000) break;
+    if(n_hits>=1000) break;
     //if(hit->get_detector_id() == 100){
     //std::cout << "emcal hit edep " << hit->get_edep() << std::endl;
     //}
   }
 
-  SRecTrack* Best_recTrack = NULL;
+  // tracks
   int n_recTracks = _recEvent->getNTracks();
   n_tracks = 0;
   for(int itrk = 0; itrk < n_recTracks; ++itrk) {
     SRecTrack *trk = &_recEvent->getTrack(itrk);
-    std::cout << "******************** (trk->getTargetMom()).Px() " << (trk->getTargetMom()).Px() << std::endl;
+    //std::cout << "******************** (trk->getTargetMom()).Px() " << (trk->getTargetMom()).Px() << std::endl;
     track_charge[n_tracks] = trk->getCharge();
     track_nhits[n_tracks] = trk->getNHits();
     track_x_target[n_tracks] = (trk->getTargetPos()).X();
@@ -455,6 +470,21 @@ int SimAna::process_event(PHCompositeNode* topNode)
     ++n_tracks;
     if(n_tracks >= 100) break;
   }
+
+  // vertices
+  int nRecDimuons = _recEvent->getNDimuons();
+  n_Dimuons = 0;
+  for(int iDimuon = 0; iDimuon < nRecDimuons; ++iDimuon) {
+    SRecDimuon* recDimuon = &_recEvent->getDimuon(iDimuon);
+    dimuon_mass[n_Dimuons] = recDimuon->get_mass();
+    dimuon_vtx_x[n_Dimuons] = (recDimuon->get_pos()).X();
+    dimuon_vtx_y[n_Dimuons] = (recDimuon->get_pos()).Y();
+    dimuon_vtx_z[n_Dimuons] = (recDimuon->get_pos()).Z();
+    dimuon_chisq[n_Dimuons] = recDimuon->get_chisq();
+    ++n_Dimuons;
+    if(n_Dimuons >= 100) break;
+  }
+  
 
   n_showers = 0;
   for(auto iter=_truth->GetPrimaryParticleRange().first; iter!=_truth->GetPrimaryParticleRange().second; ++iter) {
@@ -703,12 +733,16 @@ void SimAna::MakeTree()
   saveTree->Branch("n_hits",        &n_hits,          "n_hits/I");
   saveTree->Branch("hit_detID",     hit_detid,        "hit_detID[n_hits]/I");
   saveTree->Branch("hit_elmID",     hit_elmid,        "hit_elmID[n_hits]/I");
+  saveTree->Branch("hit_trkID",     hit_trkid,        "hit_trkID[n_hits]/I");
   saveTree->Branch("hit_driftdis",  hit_driftdis,     "hit_driftdis[n_hits]/F");
   saveTree->Branch("hit_pos",       hit_pos,          "hit_pos[n_hits]/F");
   saveTree->Branch("hit_edep",      hit_edep,         "hit_edep[n_hits]/F");
   saveTree->Branch("hit_truthx",    hit_truthx,       "hit_truthx[n_hits]/F");
   saveTree->Branch("hit_truthy",    hit_truthy,       "hit_truthy[n_hits]/F");
   saveTree->Branch("hit_truthz",    hit_truthz,       "hit_truthz[n_hits]/F");
+  saveTree->Branch("hit_truthpx",   hit_truthpx,      "hit_truthpx[n_hits]/F");
+  saveTree->Branch("hit_truthpy",   hit_truthpy,      "hit_truthpy[n_hits]/F");
+  saveTree->Branch("hit_truthpz",   hit_truthpz,      "hit_truthpz[n_hits]/F");
 
   saveTree->Branch("n_tracks",         &n_tracks,         "n_tracks/I");
   saveTree->Branch("track_charge",     track_charge,      "track_charge[n_tracks]/I");
@@ -735,6 +769,13 @@ void SimAna::MakeTree()
   saveTree->Branch("track_nhits_st1",    track_nhits_st1,     "track_nhits_st1[n_tracks]/I");
   saveTree->Branch("track_nhits_st2",    track_nhits_st2,     "track_nhits_st2[n_tracks]/I");
   saveTree->Branch("track_nhits_st3",    track_nhits_st3,     "track_nhits_st3[n_tracks]/I");
+
+  saveTree->Branch("n_Dimuons",    &n_Dimuons,  "n_Dimuons/I");
+  saveTree->Branch("dimuon_mass",  dimuon_mass, "dimuon_mass[n_Dimuons]/F");
+  saveTree->Branch("dimuon_vtx_x", dimuon_vtx_x, "dimuon_vtx_x[n_Dimuons]/F");
+  saveTree->Branch("dimuon_vtx_y", dimuon_vtx_y, "dimuon_vtx_y[n_Dimuons]/F");
+  saveTree->Branch("dimuon_vtx_z", dimuon_vtx_z, "dimuon_vtx_z[n_Dimuons]/F");
+  saveTree->Branch("dimuon_chisq", dimuon_chisq, "dimuon_chisq[n_Dimuons]/F");
 
 
   saveTree->Branch("n_showers",     &n_showers,       "n_showers/I");

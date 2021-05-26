@@ -85,16 +85,18 @@ private:
   TTree* saveTree;
 
   int n_hits;
-  int hit_detid[10000];
-  int hit_elmid[10000];
-  float hit_driftdis[10000];
-  float hit_pos[10000];
-  float hit_detz[10000];
-  float hit_edep[10000];
-  float hit_truthx[10000];
-  float hit_truthy[10000];
-  float hit_truthz[10000];
-  float hit_truthpos[10000];
+  int hit_detid[1000];
+  int hit_elmid[1000];
+  int hit_trkid[1000];
+  float hit_driftdis[1000];
+  float hit_pos[1000];
+  float hit_edep[1000];
+  float hit_truthx[1000];
+  float hit_truthy[1000];
+  float hit_truthz[1000];
+  float hit_truthpx[1000];
+  float hit_truthpy[1000];
+  float hit_truthpz[1000];
 
   int n_tracks;
   int track_charge[100];
@@ -121,6 +123,13 @@ private:
   int track_nhits_st1[100];
   int track_nhits_st2[100];
   int track_nhits_st3[100];
+
+  int n_Dimuons;
+  float dimuon_mass[100];
+  float dimuon_vtx_x[100];
+  float dimuon_vtx_y[100];
+  float dimuon_vtx_z[100];
+  float dimuon_chisq[100];
 
   int n_showers;
   float sx_ecal[1000];
