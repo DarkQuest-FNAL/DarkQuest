@@ -27,6 +27,7 @@ using namespace std;
 
 int Fun4Sim_Muons(const int nevent = 100,
 		     const int isim = 4,
+	             const bool is_displaced = true,
 		     std::string ifile="Brem_2.750000_z500_600_eps_-6.4"
 		     )
 {
@@ -52,9 +53,6 @@ int Fun4Sim_Muons(const int nevent = 100,
 
   // legacy rec container
   const bool legacy_rec_container = false; // if true that is for e906 format?
-
-  // displaced (?)
-  const bool is_displaced = true;
 
   // setup detectors in SpinQuest
   const bool do_collimator = true;
@@ -280,7 +278,7 @@ int Fun4Sim_Muons(const int nevent = 100,
   gSystem->Load("libsim_ana.so");
   SimAna *sim_ana = new SimAna();  
   //sim_ana->Verbosity(99); 
-  //se->registerSubsystem(sim_ana);    
+  se->registerSubsystem(sim_ana);    
 
   // input - we need a dummy to drive the event loop
   if(do_aprime){
