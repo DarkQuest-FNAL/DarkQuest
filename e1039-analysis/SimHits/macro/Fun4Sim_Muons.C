@@ -54,7 +54,7 @@ int Fun4Sim_Muons(const int nevent = 100,
   const bool legacy_rec_container = false; // if true that is for e906 format?
 
   // displaced (?)
-  const bool is_displaced = true;
+  const bool is_displaced = false;
 
   // setup detectors in SpinQuest
   const bool do_collimator = true;
@@ -253,7 +253,7 @@ int Fun4Sim_Muons(const int nevent = 100,
   std::cout << "*********** Start SQReco step now..." << std::endl;
   SQReco* reco = new SQReco();
   reco->Verbosity(99);
-  //reco->set_legacy_rec_container(legacy_rec_container);
+  reco->set_legacy_rec_container(legacy_rec_container);
   //reco->set_geom_file_name("support/geom.root"); // not needed as it's created on the fly
   reco->set_enable_KF(true);                      // Kalman filter not needed for the track finding, disabling KF saves a lot of initialization time
   reco->setInputTy(SQReco::E1039);                // options are SQReco::E906 and SQReco::E1039
@@ -267,16 +267,22 @@ int Fun4Sim_Muons(const int nevent = 100,
   reco->add_eval_list(1);                         // include station-2 in eval tree for debugging
   se->registerSubsystem(reco);
 
+  // vertexing
   //VertexFit* vertexing = new VertexFit();
   //se->registerSubsystem(vertexing);
 
-  // Truth node maker after tracking
+  // truth node maker after tracking
   TruthNodeMaker* truthMaker = new TruthNodeMaker();
   truthMaker->set_legacy_rec_container(legacy_rec_container);
   truthMaker->Verbosity(99);
-  //se->registerSubsystem(truthMaker);
+  se->registerSubsystem(truthMaker);
 
-  // Analysis module
+  // truth vertexing
+  SQTruthVertexing* truthVtx = new SQTruthVertexing();
+  truthVtx->set_legacy_rec_container(legacy_rec_container);
+  se->registerSubsystem(truthVtx);
+
+  // analysis module
   gSystem->Load("libsim_ana.so");
   SimAna *sim_ana = new SimAna();  
   //sim_ana->Verbosity(99); 
