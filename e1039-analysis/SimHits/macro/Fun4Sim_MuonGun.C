@@ -23,7 +23,7 @@ using namespace std;
 
 /*
  * WARNING!!!
- * This macro is not less maintained. Please use
+ * This macro is not well maintained. Please use
  * Fun4Sim_Muons.C instead, which can run on signal,
  * pythia/gun, and cosmic samples
  */
