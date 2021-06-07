@@ -10,6 +10,7 @@ class TFile;
 class TTree;
 class SQHitVector;
 class SQTrackVector;
+class SQDimuonVector;
 
 class PHG4TruthInfoContainer;
 class PHG4HitContainer;
@@ -30,20 +31,31 @@ public:
   int process_event(PHCompositeNode* topNode);
   int End(PHCompositeNode* topNode);
 
+  int ResetEvalVars();
+
   PHG4Hit* FindG4HitAtStation(const int trk_id, const PHG4HitContainer* g4hc);
   std::vector<PHG4Hit*> FindG4HitsAtStation(const int trk_id, const PHG4HitContainer* g4hc);
   PHG4Shower* get_primary_shower(PHG4Particle* particle);
-  void checkKinematics(PHG4Particle* primary);
+  int  FindCommonHitIDs(std::vector<int>& hitidvec1, std::vector<int>& hitidvec2);
+  SRecTrack* FindBestMomRecTrack(SRecEvent *recEvent, const float true_P); 
 
-  void set_out_name(const char* outName) {
-    saveNameOut = outName;
-  }
+  void set_out_name(const TString& n); 
+  void set_legacy_rec_container(bool b); 
+
 private:
   int GetNodes(PHCompositeNode* topNode);
+  bool legacyContainer;
+
   void MakeTree();
 
-  SQHitVector* hitVector;
+  SQHitVector* _hitVector;
+  SQTrackVector* _trackVector;
+  SQDimuonVector* _dimuonVector;
+
   SRecEvent* _recEvent;
+  SQTrackVector*  _recTrackVector;
+  SQDimuonVector* _recDimuonVector;
+
   PHG4TruthInfoContainer* _truth;
 
   PHG4HitContainer *g4hc_d1x;
@@ -100,36 +112,81 @@ private:
 
   int n_tracks;
   int track_charge[100];
-  int track_nhits[100];
-  float track_x_target[100];
-  float track_y_target[100];
-  float track_z_target[100];
-  float track_px_target[100];
-  float track_py_target[100];
-  float track_pz_target[100];
   float track_x_st1[100];
   float track_y_st1[100];
   float track_z_st1[100];
   float track_px_st1[100];
   float track_py_st1[100];
   float track_pz_st1[100];
+  float track_x_st3[100];
+  float track_y_st3[100];
+  float track_z_st3[100];
+  float track_px_st3[100];
+  float track_py_st3[100];
+  float track_pz_st3[100];
   float track_x_vtx[100];
   float track_y_vtx[100];
   float track_z_vtx[100];
-  float track_m[100];
-  float track_chisq[100];
-  float track_prob[100];
-  float track_quality[100];
-  int track_nhits_st1[100];
-  int track_nhits_st2[100];
-  int track_nhits_st3[100];
+  float track_px_vtx[100];
+  float track_py_vtx[100];
+  float track_pz_vtx[100];
+
+  int n_rectracks;
+  int rec_track_charge[100];
+  int rec_track_nhits[100];
+  float rec_track_x_target[100];
+  float rec_track_y_target[100];
+  float rec_track_z_target[100];
+  float rec_track_px_target[100];
+  float rec_track_py_target[100];
+  float rec_track_pz_target[100];
+  float rec_track_x_st1[100];
+  float rec_track_y_st1[100];
+  float rec_track_z_st1[100];
+  float rec_track_px_st1[100];
+  float rec_track_py_st1[100];
+  float rec_track_pz_st1[100];
+  float rec_track_x_vtx[100];
+  float rec_track_y_vtx[100];
+  float rec_track_z_vtx[100];
+  float rec_track_m[100];
+  float rec_track_chisq[100];
+  float rec_track_prob[100];
+  float rec_track_quality[100];
+  int rec_track_nhits_st1[100];
+  int rec_track_nhits_st2[100];
+  int rec_track_nhits_st3[100];
 
   int n_Dimuons;
   float dimuon_mass[100];
   float dimuon_vtx_x[100];
   float dimuon_vtx_y[100];
   float dimuon_vtx_z[100];
-  float dimuon_chisq[100];
+  float dimuon_pmom_x[100];
+  float dimuon_pmom_y[100];
+  float dimuon_pmom_z[100];
+  float dimuon_nmom_x[100];
+  float dimuon_nmom_y[100];
+  float dimuon_nmom_z[100];
+
+  int n_RecDimuons;
+  float rec_dimuon_mass[100];
+  float rec_dimuon_chisq[100];
+  float rec_dimuon_vtx_x[100];
+  float rec_dimuon_vtx_y[100];
+  float rec_dimuon_vtx_z[100];
+  float rec_dimuon_pmom_x[100];
+  float rec_dimuon_pmom_y[100];
+  float rec_dimuon_pmom_z[100];
+  float rec_dimuon_nmom_x[100];
+  float rec_dimuon_nmom_y[100];
+  float rec_dimuon_nmom_z[100];
+  float rec_dimuon_ppos_x[100];
+  float rec_dimuon_ppos_y[100];
+  float rec_dimuon_ppos_z[100];
+  float rec_dimuon_npos_x[100];
+  float rec_dimuon_npos_y[100];
+  float rec_dimuon_npos_z[100];
 
   int n_showers;
   float sx_ecal[1000];
@@ -210,7 +267,6 @@ private:
   float gpx_p1[1000];
   float gpy_p1[1000];
   float gpz_p1[1000];
-
 
   float gx_h4y2l[1000];
   float gy_h4y2l[1000];

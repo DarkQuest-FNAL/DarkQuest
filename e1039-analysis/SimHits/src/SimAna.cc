@@ -8,6 +8,7 @@
 #include <interface_main/SQHitVector_v1.h>
 #include <interface_main/SQHit.h>
 #include <interface_main/SQTrackVector_v1.h>
+#include <interface_main/SQDimuonVector_v1.h>
 
 #include <ktracker/SRecEvent.h>
 
@@ -21,11 +22,7 @@
 
 #include "SimAna.h"
 
-#define LogDebug(exp)       std::cout<<"DEBUG: "  <<__FILE__<<": "<<__LINE__<<": "<< exp << std::endl
-#define LogError(exp)       std::cout<<"ERROR: "  <<__FILE__<<": "<<__LINE__<<": "<< exp << std::endl
-#define LogWarning(exp)     std::cout<<"WARNING: "<<__FILE__<<": "<<__LINE__<<": "<< exp << std::endl
-
-SimAna::SimAna(const std::string& name): SubsysReco(name)
+SimAna::SimAna(const std::string& name): SubsysReco(name), legacyContainer(true)
 {}
 
 SimAna::~SimAna()
@@ -42,10 +39,13 @@ int SimAna::InitRun(PHCompositeNode* topNode)
   if(ret != Fun4AllReturnCodes::EVENT_OK) return ret;
 
   eventID = 0;
+  ResetEvalVars();
   MakeTree();
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
+// find one g4 hit at station
 PHG4Hit* SimAna::FindG4HitAtStation(const int trk_id, const PHG4HitContainer* g4hc) {
   PHG4Hit* hit = nullptr;
   PHG4HitContainer::ConstRange range = g4hc->getHits();
@@ -59,7 +59,7 @@ PHG4Hit* SimAna::FindG4HitAtStation(const int trk_id, const PHG4HitContainer* g4
   return hit;
 }
 
-
+// find several g4 hits at one station (e.g for emcal)
 std::vector<PHG4Hit*> SimAna::FindG4HitsAtStation(const int trk_id, const PHG4HitContainer* g4hc) {
   std::vector<PHG4Hit*> vhit;
   PHG4HitContainer::ConstRange range = g4hc->getHits();
@@ -87,210 +87,55 @@ PHG4Shower* SimAna::get_primary_shower(PHG4Particle* primary) {
 
 }
 
-// check showers 
-void SimAna::checkKinematics(PHG4Particle* primary) {
-  PHG4Shower* shower = nullptr;
+// find best reco track
+SRecTrack* SimAna::FindBestMomRecTrack(SRecEvent *recEvent,  const float true_TargetP) {
+  double dP = 100.; // delta(momentum)
+  double hold_dP = 99999.;
+  
+  SRecTrack* Best_recTrack =  NULL;
+  for(int itrack=0; itrack<recEvent->getNTracks(); ++itrack){   
+    if (hold_dP>dP) hold_dP = dP;
+    SRecTrack *recTrack = &recEvent->getTrack(itrack);
+    dP = fabs(true_TargetP - recTrack->getTargetMom().Mag());
+   
+    //Finding out best match track in terms of energy
+    if(dP-hold_dP<0.) Best_recTrack = recTrack;  
+  }
+  return Best_recTrack;
+}
 
-  // define volumes
-  int ECAL_volume = PHG4HitDefs::get_volume_id("G4HIT_EMCal");
+// find common ids for reco and truth tracks
+int SimAna::FindCommonHitIDs(std::vector<int>& hitidvec1, std::vector<int>& hitidvec2) {
+  //This function assumes the input vectors have been sorted
+  auto iter = hitidvec1.begin();
+  auto jter = hitidvec2.begin();
 
-  int h1t_volume = PHG4HitDefs::get_volume_id("G4HIT_H1T");
-  int h1b_volume = PHG4HitDefs::get_volume_id("G4HIT_H1B");
-  int h1l_volume = PHG4HitDefs::get_volume_id("G4HIT_H1L");
-  int h1r_volume = PHG4HitDefs::get_volume_id("G4HIT_H1R");
-  int h2t_volume = PHG4HitDefs::get_volume_id("G4HIT_H2T");
-  int h2b_volume = PHG4HitDefs::get_volume_id("G4HIT_H2B");
-  int h2l_volume = PHG4HitDefs::get_volume_id("G4HIT_H2L");
-  int h2r_volume = PHG4HitDefs::get_volume_id("G4HIT_H2R");
-  int h3t_volume = PHG4HitDefs::get_volume_id("G4HIT_H3T");
-  int h3b_volume = PHG4HitDefs::get_volume_id("G4HIT_H3B");
-  int h3l_volume = PHG4HitDefs::get_volume_id("G4HIT_H3L");
-  int h3r_volume = PHG4HitDefs::get_volume_id("G4HIT_H3R");
-  int h4t_volume = PHG4HitDefs::get_volume_id("G4HIT_H4T");
-  int h4b_volume = PHG4HitDefs::get_volume_id("G4HIT_H4B");
-
-  int d1x_volume = PHG4HitDefs::get_volume_id("G4HIT_D1X");
-  int d0x_volume = PHG4HitDefs::get_volume_id("G4HIT_D0X");
-  int d2xp_volume = PHG4HitDefs::get_volume_id("G4HIT_D2Xp");
-  int d3pxp_volume = PHG4HitDefs::get_volume_id("G4HIT_D3pXp");
-  int d3mxp_volume = PHG4HitDefs::get_volume_id("G4HIT_D3mXp");
-
-  int abs_volume = PHG4HitDefs::get_volume_id("MUID_absorber");
-
-  // first let's find shower
-  bool printPrimary=false;
-  for (auto iter=_truth->GetPrimaryShowerRange().first; iter!=_truth->GetPrimaryShowerRange().second; ++iter) {
-    PHG4Shower* tmpshower = iter->second;
-    if (tmpshower->get_parent_particle_id() == primary->get_track_id()) {
-      shower = tmpshower;
-
-      // if shower edep in EMCAL is zero then print
-      //if(shower->get_edep(ECAL_volume) == 0) printPrimary=true;
-      
-      break;
+  int nCommon = 0;
+  while(iter != hitidvec1.end() && jter != hitidvec2.end()) {
+    if(*iter < *jter) {
+      ++iter;
+    } else {
+      if(!(*jter < *iter)) {
+        ++nCommon;
+        ++iter;
+      }
+      ++jter;
     }
   }
 
-  bool printh4 =false;
-  PHG4Hit* h4hit1 = FindG4HitAtStation(primary->get_track_id(),g4hc_h4t);
-  if(!h4hit1)
-    PHG4Hit* h4hit1 = FindG4HitAtStation(primary->get_track_id(),g4hc_h4b);
-  //if(h4hit1){
-  //printh4 = true;
-  // }
-
-  //if(printPrimary && printh4){
-  if(printPrimary){
-    shower->identify(std::cout);
-    std::cout << "start printing " << std::endl;
-    std::cout << "primary shower z " << shower->get_z() << " shower id " << shower->get_id() << " pz " << primary->get_pz() << " e " << primary->get_e() << std::endl;
-    std::cout << "edep emcal " <<  shower->get_edep(ECAL_volume) << std::endl;
-    std::cout << " h1t " << shower->get_edep(h1t_volume) << " h1b " << shower->get_edep(h1b_volume) << " h1r " <<  shower->get_edep(h1r_volume) << " h1l " << shower->get_edep(h1l_volume);
-    std::cout << " h2t " << shower->get_edep(h2t_volume) << " h2b " << shower->get_edep(h2b_volume) << " h2r " <<  shower->get_edep(h2r_volume) << " h2l " << shower->get_edep(h2l_volume);
-    std::cout << " h3t " << shower->get_edep(h3t_volume) << " h3b " << shower->get_edep(h3b_volume) << std::endl;
-    std::cout << " d0x " << shower->get_edep(d0x_volume) << " d1x " << shower->get_edep(d1x_volume);
-    std::cout << " d2xp " << shower->get_edep(d2xp_volume) << " d3pxp " << shower->get_edep(d3pxp_volume) << " d3mxp " << shower->get_edep(d3mxp_volume) << std::endl;
-    std::cout << " absorber " << shower->get_edep(abs_volume) << std::endl;
-
-    // constants
-    double kmag_maxkick = 0.414; //GeV/c                                                                                                                                                                  
-    //center of KMag is at z=1041.8- 1064.26
-    double kmag_minz = 891.8;
-    double kmag_maxz = 1191.8;
-    
-    // primary
-    int vtx_id =  primary->get_vtx_id();
-    PHG4VtxPoint* vtx = _truth->GetVtx(vtx_id);
-    double gvx = vtx->get_x();
-    double gvy = vtx->get_y();
-    double gvz = vtx->get_z();
-    std::cout << "Primary " << primary->get_pid() << " vx " << gvx << " vy " << gvy << " vz " << gvz << std::endl;
-    std::cout << " E " << primary->get_e() << std::endl;
-    std::cout << " px " <<  primary->get_px() << " py " << primary->get_py() << " pz " << primary->get_pz() << std::endl;
-    
-    bool posel = false;
-    if(primary->get_pid()==-11) posel = true;
-    
-    // no fmag kick because vertex > 500 cm
-    
-    // look for hits in stations
-    PHG4Hit* st1hit = FindG4HitAtStation(primary->get_track_id(), g4hc_d1x);
-    double x_st1 = 0;
-    double px_st1 = 0;
-    double pz_st1 = 0;
-    // px/pz = cos(phi)
-    // py/pz = sin(phi)
-    // px = ptcos(phi)
-    // dpx = dpt px/pz
-    if(st1hit){
-      std::cout << "st1 x " << st1hit->get_x(0) << " y " << st1hit->get_y(0) <<" z " << st1hit->get_z(0) << std::endl;
-      std::cout << "    px " << st1hit->get_px(0) << " py " << st1hit->get_py(0) << " pz " << st1hit->get_pz(0) << " px/pz " << st1hit->get_px(0)/st1hit->get_pz(0) << std::endl;
-      px_st1 = st1hit->get_px(0);
-      pz_st1 = st1hit->get_pz(0);
-      // z: 616.956
-
-      double tx_st1 = (primary->get_px())/primary->get_pz();
-      x_st1 = gvx + (st1hit->get_z(0)-gvz)*(primary->get_px()/primary->get_pz());	
-      std::cout << "   calculated x " << x_st1 << " px/pz " << tx_st1 << std::endl;
-
-    }
-    
-    // hodoscopes
-    // h1tb: 669.091 
-    // h1lr: 655.807
-    PHG4Hit* h1hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h1t);
-    if(!h1hit)
-      PHG4Hit* h1hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h1b);
-    if(h1hit){
-      std::cout << "h1y t/b x " << h1hit->get_x(0) << " y " << h1hit->get_y(0) <<" z " << h1hit->get_z(0) << " pz " << h1hit->get_pz(0) << std::endl;
-    }
-    
-    PHG4Hit* h1xhit = FindG4HitAtStation(primary->get_track_id(),g4hc_h1l);
-    if(!h1xhit)
-      PHG4Hit* h1xhit = FindG4HitAtStation(primary->get_track_id(),g4hc_h1r);
-    if(h1xhit){
-      std::cout << "h1x l/r x " << h1xhit->get_x(0) << " y " << h1xhit->get_y(0) <<" z " << h1xhit->get_z(0) << " pz " << h1xhit->get_pz(0) << std::endl;
-    }
-    
-    // st2: 1339.27
-    // h2lr 1404.76
-    // h2tb: 1420.95
-    PHG4Hit* st2hit = FindG4HitAtStation(primary->get_track_id(), g4hc_d2xp);
-    double px_st2 = 0;
-    double pz_st2 = 0;
-    double z_st2 = 0;
-    double x_st2 = 0;
-    if(st2hit){
-      std::cout << "st2 x " << st2hit->get_x(0) << " y " << st2hit->get_y(0) <<" z " << st2hit->get_z(0) << std::endl;
-      std::cout << "    px " << st2hit->get_px(0) << " py " << st2hit->get_py(0) << " pz " << st2hit->get_pz(0) << " px/pz " << st2hit->get_px(0)/st2hit->get_pz(0) << std::endl;
-      
-      px_st2 = st2hit->get_px(0);
-      pz_st2 = st2hit->get_pz(0);
-      z_st2 = st2hit->get_z(0);
-      x_st2 = st2hit->get_x(0);
-      double kmag_kick, kmag_center;
-      kmag_kick = kmag_maxkick;
-      kmag_center = (kmag_maxz+kmag_minz)/2.0;
-
-      std::cout << "   kmag kick " << kmag_kick << " center " << kmag_center << std::endl;
-      if(posel){
-	double tx_st2 = (px_st1 + kmag_kick)/pz_st1;
-	double x_st2 = x_st1 + (st2hit->get_z(0)-1064.26)*tx_st2;
-	std::cout << "   calculated x " << x_st2 << " px/pz " << tx_st2 << " pxst1 " << px_st1 << std::endl;
-      }
-      else{
-        double tx_st2 = (px_st1 - kmag_kick)/pz_st1;
-	double x_st2 = x_st1 + (st2hit->get_z(0)-1064.26)*tx_st2;
-	std::cout << "   calculated x " << x_st2 << " px/pz " << tx_st2 << std::endl;
-      }
-
-    }
-    
-    PHG4Hit* h2xhit = FindG4HitAtStation(primary->get_track_id(),g4hc_h2l);
-    if(!h2xhit)
-      PHG4Hit* h2xhit = FindG4HitAtStation(primary->get_track_id(),g4hc_h2r);
-    if(h2xhit){
-      std::cout << "h2x l/r x " << h2xhit->get_x(0) << " y " << h2xhit->get_y(0) <<" z " << h2xhit->get_z(0) << " pz " << h2xhit->get_pz(0) << std::endl;
-    }
-    
-    PHG4Hit* h2hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h2t);
-    if(!h2hit)
-      PHG4Hit* h2hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h2b);
-    if(h2hit){
-      std::cout << "h2y t/b x " << h2hit->get_x(0) << " y " << h2hit->get_y(0) <<" z " << h2hit->get_z(0) << " pz " << h2hit->get_pz(0) << std::endl;
-      std::cout << "    px " << h2hit->get_px(0) << " py " << h2hit->get_py(0) << " pz " << h2hit->get_pz(0) << " px/pz " << h2hit->get_px(0)/h2hit->get_pz(0) << std::endl;
-      
-      double tx_h2 = (px_st2)/pz_st2;
-      double x_h2 = x_st2 + (h2hit->get_z(0)-z_st2)*tx_h2;
-      std::cout << "   calculated x " << x_h2 << " px/pz " << tx_h2 << std::endl;
-    }
-    
-    PHG4Hit* h3hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h3t);
-    if(!h3hit)
-      PHG4Hit* h3hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h3b);
-    if(h3hit){
-      std::cout << "h3y t/b x " << h3hit->get_x(0) << " y " << h3hit->get_y(0) <<" z " << h3hit->get_z(0) << " pz " << h3hit->get_pz(0) << std::endl;
-    }
-    
-    PHG4Hit* h4hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h4t);
-    if(!h4hit)
-      PHG4Hit* h4hit = FindG4HitAtStation(primary->get_track_id(),g4hc_h4b);
-    if(h4hit){
-      std::cout << "h4 t/b x " << h4hit->get_x(0) << " y " << h4hit->get_y(0) <<" z " << h4hit->get_z(0) << " pz " << h4hit->get_pz(0) << std::endl;
-      std::cout << "    px " << h4hit->get_px(0) << " py " << h4hit->get_py(0) << " pz " << h4hit->get_pz(0) << " px/pz " << h4hit->get_px(0)/h4hit->get_pz(0) << std::endl;
-
-      double tx_h4 = (px_st2)/pz_st2;
-      double x_h4 = x_st2 + (h4hit->get_z(0)-z_st2)*tx_h4;
-      std::cout << "   calculated x " << x_h4 << " px/pz " << tx_h4 << std::endl;
-    }
-    
-  } // end printing
-
+  return nCommon;
 }
-  
-int SimAna::process_event(PHCompositeNode* topNode)
-{
-  //std::cout << "new event " <<std::endl;
+
+void SimAna::set_out_name(const TString& n) { 
+  saveName = n; 
+}
+
+void SimAna::set_legacy_rec_container(bool b) { 
+  legacyContainer = b; 
+}
+
+int SimAna::ResetEvalVars() {
+  // hits
   for(int i=0; i<1000; ++i) {
     hit_detid[i]        = std::numeric_limits<short>::max();
     hit_elmid[i]        = std::numeric_limits<short>::max();
@@ -306,41 +151,97 @@ int SimAna::process_event(PHCompositeNode* topNode)
     hit_truthpz[i]      = std::numeric_limits<float>::max();
   }
 
+  // truth tracks and rec tracks
+  n_tracks = 0;
+  n_rectracks = 0;
+
   for(int i=0; i<100; ++i) {
-    track_charge[i]      = std::numeric_limits<int>::max();
-    track_nhits[i]       = std::numeric_limits<int>::max();
-    track_x_target[i]           = std::numeric_limits<float>::max();
-    track_y_target[i]           = std::numeric_limits<float>::max();
-    track_z_target[i]           = std::numeric_limits<float>::max();
-    track_px_target[i]          = std::numeric_limits<float>::max();
-    track_py_target[i]          = std::numeric_limits<float>::max();
-    track_pz_target[i]          = std::numeric_limits<float>::max();
-    track_x_st1[i]           = std::numeric_limits<float>::max();
-    track_y_st1[i]           = std::numeric_limits<float>::max();
-    track_z_st1[i]           = std::numeric_limits<float>::max();
-    track_px_st1[i]          = std::numeric_limits<float>::max();
-    track_py_st1[i]          = std::numeric_limits<float>::max();
-    track_pz_st1[i]          = std::numeric_limits<float>::max();
-    track_x_vtx[i]           = std::numeric_limits<float>::max();
-    track_y_vtx[i]           = std::numeric_limits<float>::max();
-    track_z_vtx[i]           = std::numeric_limits<float>::max();
-    track_m[i]           = std::numeric_limits<float>::max();
-    track_chisq[i]       = std::numeric_limits<float>::max();
-    track_prob[i]       = std::numeric_limits<float>::max();
-    track_quality[i]       = std::numeric_limits<float>::max();
-    track_nhits_st1[i]       = std::numeric_limits<float>::max();
-    track_nhits_st2[i]       = std::numeric_limits<float>::max();
-    track_nhits_st3[i]       = std::numeric_limits<float>::max();
+    track_charge[i] = std::numeric_limits<int>::max();
+    track_x_st1[i] = std::numeric_limits<int>::max();
+    track_y_st1[i] = std::numeric_limits<int>::max();
+    track_z_st1[i] = std::numeric_limits<int>::max();
+    track_px_st1[i] = std::numeric_limits<int>::max();
+    track_py_st1[i] = std::numeric_limits<int>::max();
+    track_pz_st1[i] = std::numeric_limits<int>::max();
+    track_x_st3[i] = std::numeric_limits<int>::max();
+    track_y_st3[i] = std::numeric_limits<int>::max();
+    track_z_st3[i] = std::numeric_limits<int>::max();
+    track_px_st3[i] = std::numeric_limits<int>::max();
+    track_py_st3[i] = std::numeric_limits<int>::max();
+    track_pz_st3[i] = std::numeric_limits<int>::max();
+    track_x_vtx[i] = std::numeric_limits<int>::max();
+    track_y_vtx[i] = std::numeric_limits<int>::max();
+    track_z_vtx[i] = std::numeric_limits<int>::max();
+    track_px_vtx[i] = std::numeric_limits<int>::max();
+    track_py_vtx[i] = std::numeric_limits<int>::max();
+    track_pz_vtx[i] = std::numeric_limits<int>::max();
   }
 
   for(int i=0; i<100; ++i) {
-    dimuon_mass[i] = std::numeric_limits<float>::max();
-    dimuon_vtx_x[i] = std::numeric_limits<float>::max();
-    dimuon_vtx_y[i] = std::numeric_limits<float>::max();
-    dimuon_vtx_z[i] = std::numeric_limits<float>::max();
-    dimuon_chisq[i] = std::numeric_limits<float>::max();
+    rec_track_charge[i]      = std::numeric_limits<int>::max();
+    rec_track_nhits[i]       = std::numeric_limits<int>::max();
+    rec_track_x_target[i]    = std::numeric_limits<float>::max();
+    rec_track_y_target[i]    = std::numeric_limits<float>::max();
+    rec_track_z_target[i]    = std::numeric_limits<float>::max();
+    rec_track_px_target[i]   = std::numeric_limits<float>::max();
+    rec_track_py_target[i]   = std::numeric_limits<float>::max();
+    rec_track_pz_target[i]   = std::numeric_limits<float>::max();
+    rec_track_x_st1[i]       = std::numeric_limits<float>::max();
+    rec_track_y_st1[i]       = std::numeric_limits<float>::max();
+    rec_track_z_st1[i]       = std::numeric_limits<float>::max();
+    rec_track_px_st1[i]      = std::numeric_limits<float>::max();
+    rec_track_py_st1[i]      = std::numeric_limits<float>::max();
+    rec_track_pz_st1[i]      = std::numeric_limits<float>::max();
+    rec_track_x_vtx[i]       = std::numeric_limits<float>::max();
+    rec_track_y_vtx[i]       = std::numeric_limits<float>::max();
+    rec_track_z_vtx[i]       = std::numeric_limits<float>::max();
+    rec_track_m[i]           = std::numeric_limits<float>::max();
+    rec_track_chisq[i]       = std::numeric_limits<float>::max();
+    rec_track_prob[i]        = std::numeric_limits<float>::max();
+    rec_track_quality[i]     = std::numeric_limits<float>::max();
+    rec_track_nhits_st1[i]   = std::numeric_limits<float>::max();
+    rec_track_nhits_st2[i]   = std::numeric_limits<float>::max();
+    rec_track_nhits_st3[i]   = std::numeric_limits<float>::max();
   }
 
+  // dimuons
+  n_Dimuons = 0;
+  for(int i=0; i<100; ++i) {
+    dimuon_mass[i]       = std::numeric_limits<float>::max();
+    dimuon_vtx_x[i]      = std::numeric_limits<float>::max();
+    dimuon_vtx_y[i]      = std::numeric_limits<float>::max();
+    dimuon_vtx_z[i]      = std::numeric_limits<float>::max();
+    dimuon_pmom_x[i]      = std::numeric_limits<float>::max();
+    dimuon_pmom_y[i]      = std::numeric_limits<float>::max();
+    dimuon_pmom_z[i]      = std::numeric_limits<float>::max();
+    dimuon_nmom_x[i]      = std::numeric_limits<float>::max();
+    dimuon_nmom_y[i]      = std::numeric_limits<float>::max();
+    dimuon_nmom_z[i]      = std::numeric_limits<float>::max();
+  }
+
+  n_RecDimuons = 0;
+  for(int i=0; i<100; ++i) {
+    rec_dimuon_mass[i]       = std::numeric_limits<float>::max();
+    rec_dimuon_chisq[i]      = std::numeric_limits<float>::max();
+    rec_dimuon_vtx_x[i]      = std::numeric_limits<float>::max();
+    rec_dimuon_vtx_y[i]      = std::numeric_limits<float>::max();
+    rec_dimuon_vtx_z[i]      = std::numeric_limits<float>::max();
+    rec_dimuon_pmom_x[i]     = std::numeric_limits<float>::max();
+    rec_dimuon_pmom_y[i]     = std::numeric_limits<float>::max();
+    rec_dimuon_pmom_z[i]     = std::numeric_limits<float>::max();
+    rec_dimuon_nmom_x[i]     = std::numeric_limits<float>::max();
+    rec_dimuon_nmom_y[i]     = std::numeric_limits<float>::max();
+    rec_dimuon_nmom_z[i]     = std::numeric_limits<float>::max();
+    rec_dimuon_ppos_x[i]     = std::numeric_limits<float>::max();
+    rec_dimuon_ppos_y[i]     = std::numeric_limits<float>::max();
+    rec_dimuon_ppos_z[i]     = std::numeric_limits<float>::max();
+    rec_dimuon_npos_x[i]     = std::numeric_limits<float>::max();
+    rec_dimuon_npos_y[i]     = std::numeric_limits<float>::max();
+    rec_dimuon_npos_z[i]     = std::numeric_limits<float>::max();
+  }
+
+  // truth information
+  // g4 showers
   n_showers =0;
   for(int i=0; i<1000; ++i) {
     sx_ecal[i]          = std::numeric_limits<float>::max();
@@ -349,6 +250,7 @@ int SimAna::process_event(PHCompositeNode* topNode)
     sedep_ecal[i]       = std::numeric_limits<float>::max();
   }
 
+  // primary hits
   n_primaries = 0;
   for(int i=0; i<1000; ++i) {
     gtrkid[i]     = std::numeric_limits<int>::max();
@@ -414,9 +316,17 @@ int SimAna::process_event(PHCompositeNode* topNode)
     gpz_h4[i]    = std::numeric_limits<float>::max();
   }
 
+  return 0;
+}
+
+int SimAna::process_event(PHCompositeNode* topNode) {
+
+  ResetEvalVars();
+
+  // filling arrays
   n_hits = 0;
-  for(int ihit=0; ihit<hitVector->size(); ++ihit) {
-    SQHit *hit = hitVector->at(ihit);
+  for(int ihit=0; ihit<_hitVector->size(); ++ihit) {
+    SQHit *hit = _hitVector->at(ihit);
     int hitID = hit->get_hit_id();
     hit_detid[n_hits]      = hit->get_detector_id();
     hit_elmid[n_hits]      = hit->get_element_id();
@@ -424,68 +334,124 @@ int SimAna::process_event(PHCompositeNode* topNode)
     hit_driftdis[n_hits]   = hit->get_drift_distance();
     hit_pos[n_hits]        = hit->get_pos();
     hit_edep[n_hits]       = hit->get_edep();
-    hit_truthx[n_hits] = hit->get_truth_x();
-    hit_truthy[n_hits] = hit->get_truth_y();
-    hit_truthz[n_hits] = hit->get_truth_z();
-    hit_truthpx[n_hits] = hit->get_truth_px();
-    hit_truthpy[n_hits] = hit->get_truth_py();
-    hit_truthpz[n_hits] = hit->get_truth_pz();
+    hit_truthx[n_hits]     = hit->get_truth_x();
+    hit_truthy[n_hits]     = hit->get_truth_y();
+    hit_truthz[n_hits]     = hit->get_truth_z();
+    hit_truthpx[n_hits]    = hit->get_truth_px();
+    hit_truthpy[n_hits]    = hit->get_truth_py();
+    hit_truthpz[n_hits]    = hit->get_truth_pz();
     ++n_hits;
     if(n_hits>=1000) break;
-    //if(hit->get_detector_id() == 100){
-    //std::cout << "emcal hit edep " << hit->get_edep() << std::endl;
-    //}
   }
 
   // tracks
-  int n_recTracks = _recEvent->getNTracks();
+  int n_recTracks = legacyContainer ? _recEvent->getNTracks() : _recTrackVector->size();
   n_tracks = 0;
-  for(int itrk = 0; itrk < n_recTracks; ++itrk) {
-    SRecTrack *trk = &_recEvent->getTrack(itrk);
-    //std::cout << "******************** (trk->getTargetMom()).Px() " << (trk->getTargetMom()).Px() << std::endl;
-    track_charge[n_tracks] = trk->getCharge();
-    track_nhits[n_tracks] = trk->getNHits();
-    track_x_target[n_tracks] = (trk->getTargetPos()).X();
-    track_y_target[n_tracks] = (trk->getTargetPos()).Y();
-    track_z_target[n_tracks] = (trk->getTargetPos()).Z();
-    track_px_target[n_tracks] = (trk->getTargetMom()).Px();
-    track_py_target[n_tracks] = (trk->getTargetMom()).Py();
-    track_pz_target[n_tracks] = (trk->getTargetMom()).Pz();
-    track_x_st1[n_tracks] = (trk->getPositionVecSt1()).X();
-    track_y_st1[n_tracks] = (trk->getPositionVecSt1()).Y();
-    track_z_st1[n_tracks] = (trk->getPositionVecSt1()).Z();
-    track_px_st1[n_tracks] = (trk->getMomentumVecSt1()).Px();
-    track_py_st1[n_tracks] = (trk->getMomentumVecSt1()).Py();
-    track_pz_st1[n_tracks] = (trk->getMomentumVecSt1()).Pz();
-    track_x_vtx[n_tracks] = (trk->getVertexPos()).X();
-    track_y_vtx[n_tracks] = (trk->getVertexPos()).Y();
-    track_z_vtx[n_tracks] = (trk->getVertexPos()).Z();
-    
-    track_chisq[n_tracks] = trk->getChisq();
-    track_prob[n_tracks] = trk->getProb();
-    track_quality[n_tracks] = trk->getQuality();
-    track_nhits_st1[n_tracks] = trk->getNHitsInStation(1);
-    track_nhits_st2[n_tracks] = trk->getNHitsInStation(2);
-    track_nhits_st3[n_tracks] = trk->getNHitsInStation(3);
+  for(int itrk = 0; itrk < _trackVector->size(); ++itrk) {
+    SQTrack* track = _trackVector->at(itrk);
+
+    track_charge[n_tracks] = track->get_charge();
+    track_x_st1[n_tracks] = (track->get_pos_st1()).X();
+    track_y_st1[n_tracks] = (track->get_pos_st1()).Y();
+    track_z_st1[n_tracks] = (track->get_pos_st1()).Z();
+    track_px_st1[n_tracks] = (track->get_mom_st1()).Px();
+    track_py_st1[n_tracks] = (track->get_mom_st1()).Py();
+    track_pz_st1[n_tracks] = (track->get_mom_st1()).Pz();
+    track_x_st3[n_tracks] = (track->get_pos_st3()).X();
+    track_y_st3[n_tracks] = (track->get_pos_st3()).Y();
+    track_z_st3[n_tracks] = (track->get_pos_st3()).Z();
+    track_px_st3[n_tracks] = (track->get_mom_st3()).Px();
+    track_py_st3[n_tracks] = (track->get_mom_st3()).Py();
+    track_pz_st3[n_tracks] = (track->get_mom_st3()).Pz();
+    track_x_vtx[n_tracks] = (track->get_pos_vtx()).X();
+    track_y_vtx[n_tracks] = (track->get_pos_vtx()).Y();
+    track_z_vtx[n_tracks] = (track->get_pos_vtx()).Z();
+    track_px_vtx[n_tracks] = (track->get_mom_vtx()).Px();
+    track_py_vtx[n_tracks] = (track->get_mom_vtx()).Py();
+    track_pz_vtx[n_tracks] = (track->get_mom_vtx()).Pz();
+
+    int recid = track->get_rec_track_id();
+    if(recid >= 0 && recid < n_recTracks) {
+      SRecTrack* recTrack = legacyContainer ? &(_recEvent->getTrack(recid)) : dynamic_cast<SRecTrack*>(_recTrackVector->at(recid));
+      std::cout << "******************** (recTrack->getTargetMom()).Px() " << (recTrack->getTargetMom()).Px() << std::endl;
+      rec_track_charge[n_rectracks] = recTrack->getCharge();
+      rec_track_nhits[n_rectracks] = recTrack->getNHits();
+      rec_track_x_target[n_rectracks] = (recTrack->getTargetPos()).X();
+      rec_track_y_target[n_rectracks] = (recTrack->getTargetPos()).Y();
+      rec_track_z_target[n_rectracks] = (recTrack->getTargetPos()).Z();
+      rec_track_px_target[n_rectracks] = (recTrack->getTargetMom()).Px();
+      rec_track_py_target[n_rectracks] = (recTrack->getTargetMom()).Py();
+      rec_track_pz_target[n_rectracks] = (recTrack->getTargetMom()).Pz();
+      rec_track_x_st1[n_rectracks] = (recTrack->getPositionVecSt1()).X();
+      rec_track_y_st1[n_rectracks] = (recTrack->getPositionVecSt1()).Y();
+      rec_track_z_st1[n_rectracks] = (recTrack->getPositionVecSt1()).Z();
+      rec_track_px_st1[n_rectracks] = (recTrack->getMomentumVecSt1()).Px();
+      rec_track_py_st1[n_rectracks] = (recTrack->getMomentumVecSt1()).Py();
+      rec_track_pz_st1[n_rectracks] = (recTrack->getMomentumVecSt1()).Pz();
+      rec_track_x_vtx[n_rectracks] = (recTrack->getVertexPos()).X();
+      rec_track_y_vtx[n_rectracks] = (recTrack->getVertexPos()).Y();
+      rec_track_z_vtx[n_rectracks] = (recTrack->getVertexPos()).Z();
+      rec_track_chisq[n_rectracks] = recTrack->getChisq();
+      rec_track_prob[n_rectracks] = recTrack->getProb();
+      rec_track_quality[n_rectracks] = recTrack->getQuality();
+      rec_track_nhits_st1[n_rectracks] = recTrack->getNHitsInStation(1);
+      rec_track_nhits_st2[n_rectracks] = recTrack->getNHitsInStation(2);
+      rec_track_nhits_st3[n_rectracks] = recTrack->getNHitsInStation(3);
+      ++n_rectracks;
+      if(n_rectracks >= 100) break;
+    }
     ++n_tracks;
     if(n_tracks >= 100) break;
   }
 
   // vertices
-  int nRecDimuons = _recEvent->getNDimuons();
   n_Dimuons = 0;
-  for(int iDimuon = 0; iDimuon < nRecDimuons; ++iDimuon) {
-    SRecDimuon* recDimuon = &_recEvent->getDimuon(iDimuon);
-    dimuon_mass[n_Dimuons] = recDimuon->get_mass();
-    dimuon_vtx_x[n_Dimuons] = (recDimuon->get_pos()).X();
-    dimuon_vtx_y[n_Dimuons] = (recDimuon->get_pos()).Y();
-    dimuon_vtx_z[n_Dimuons] = (recDimuon->get_pos()).Z();
-    dimuon_chisq[n_Dimuons] = recDimuon->get_chisq();
+  n_RecDimuons = 0;
+  int nDimuons = _dimuonVector->size();
+  int nRecDimuons = legacyContainer ? _recEvent->getNDimuons() : (_recDimuonVector ? _recDimuonVector->size() : -1);
+  for(int i = 0; i < nDimuons; ++i) {
+    SQDimuon* dimuon = _dimuonVector->at(i);
+    dimuon_mass[n_Dimuons] = dimuon->get_mom().M();
+    dimuon_vtx_x[n_Dimuons] = (dimuon->get_pos()).X();
+    dimuon_vtx_y[n_Dimuons] = (dimuon->get_pos()).Y();
+    dimuon_vtx_z[n_Dimuons] = (dimuon->get_pos()).Z();
+    dimuon_pmom_x[n_Dimuons] = (dimuon->get_mom_pos()).Px();
+    dimuon_pmom_y[n_Dimuons] = (dimuon->get_mom_pos()).Py();
+    dimuon_pmom_z[n_Dimuons] = (dimuon->get_mom_pos()).Pz();
+    dimuon_nmom_x[n_Dimuons] = (dimuon->get_mom_neg()).Px();
+    dimuon_nmom_y[n_Dimuons] = (dimuon->get_mom_neg()).Py();
+    dimuon_nmom_z[n_Dimuons] = (dimuon->get_mom_neg()).Pz();
+    
+    int recid = dimuon->get_rec_dimuon_id();
+    if(recid >= 0 && recid < nRecDimuons) {
+      SRecDimuon* recDimuon = legacyContainer ? &(_recEvent->getDimuon(recid)) : dynamic_cast<SRecDimuon*>(_recDimuonVector->at(recid));
+      rec_dimuon_mass[n_RecDimuons] = recDimuon->mass;
+      rec_dimuon_chisq[n_RecDimuons] = recDimuon->get_chisq();
+      rec_dimuon_vtx_x[n_RecDimuons] = (recDimuon->vtx).X();
+      rec_dimuon_vtx_y[n_RecDimuons] = (recDimuon->vtx).Y();
+      rec_dimuon_vtx_z[n_RecDimuons] = (recDimuon->vtx).Z();
+      rec_dimuon_pmom_x[n_RecDimuons] = (recDimuon->p_pos).Px(); //4-momentum of the muon tracks after vertex fit
+      rec_dimuon_pmom_y[n_RecDimuons] = (recDimuon->p_pos).Py();
+      rec_dimuon_pmom_z[n_RecDimuons] = (recDimuon->p_pos).Pz();
+      rec_dimuon_nmom_x[n_RecDimuons] = (recDimuon->p_neg).Px();
+      rec_dimuon_nmom_y[n_RecDimuons] = (recDimuon->p_neg).Py();
+      rec_dimuon_nmom_z[n_RecDimuons] = (recDimuon->p_neg).Pz();
+      rec_dimuon_ppos_x[n_RecDimuons] = (recDimuon->vtx_pos).X(); // vertex position
+      rec_dimuon_ppos_y[n_RecDimuons] = (recDimuon->vtx_pos).Y();
+      rec_dimuon_ppos_z[n_RecDimuons] = (recDimuon->vtx_pos).Z();
+      rec_dimuon_npos_x[n_RecDimuons] = (recDimuon->vtx_neg).X(); 
+      rec_dimuon_npos_y[n_RecDimuons] = (recDimuon->vtx_neg).Y();
+      rec_dimuon_npos_z[n_RecDimuons] = (recDimuon->vtx_neg).Z();
+
+      ++n_RecDimuons;
+      if(n_RecDimuons >= 100) break;
+    }
+    
     ++n_Dimuons;
     if(n_Dimuons >= 100) break;
   }
   
-
+  // truth info
   n_showers = 0;
   for(auto iter=_truth->GetPrimaryParticleRange().first; iter!=_truth->GetPrimaryParticleRange().second; ++iter) {
     PHG4Particle * primary = iter->second;
@@ -496,7 +462,6 @@ int SimAna::process_event(PHCompositeNode* topNode)
       sy_ecal[n_showers] = shower->get_y();
       sz_ecal[n_showers] = shower->get_z();
       sedep_ecal[n_showers] = shower->get_edep(ECAL_volume);
-      //std::cout << "shower " << shower->get_x() << " y " << shower->get_y() <<" z " << shower->get_z() << " id " << shower->get_id() << " parent particle " << shower->get_parent_particle_id() << " nhits " << shower->get_nhits(ECAL_volume) << " edep " << shower->get_edep(ECAL_volume) << std::endl;
       n_showers++;
     }
     if(n_showers>=1000) break;
@@ -507,7 +472,6 @@ int SimAna::process_event(PHCompositeNode* topNode)
   for(auto iterp=_truth->GetPrimaryParticleRange().first; iterp!=_truth->GetPrimaryParticleRange().second; ++iterp) {
     PHG4Particle * primary = iterp->second;
     gpid[n_primaries] = primary->get_pid();
-    //std::cout<<"primary " << n_primaries << " id " << primary->get_pid() << std::endl;
 
     int vtx_id =  primary->get_vtx_id();
     PHG4VtxPoint* vtx = _truth->GetVtx(vtx_id);
@@ -529,10 +493,8 @@ int SimAna::process_event(PHCompositeNode* topNode)
 
     // G4Hits at different stations                                                                                                                                                                       
     if(g4hc_ecal){
-      // checkKinematics(primary);
       std::vector<PHG4Hit*> g4hits = FindG4HitsAtStation(trkID, g4hc_ecal);
       nhits_ecal[n_primaries] =0;
-      //std::cout << "nhits in EMCAL " << g4hits.size() << std::endl;
       for(int iecal=0; iecal<g4hits.size(); ++iecal) {
 	PHG4Hit* g4hit = g4hits[iecal];
 	gx_ecal[n_primaries][iecal] = g4hit->get_x(0);
@@ -555,7 +517,6 @@ int SimAna::process_event(PHCompositeNode* topNode)
       gx_st1[n_primaries] = st1hit->get_x(0);
       gy_st1[n_primaries] = st1hit->get_y(0);
       gz_st1[n_primaries] = st1hit->get_z(0);
-      //std::cout << "st1 x " << st1hit->get_x(0) << " y " << st1hit->get_y(0) <<" z " << st1hit->get_z(0) << std::endl;
       gpx_st1[n_primaries] = st1hit->get_px(0);
       gpy_st1[n_primaries] = st1hit->get_py(0);
       gpz_st1[n_primaries] = st1hit->get_pz(0);
@@ -565,7 +526,6 @@ int SimAna::process_event(PHCompositeNode* topNode)
       gx_st2[n_primaries] = st2hit->get_x(0);
       gy_st2[n_primaries] = st2hit->get_y(0);
       gz_st2[n_primaries] = st2hit->get_z(0);
-      //std::cout << "st2 x " << st2hit->get_x(0) << " y " << st2hit->get_y(0) <<" z " << st2hit->get_z(0) << std::endl;
       gpx_st2[n_primaries] = st2hit->get_px(0);
       gpy_st2[n_primaries] = st2hit->get_py(0);
       gpz_st2[n_primaries] = st2hit->get_pz(0);
@@ -577,7 +537,6 @@ int SimAna::process_event(PHCompositeNode* topNode)
       gx_st3[n_primaries] = st3hit->get_x(0);
       gy_st3[n_primaries] = st3hit->get_y(0);
       gz_st3[n_primaries] = st3hit->get_z(0);
-      //std::cout << "st3 x " << st3hit->get_x(0) << " y " << st3hit->get_y(0) <<" z " << st3hit->get_z(0) << std::endl;
       gpx_st3[n_primaries] = st3hit->get_px(0);
       gpy_st3[n_primaries] = st3hit->get_py(0);
       gpz_st3[n_primaries] = st3hit->get_pz(0);
@@ -590,7 +549,6 @@ int SimAna::process_event(PHCompositeNode* topNode)
       gx_h1[n_primaries] = h1hit->get_x(0);
       gy_h1[n_primaries] = h1hit->get_y(0);
       gz_h1[n_primaries] = h1hit->get_z(0);
-      //std::cout << "h1 x " << h1hit->get_x(0) << " y " << h1hit->get_y(0) <<" z " << h1hit->get_z(0) << std::endl;
       gpx_h1[n_primaries] = h1hit->get_px(0);
       gpy_h1[n_primaries] = h1hit->get_py(0);
       gpz_h1[n_primaries] = h1hit->get_pz(0);
@@ -602,7 +560,6 @@ int SimAna::process_event(PHCompositeNode* topNode)
       gx_h2[n_primaries] = h2hit->get_x(0);
       gy_h2[n_primaries] = h2hit->get_y(0);
       gz_h2[n_primaries] = h2hit->get_z(0);
-      //std::cout << "h2 x " << h2hit->get_x(0) << " y " << h2hit->get_y(0) <<" z " << h2hit->get_z(0) << std::endl;
       gpx_h2[n_primaries] = h2hit->get_px(0);
       gpy_h2[n_primaries] = h2hit->get_py(0);
       gpz_h2[n_primaries] = h2hit->get_pz(0);
@@ -614,24 +571,14 @@ int SimAna::process_event(PHCompositeNode* topNode)
       gx_h3[n_primaries] = h3hit->get_x(0);
       gy_h3[n_primaries] = h3hit->get_y(0);
       gz_h3[n_primaries] = h3hit->get_z(0);
-      //std::cout << "h3 x " << h3hit->get_x(0) << " y " << h3hit->get_y(0) <<" z " << h3hit->get_z(0) << std::endl;
       gpx_h3[n_primaries] = h3hit->get_px(0);
       gpy_h3[n_primaries] = h3hit->get_py(0);
       gpz_h3[n_primaries] = h3hit->get_pz(0);
     }
-    //PHG4Hit* h4hit_t = FindG4HitAtStation(trkID,g4hc_h4t);
-    //if(h4hit_t) {
-    //std::cout << "h4y t x " << h4hit_t->get_x(0) << " y " << h4hit_t->get_y(0) <<" z " << h4hit_t->get_z(0) << std::endl; 
-    // }
-    //PHG4Hit* h4hit_b = FindG4HitAtStation(trkID,g4hc_h4b);
-    //if(h4hit_b){
-    //  std::cout << "h4y b x " << h4hit_b->get_x(0) << " y " << h4hit_b->get_y(0) <<" z " << h4hit_b->get_z(0) << std::endl;
-    //}
     PHG4Hit* h4hit = FindG4HitAtStation(trkID,g4hc_h4t);
     if(!h4hit)
       PHG4Hit* h4hit = FindG4HitAtStation(trkID,g4hc_h4b);
     if(h4hit){
-      //std::cout << "h4y x "  << h4hit->get_x(0) << " y " << h4hit->get_y(0) <<" z " << h4hit->get_z(0) << std::endl;
       gx_h4[n_primaries] = h4hit->get_x(0);
       gy_h4[n_primaries] = h4hit->get_y(0);
       gz_h4[n_primaries] = h4hit->get_z(0);
@@ -658,18 +605,33 @@ int SimAna::End(PHCompositeNode* topNode)
 
 int SimAna::GetNodes(PHCompositeNode* topNode)
 {
-  hitVector    = findNode::getClass<SQHitVector>(topNode, "SQHitVector");
-  if(!hitVector) return Fun4AllReturnCodes::ABORTEVENT;
+  _hitVector    = findNode::getClass<SQHitVector>(topNode, "SQHitVector");
+  if(!_hitVector) return Fun4AllReturnCodes::ABORTEVENT;
 
-  //trackVector = findNode::getClass<SQTrackVector>(topNode, "SQRecTrackVector");
-  //if(!trackVector) {
-  //  std::cout << "did not find SQTrackVector" << std::endl;
-  //  return Fun4AllReturnCodes::ABORTEVENT;
-  //}
-  _recEvent = findNode::getClass<SRecEvent>(topNode, "SRecEvent");
-  if (!_recEvent) {
-    LogError("!_recEvent");
-    //return Fun4AllReturnCodes::ABORTEVENT;
+  _trackVector  = findNode::getClass<SQTrackVector>(topNode, "SQTruthTrackVector");
+  if(!_trackVector) {
+    std::cout << "ERROR:: did not find SQTruthTrackVector" << std::endl;
+  }
+
+  _dimuonVector = findNode::getClass<SQDimuonVector>(topNode, "SQTruthDimuonVector");
+  if(!_dimuonVector) {
+    std::cout << "ERROR:: did not find SQTruthDimuonVector" << std::endl;
+  }
+
+  if(legacyContainer) {
+    _recEvent = findNode::getClass<SRecEvent>(topNode, "SRecEvent");
+    if(!_recEvent) {
+      _recEvent = nullptr;
+      std::cout << "ERROR:: no RecEvent " << std::endl;
+      //return Fun4AllReturnCodes::ABORTEVENT;
+    }
+  }
+  else { 
+    _recTrackVector  = findNode::getClass<SQTrackVector>(topNode, "SQRecTrackVector");
+    _recDimuonVector = findNode::getClass<SQDimuonVector>(topNode, "SQRecDimuonVector");
+    if(!_recTrackVector) {
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
   }
 
   _truth = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
@@ -679,7 +641,8 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
   g4hc_d2xp = findNode::getClass<PHG4HitContainer      >(topNode, "G4HIT_D2Xp");
   g4hc_d3px = findNode::getClass<PHG4HitContainer      >(topNode, "G4HIT_D3pXp");
   g4hc_d3mx = findNode::getClass<PHG4HitContainer      >(topNode, "G4HIT_D3mXp");
-  if (! g4hc_d1x) g4hc_d1x = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D0X");
+  if (! g4hc_d1x) 
+    g4hc_d1x = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D0X"); // D0X is considered as station 1
   if ( !g4hc_d1x || !g4hc_d3px || !g4hc_d3mx) {
     std::cout << "SimAna::GetNode No drift chamber node " << std::endl;
     return Fun4AllReturnCodes::ABORTEVENT;
@@ -728,8 +691,9 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
 void SimAna::MakeTree()
 {
   saveFile= new TFile("output.root", "RECREATE");
-  saveTree = new TTree("Truth", "Truth Tree Created by SimAna");
+  saveTree = new TTree("Events", "Tree Created by SimAna");
   saveTree->Branch("eventID", &eventID, "eventID/I");
+
   saveTree->Branch("n_hits",        &n_hits,          "n_hits/I");
   saveTree->Branch("hit_detID",     hit_detid,        "hit_detID[n_hits]/I");
   saveTree->Branch("hit_elmID",     hit_elmid,        "hit_elmID[n_hits]/I");
@@ -744,39 +708,83 @@ void SimAna::MakeTree()
   saveTree->Branch("hit_truthpy",   hit_truthpy,      "hit_truthpy[n_hits]/F");
   saveTree->Branch("hit_truthpz",   hit_truthpz,      "hit_truthpz[n_hits]/F");
 
-  saveTree->Branch("n_tracks",         &n_tracks,         "n_tracks/I");
-  saveTree->Branch("track_charge",     track_charge,      "track_charge[n_tracks]/I");
-  saveTree->Branch("track_nhits",      track_nhits,       "track_nhits[n_tracks]/I");
-  saveTree->Branch("track_x_target",          track_x_target,           "track_x_target[n_tracks]/F");
-  saveTree->Branch("track_y_target",          track_y_target,           "track_y_target[n_tracks]/F");
-  saveTree->Branch("track_z_target",          track_z_target,           "track_z_target[n_tracks]/F");
-  saveTree->Branch("track_px_target",         track_px_target,          "track_px_target[n_tracks]/F");
-  saveTree->Branch("track_py_target",         track_py_target,          "track_py_target[n_tracks]/F");
-  saveTree->Branch("track_pz_target",         track_pz_target,          "track_pz_target[n_tracks]/F");
-  saveTree->Branch("track_x_st1",          track_x_st1,           "track_x_st1[n_tracks]/F");
-  saveTree->Branch("track_y_st1",          track_y_st1,           "track_y_st1[n_tracks]/F");
-  saveTree->Branch("track_z_st1",          track_z_st1,           "track_z_st1[n_tracks]/F");
-  saveTree->Branch("track_px_st1",         track_px_st1,          "track_px_st1[n_tracks]/F");
-  saveTree->Branch("track_py_st1",         track_py_st1,          "track_py_st1[n_tracks]/F");
-  saveTree->Branch("track_pz_st1",         track_pz_st1,          "track_pz_st1[n_tracks]/F");
-  saveTree->Branch("track_x_vtx",          track_x_vtx,           "track_x_vtx[n_tracks]/F");
-  saveTree->Branch("track_y_vtx",          track_y_vtx,           "track_y_vtx[n_tracks]/F");
-  saveTree->Branch("track_z_vtx",          track_z_vtx,           "track_z_vtx[n_tracks]/F");
-  saveTree->Branch("track_m",          track_m,           "track_m[n_tracks]/F");
-  saveTree->Branch("track_chisq",      track_chisq,       "track_chisq[n_tracks]/F");
-  saveTree->Branch("track_prob",       track_prob,        "track_prob[n_tracks]/F");
-  saveTree->Branch("track_quality",    track_quality,     "track_quality[n_tracks]/F");
-  saveTree->Branch("track_nhits_st1",    track_nhits_st1,     "track_nhits_st1[n_tracks]/I");
-  saveTree->Branch("track_nhits_st2",    track_nhits_st2,     "track_nhits_st2[n_tracks]/I");
-  saveTree->Branch("track_nhits_st3",    track_nhits_st3,     "track_nhits_st3[n_tracks]/I");
+  saveTree->Branch("n_tracks",             &n_tracks,           "n_tracks/I");
+  saveTree->Branch("track_charge",         track_charge,        "track_charge[n_tracks]/I");
+  saveTree->Branch("track_x_st1",          track_x_st1,         "track_x_st1[n_tracks]/F");
+  saveTree->Branch("track_y_st1",          track_y_st1,         "track_y_st1[n_tracks]/F");
+  saveTree->Branch("track_z_st1",          track_z_st1,         "track_z_st1[n_tracks]/F");
+  saveTree->Branch("track_px_st1",         track_px_st1,        "track_px_st1[n_tracks]/F");
+  saveTree->Branch("track_py_st1",         track_py_st1,        "track_py_st1[n_tracks]/F");
+  saveTree->Branch("track_pz_st1",         track_pz_st1,        "track_pz_st1[n_tracks]/F");
+  saveTree->Branch("track_x_st3",          track_x_st3,         "track_x_st3[n_tracks]/F");
+  saveTree->Branch("track_y_st3",          track_y_st3,         "track_y_st3[n_tracks]/F");
+  saveTree->Branch("track_z_st3",          track_z_st3,         "track_z_st3[n_tracks]/F");
+  saveTree->Branch("track_px_st3",         track_px_st3,        "track_px_st3[n_tracks]/F");
+  saveTree->Branch("track_py_st3",         track_py_st3,        "track_py_st3[n_tracks]/F");
+  saveTree->Branch("track_pz_st3",         track_pz_st3,        "track_pz_st3[n_tracks]/F");
+  saveTree->Branch("track_x_vtx",          track_x_vtx,         "track_x_vtx[n_tracks]/F");
+  saveTree->Branch("track_y_vtx",          track_y_vtx,         "track_y_vtx[n_tracks]/F");
+  saveTree->Branch("track_z_vtx",          track_z_vtx,         "track_z_vtx[n_tracks]/F");
+  saveTree->Branch("track_px_vtx",         track_px_vtx,        "track_px_vtx[n_tracks]/F");
+  saveTree->Branch("track_py_vtx",         track_py_vtx,        "track_py_vtx[n_tracks]/F");
+  saveTree->Branch("track_pz_vtx",         track_pz_vtx,        "track_pz_vtx[n_tracks]/F");
 
-  saveTree->Branch("n_Dimuons",    &n_Dimuons,  "n_Dimuons/I");
-  saveTree->Branch("dimuon_mass",  dimuon_mass, "dimuon_mass[n_Dimuons]/F");
+  saveTree->Branch("n_rectracks",              &n_rectracks,            "n_rectracks/I");
+  saveTree->Branch("rec_track_charge",         rec_track_charge,        "rec_track_charge[n_rectracks]/I");
+  saveTree->Branch("rec_track_nhits",          rec_track_nhits,         "rec_track_nhits[n_rectracks]/I");
+  saveTree->Branch("rec_track_x_target",       rec_track_x_target,      "rec_track_x_target[n_rectracks]/F");
+  saveTree->Branch("rec_track_y_target",       rec_track_y_target,      "rec_track_y_target[n_rectracks]/F");
+  saveTree->Branch("rec_track_z_target",       rec_track_z_target,      "rec_track_z_target[n_rectracks]/F");
+  saveTree->Branch("rec_track_px_target",      rec_track_px_target,     "rec_track_px_target[n_rectracks]/F");
+  saveTree->Branch("rec_track_py_target",      rec_track_py_target,     "rec_track_py_target[n_rectracks]/F");
+  saveTree->Branch("rec_track_pz_target",      rec_track_pz_target,     "rec_track_pz_target[n_rectracks]/F");
+  saveTree->Branch("rec_track_x_st1",          rec_track_x_st1,         "rec_track_x_st1[n_rectracks]/F");
+  saveTree->Branch("rec_track_y_st1",          rec_track_y_st1,         "rec_track_y_st1[n_rectracks]/F");
+  saveTree->Branch("rec_track_z_st1",          rec_track_z_st1,         "rec_track_z_st1[n_rectracks]/F");
+  saveTree->Branch("rec_track_px_st1",         rec_track_px_st1,        "rec_track_px_st1[n_rectracks]/F");
+  saveTree->Branch("rec_track_py_st1",         rec_track_py_st1,        "rec_track_py_st1[n_rectracks]/F");
+  saveTree->Branch("rec_track_pz_st1",         rec_track_pz_st1,        "rec_track_pz_st1[n_rectracks]/F");
+  saveTree->Branch("rec_track_x_vtx",          rec_track_x_vtx,         "rec_track_x_vtx[n_rectracks]/F");
+  saveTree->Branch("rec_track_y_vtx",          rec_track_y_vtx,         "rec_track_y_vtx[n_rectracks]/F");
+  saveTree->Branch("rec_track_z_vtx",          rec_track_z_vtx,         "rec_track_z_vtx[n_rectracks]/F");
+  saveTree->Branch("rec_track_m",              rec_track_m,             "rec_track_m[n_rectracks]/F");
+  saveTree->Branch("rec_track_chisq",          rec_track_chisq,         "rec_track_chisq[n_rectracks]/F");
+  saveTree->Branch("rec_track_prob",           rec_track_prob,          "rec_track_prob[n_rectracks]/F");
+  saveTree->Branch("rec_track_quality",        rec_track_quality,       "rec_track_quality[n_rectracks]/F");
+  saveTree->Branch("rec_track_nhits_st1",      rec_track_nhits_st1,     "rec_track_nhits_st1[n_rectracks]/I");
+  saveTree->Branch("rec_track_nhits_st2",      rec_track_nhits_st2,     "rec_track_nhits_st2[n_rectracks]/I");
+  saveTree->Branch("rec_track_nhits_st3",      rec_track_nhits_st3,     "rec_track_nhits_st3[n_rectracks]/I");
+
+  saveTree->Branch("n_Dimuons",    &n_Dimuons,   "n_Dimuons/I");
+  saveTree->Branch("dimuon_mass",  dimuon_mass,  "dimuon_mass[n_Dimuons]/F");
   saveTree->Branch("dimuon_vtx_x", dimuon_vtx_x, "dimuon_vtx_x[n_Dimuons]/F");
   saveTree->Branch("dimuon_vtx_y", dimuon_vtx_y, "dimuon_vtx_y[n_Dimuons]/F");
   saveTree->Branch("dimuon_vtx_z", dimuon_vtx_z, "dimuon_vtx_z[n_Dimuons]/F");
-  saveTree->Branch("dimuon_chisq", dimuon_chisq, "dimuon_chisq[n_Dimuons]/F");
+  saveTree->Branch("dimuon_pmom_x", dimuon_pmom_x, "dimuon_pmom_x[n_Dimuons]/F");
+  saveTree->Branch("dimuon_pmom_y", dimuon_pmom_y, "dimuon_pmom_y[n_Dimuons]/F");
+  saveTree->Branch("dimuon_pmom_z", dimuon_pmom_z, "dimuon_pmom_z[n_Dimuons]/F");
+  saveTree->Branch("dimuon_nmom_x", dimuon_nmom_x, "dimuon_nmom_x[n_Dimuons]/F");
+  saveTree->Branch("dimuon_nmom_y", dimuon_nmom_y, "dimuon_nmom_y[n_Dimuons]/F");
+  saveTree->Branch("dimuon_nmom_z", dimuon_nmom_z, "dimuon_nmom_z[n_Dimuons]/F");
 
+  saveTree->Branch("n_RecDimuons",    &n_RecDimuons,   "n_RecDimuons/I");
+  saveTree->Branch("rec_dimuon_mass",  rec_dimuon_mass,  "rec_dimuon_mass[n_RecDimuons]/F");
+  saveTree->Branch("rec_dimuon_chisq", rec_dimuon_chisq, "rec_dimuon_chisq[n_RecDimuons]/F");
+  saveTree->Branch("rec_dimuon_vtx_x", rec_dimuon_vtx_x, "rec_dimuon_vtx_x[n_RecDimuons]/F");
+  saveTree->Branch("rec_dimuon_vtx_y", rec_dimuon_vtx_y, "rec_dimuon_vtx_y[n_RecDimuons]/F");
+  saveTree->Branch("rec_dimuon_vtx_z", rec_dimuon_vtx_z, "rec_dimuon_vtx_z[n_RecDimuons]/F");
+  saveTree->Branch("rec_dimuon_pmom_x", rec_dimuon_pmom_x, "rec_dimuon_pmom_x[n_RecDimuons]/F");
+  saveTree->Branch("rec_dimuon_pmom_y", rec_dimuon_pmom_y, "rec_dimuon_pmom_y[n_RecDimuons]/F");
+  saveTree->Branch("rec_dimuon_pmom_z", rec_dimuon_pmom_z, "rec_dimuon_pmom_z[n_RecDimuons]/F");
+  saveTree->Branch("rec_dimuon_nmom_x", rec_dimuon_nmom_x, "rec_dimuon_nmom_x[n_RecDimuons]/F");
+  saveTree->Branch("rec_dimuon_nmom_y", rec_dimuon_nmom_y, "rec_dimuon_nmom_y[n_RecDimuons]/F");
+  saveTree->Branch("rec_dimuon_nmom_z", rec_dimuon_nmom_z, "rec_dimuon_nmom_z[n_RecDimuons]/F");
+  saveTree->Branch("rec_dimuon_ppos_x", rec_dimuon_ppos_x, "rec_dimuon_ppos_x[n_RecDimuons]/F");
+  saveTree->Branch("rec_dimuon_ppos_y", rec_dimuon_ppos_y, "rec_dimuon_ppos_y[n_RecDimuons]/F");
+  saveTree->Branch("rec_dimuon_ppos_z", rec_dimuon_ppos_z, "rec_dimuon_ppos_z[n_RecDimuons]/F");
+  saveTree->Branch("rec_dimuon_npos_x", rec_dimuon_npos_x, "rec_dimuon_npos_x[n_RecDimuons]/F");
+  saveTree->Branch("rec_dimuon_npos_y", rec_dimuon_npos_y, "rec_dimuon_npos_y[n_RecDimuons]/F");
+  saveTree->Branch("rec_dimuon_npos_z", rec_dimuon_npos_z, "rec_dimuon_npos_z[n_RecDimuons]/F");
 
   saveTree->Branch("n_showers",     &n_showers,       "n_showers/I");
   saveTree->Branch("sx_ecal",       &sx_ecal,         "sx_ecal[n_showers]/F");
