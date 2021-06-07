@@ -337,7 +337,7 @@ int RecoE1039Sim(const int nevent = 200,
   SQTruthVertexing* truthVtx = new SQTruthVertexing();
   truthVtx->set_legacy_rec_container(legacy_rec_container);
   truthVtx->set_vtx_smearing(50.); // smear the truth z_vertex to mimic resolution effect, default is 0.
-  se->registerSubsystem(truthVtx);
+  //se->registerSubsystem(truthVtx);
 
   // vertexing for dimuon information
   if(legacy_rec_container){
