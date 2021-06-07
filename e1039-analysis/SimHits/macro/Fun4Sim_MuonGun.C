@@ -21,7 +21,14 @@ R__LOAD_LIBRARY(libsim_ana)
 #include <sstream>
 using namespace std;
 
-int Fun4Sim_MuonGun(const int nevent = 20) {
+/*
+ * WARNING!!!
+ * This macro is not less maintained. Please use
+ * Fun4Sim_Muons.C instead, which can run on signal,
+ * pythia/gun, and cosmic samples
+ */
+
+int Fun4Sim_MuonGun(const int nevent = 1) {
   const double target_coil_pos_z = -300;
 
   const bool do_collimator = true;
@@ -146,12 +153,12 @@ int Fun4Sim_MuonGun(const int nevent = 20) {
   se->registerSubsystem(digitizer);
 
   // Make SQ nodes for truth info
-  // se->registerSubsystem(new TruthNodeMaker());
+  se->registerSubsystem(new TruthNodeMaker());
 
   // Trigger Emulator
   DPTriggerAnalyzer *dptrigger = new DPTriggerAnalyzer();
   dptrigger->set_road_set_file_name("$E1039_RESOURCE/trigger/trigger_67.txt");
-  // se->registerSubsystem(dptrigger);
+  se->registerSubsystem(dptrigger);
 
   // Event Filter
   // EvtFilter *evt_filter = new EvtFilter();
