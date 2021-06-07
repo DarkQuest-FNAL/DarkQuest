@@ -21,13 +21,20 @@ R__LOAD_LIBRARY(libsim_ana)
 using namespace std;
 
 /*
+ * WARNING!!! 
+ * This macro is not well maintained. Please use
+ * Fun4Sim_Muons.C instead, which can run on signal, 
+ * pythia/gun, and cosmic samples
+ */
+
+/*
  * macro used to analyze Aprime decaying to dimuons, 
  * Heavily based on Fun4Sim.C with small modification
  * for muons. 
  * Can be merged together with Fun4Sim.C
  */
 
-int Fun4Sim_Ap2Muons(const int nevent = 10000,
+int Fun4Sim_Ap2Muons(const int nevent = 10,
 	    //std::string ifile = "Brem_0.011603_z500_600_eps_-6",
 	    std::string ifile = "Brem_2.750000_z500_600_eps_-6.4",
 	    //std::string ifile = "Eta_0.012922_z500_600_eps_-6",
@@ -143,12 +150,17 @@ int Fun4Sim_Ap2Muons(const int nevent = 10000,
   se->registerSubsystem(digitizer);
 
   // Make SQ nodes for truth info
-  //se->registerSubsystem(new TruthNodeMaker());
+  TruthNodeMaker *truthMaker = new TruthNodeMaker();
+  truthMaker->Verbosity(0);
+  // our signal input file seems to have different format than the offical one
+  // set m_do_evt_header to false so that TruthNodeMaker can run successfully
+  truthMaker->set_do_event_header(false);
+  se->registerSubsystem(truthMaker);
 
   // Trigger Emulator
   DPTriggerAnalyzer* dptrigger = new DPTriggerAnalyzer();
   dptrigger->set_road_set_file_name("$E1039_RESOURCE/trigger/trigger_67.txt");
-  //se->registerSubsystem(dptrigger);
+  se->registerSubsystem(dptrigger);
 
   // Event Filter
   //EvtFilter *evt_filter = new EvtFilter();

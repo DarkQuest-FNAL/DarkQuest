@@ -1,15 +1,16 @@
 #ifndef _Sim_Ana__H_
 #define _Sim_Ana__H_
 
-#include <map>
-#include <fun4all/SubsysReco.h>
 #include <TString.h>
 #include <TVector3.h>
+#include <fun4all/SubsysReco.h>
+#include <map>
 
 class TFile;
 class TTree;
 class SQHitVector;
 class SQTrackVector;
+class SQDimuonVector;
 
 class PHG4TruthInfoContainer;
 class PHG4HitContainer;
@@ -19,32 +20,33 @@ class PHG4Hit;
 class PHG4Shower;
 class PHG4Particle;
 
-class SimAna: public SubsysReco 
-{
+class SimAna : public SubsysReco {
 public:
-  SimAna(const std::string& name = "SimAna");
+  SimAna(const std::string &name = "SimAna");
   virtual ~SimAna();
 
-  int Init(PHCompositeNode* topNode);
-  int InitRun(PHCompositeNode* topNode);
-  int process_event(PHCompositeNode* topNode);
-  int End(PHCompositeNode* topNode);
+  int Init(PHCompositeNode *topNode);
+  int InitRun(PHCompositeNode *topNode);
+  int process_event(PHCompositeNode *topNode);
+  int End(PHCompositeNode *topNode);
 
-  PHG4Hit* FindG4HitAtStation(const int trk_id, const PHG4HitContainer* g4hc);
-  std::vector<PHG4Hit*> FindG4HitsAtStation(const int trk_id, const PHG4HitContainer* g4hc);
-  PHG4Shower* get_primary_shower(PHG4Particle* particle);
-  void checkKinematics(PHG4Particle* primary);
+  PHG4Hit *FindG4HitAtStation(const int trk_id, const PHG4HitContainer *g4hc);
+  std::vector<PHG4Hit *> FindG4HitsAtStation(const int trk_id,
+                                             const PHG4HitContainer *g4hc);
+  PHG4Shower *get_primary_shower(PHG4Particle *particle);
+  void checkKinematics(PHG4Particle *primary);
 
-  void set_out_name(const char* outName) {
-    saveNameOut = outName;
-  }
+  void set_out_name(const char *outName) { saveNameOut = outName; }
+
 private:
-  int GetNodes(PHCompositeNode* topNode);
+  int GetNodes(PHCompositeNode *topNode);
   void MakeTree();
 
-  SQHitVector* hitVector;
-  SRecEvent* _recEvent;
-  PHG4TruthInfoContainer* _truth;
+  SQHitVector *hitVector;
+  SRecEvent *_recEvent;
+  PHG4TruthInfoContainer *_truth;
+
+  SQDimuonVector *truthDimuonVector;
 
   PHG4HitContainer *g4hc_d1x;
   PHG4HitContainer *g4hc_d2xp;
@@ -79,10 +81,10 @@ private:
 
   // Output
   TString saveName;
-  const char* saveNameOut;
-  TFile* saveFile;
+  const char *saveNameOut;
+  TFile *saveFile;
   int eventID;
-  TTree* saveTree;
+  TTree *saveTree;
 
   int n_hits;
   int hit_detid[1000];
@@ -116,6 +118,9 @@ private:
   float track_x_vtx[100];
   float track_y_vtx[100];
   float track_z_vtx[100];
+  float track_px_vtx[100];
+  float track_py_vtx[100];
+  float track_pz_vtx[100];
   float track_m[100];
   float track_chisq[100];
   float track_prob[100];
@@ -124,12 +129,24 @@ private:
   int track_nhits_st2[100];
   int track_nhits_st3[100];
 
-  int n_Dimuons;
-  float dimuon_mass[100];
-  float dimuon_vtx_x[100];
-  float dimuon_vtx_y[100];
-  float dimuon_vtx_z[100];
-  float dimuon_chisq[100];
+  int n_dimuons;
+  float dimuon_mass[10];
+  float dimuon_x_vtx[10];
+  float dimuon_y_vtx[10];
+  float dimuon_z_vtx[10];
+  float dimuon_px[10];
+  float dimuon_py[10];
+  float dimuon_pz[10];
+  float dimuon_chisq[10];
+
+  int n_truthdimuons;
+  float truthdimuon_mass[10];
+  float truthdimuon_x_vtx[10];
+  float truthdimuon_y_vtx[10];
+  float truthdimuon_z_vtx[10];
+  float truthdimuon_px[10];
+  float truthdimuon_py[10];
+  float truthdimuon_pz[10];
 
   int n_showers;
   float sx_ecal[1000];
@@ -210,7 +227,6 @@ private:
   float gpx_p1[1000];
   float gpy_p1[1000];
   float gpz_p1[1000];
-
 
   float gx_h4y2l[1000];
   float gy_h4y2l[1000];
