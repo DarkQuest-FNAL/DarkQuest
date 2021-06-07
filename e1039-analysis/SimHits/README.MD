@@ -36,8 +36,9 @@ SimHits depends on [e1039-core](https://github.com/E1039-Collaboration/e1039-cor
 </details>
 
 ### Setting up e1039-core
-If you have the private version of e1039 installed, change the `MY_E1039` in `setup_mye1039.sh` to your directory; if not, you can leave it unchaged - the default will be
-yfeng's version. Then source the script:
+If you have the private version of e1039 installed, change the `MY_E1039` in `setup_mye1039.sh` to your directory. 
+If you do not have it installed you can call Yongbin's installation in `/seaquest/users/yfeng/mye1039/e1039-core/this-e1039.sh`.
+Then source the script:
 
 ```
 source setup_mye1039.sh
