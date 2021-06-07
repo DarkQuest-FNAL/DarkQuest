@@ -150,7 +150,12 @@ int Fun4Sim_Ap2Muons(const int nevent = 10,
   se->registerSubsystem(digitizer);
 
   // Make SQ nodes for truth info
-  se->registerSubsystem(new TruthNodeMaker());
+  TruthNodeMaker *truthMaker = new TruthNodeMaker();
+  truthMaker->Verbosity(0);
+  // our signal input file seems to have different format than the offical one
+  // set m_do_evt_header to false so that TruthNodeMaker can run successfully
+  truthMaker->set_do_event_header(false);
+  se->registerSubsystem(truthMaker);
 
   // Trigger Emulator
   DPTriggerAnalyzer* dptrigger = new DPTriggerAnalyzer();
