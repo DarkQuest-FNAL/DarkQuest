@@ -1,10 +1,10 @@
 #ifndef _Sim_Ana__H_
 #define _Sim_Ana__H_
 
-#include <map>
-#include <fun4all/SubsysReco.h>
 #include <TString.h>
 #include <TVector3.h>
+#include <fun4all/SubsysReco.h>
+#include <map>
 
 class TFile;
 class TTree;
@@ -20,34 +20,33 @@ class PHG4Hit;
 class PHG4Shower;
 class PHG4Particle;
 
-class SimAna: public SubsysReco 
-{
+class SimAna : public SubsysReco {
 public:
-  SimAna(const std::string& name = "SimAna");
+  SimAna(const std::string &name = "SimAna");
   virtual ~SimAna();
 
-  int Init(PHCompositeNode* topNode);
-  int InitRun(PHCompositeNode* topNode);
-  int process_event(PHCompositeNode* topNode);
-  int End(PHCompositeNode* topNode);
+  int Init(PHCompositeNode *topNode);
+  int InitRun(PHCompositeNode *topNode);
+  int process_event(PHCompositeNode *topNode);
+  int End(PHCompositeNode *topNode);
 
-  PHG4Hit* FindG4HitAtStation(const int trk_id, const PHG4HitContainer* g4hc);
-  std::vector<PHG4Hit*> FindG4HitsAtStation(const int trk_id, const PHG4HitContainer* g4hc);
-  PHG4Shower* get_primary_shower(PHG4Particle* particle);
-  void checkKinematics(PHG4Particle* primary);
+  PHG4Hit *FindG4HitAtStation(const int trk_id, const PHG4HitContainer *g4hc);
+  std::vector<PHG4Hit *> FindG4HitsAtStation(const int trk_id,
+                                             const PHG4HitContainer *g4hc);
+  PHG4Shower *get_primary_shower(PHG4Particle *particle);
+  void checkKinematics(PHG4Particle *primary);
 
-  void set_out_name(const char* outName) {
-    saveNameOut = outName;
-  }
+  void set_out_name(const char *outName) { saveNameOut = outName; }
+
 private:
-  int GetNodes(PHCompositeNode* topNode);
+  int GetNodes(PHCompositeNode *topNode);
   void MakeTree();
 
-  SQHitVector* hitVector;
-  SRecEvent* _recEvent;
-  PHG4TruthInfoContainer* _truth;
+  SQHitVector *hitVector;
+  SRecEvent *_recEvent;
+  PHG4TruthInfoContainer *_truth;
 
-  SQDimuonVector* truthDimuonVector;
+  SQDimuonVector *truthDimuonVector;
 
   PHG4HitContainer *g4hc_d1x;
   PHG4HitContainer *g4hc_d2xp;
@@ -82,10 +81,10 @@ private:
 
   // Output
   TString saveName;
-  const char* saveNameOut;
-  TFile* saveFile;
+  const char *saveNameOut;
+  TFile *saveFile;
   int eventID;
-  TTree* saveTree;
+  TTree *saveTree;
 
   int n_hits;
   int hit_detid[1000];
@@ -225,7 +224,6 @@ private:
   float gpx_p1[1000];
   float gpy_p1[1000];
   float gpz_p1[1000];
-
 
   float gx_h4y2l[1000];
   float gy_h4y2l[1000];
