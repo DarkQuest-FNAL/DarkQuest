@@ -380,7 +380,7 @@ int SimAna::process_event(PHCompositeNode* topNode) {
     int recid = track->get_rec_track_id();
     if(recid >= 0 && recid < n_recTracks) {
       SRecTrack* recTrack = legacyContainer ? &(_recEvent->getTrack(recid)) : dynamic_cast<SRecTrack*>(_recTrackVector->at(recid));
-      std::cout << "******************** (recTrack->getTargetMom()).Px() " << (recTrack->getTargetMom()).Px() << std::endl;
+      //std::cout << "******************** (recTrack->getTargetMom()).Px() " << (recTrack->getTargetMom()).Px() << std::endl;
       track_charge[n_tracks] = recTrack->getCharge();
       track_nhits[n_tracks] = recTrack->getNHits();
       track_x_target[n_tracks] = (recTrack->getTargetPos()).X();
@@ -417,9 +417,7 @@ int SimAna::process_event(PHCompositeNode* topNode) {
 
   // vertices
   n_truthdimuons = 0;
-  n_dimuons = 0;
   int nDimuons = _dimuonVector->size();
-  int nRecDimuons = legacyContainer ? _recEvent->getNDimuons() : (_recDimuonVector ? _recDimuonVector->size() : -1);
   for(int i = 0; i < nDimuons; ++i) {
     SQDimuon* dimuon = _dimuonVector->at(i);
     // truth dimuon
@@ -437,37 +435,37 @@ int SimAna::process_event(PHCompositeNode* topNode) {
     truthdimuon_nmom_x[n_truthdimuons] = (dimuon->get_mom_neg()).Px();
     truthdimuon_nmom_y[n_truthdimuons] = (dimuon->get_mom_neg()).Py();
     truthdimuon_nmom_z[n_truthdimuons] = (dimuon->get_mom_neg()).Pz();
-    
-    int recid = dimuon->get_rec_dimuon_id();
-    if(recid >= 0 && recid < nRecDimuons) {
-      SRecDimuon* recDimuon = legacyContainer ? &(_recEvent->getDimuon(recid)) : dynamic_cast<SRecDimuon*>(_recDimuonVector->at(recid));
-      dimuon_mass[n_dimuons] = recDimuon->mass;
-      dimuon_chisq[n_dimuons] = recDimuon->get_chisq();
-      dimuon_x_vtx[n_dimuons] = (recDimuon->vtx).X();
-      dimuon_y_vtx[n_dimuons] = (recDimuon->vtx).Y();
-      dimuon_z_vtx[n_dimuons] = (recDimuon->vtx).Z();
-      dimuon_px[n_dimuons] = (recDimuon->get_mom()).X();
-      dimuon_py[n_dimuons] = (recDimuon->get_mom()).Y();
-      dimuon_pz[n_dimuons] = (recDimuon->get_mom()).Z();
-      dimuon_pmom_x[n_dimuons] = (recDimuon->p_pos).Px(); //4-momentum of the muon tracks after vertex fit
-      dimuon_pmom_y[n_dimuons] = (recDimuon->p_pos).Py();
-      dimuon_pmom_z[n_dimuons] = (recDimuon->p_pos).Pz();
-      dimuon_nmom_x[n_dimuons] = (recDimuon->p_neg).Px();
-      dimuon_nmom_y[n_dimuons] = (recDimuon->p_neg).Py();
-      dimuon_nmom_z[n_dimuons] = (recDimuon->p_neg).Pz();
-      dimuon_ppos_x[n_dimuons] = (recDimuon->vtx_pos).X(); // vertex position
-      dimuon_ppos_y[n_dimuons] = (recDimuon->vtx_pos).Y();
-      dimuon_ppos_z[n_dimuons] = (recDimuon->vtx_pos).Z();
-      dimuon_npos_x[n_dimuons] = (recDimuon->vtx_neg).X(); 
-      dimuon_npos_y[n_dimuons] = (recDimuon->vtx_neg).Y();
-      dimuon_npos_z[n_dimuons] = (recDimuon->vtx_neg).Z();
-
-      ++n_dimuons;
-      if(n_dimuons >= 100) break;
-    }
-    
     ++n_truthdimuons;
     if(n_truthdimuons >= 100) break;
+  }
+
+  n_dimuons = 0;
+  int nRecDimuons = legacyContainer ? _recEvent->getNDimuons() : (_recDimuonVector ? _recDimuonVector->size() : -1);
+  for(int i = 0; i < nRecDimuons; ++i) {
+    SRecDimuon* recDimuon = legacyContainer ? &(_recEvent->getDimuon(i)) : dynamic_cast<SRecDimuon*>(_recDimuonVector->at(i));
+    dimuon_mass[n_dimuons] = recDimuon->mass;
+    dimuon_chisq[n_dimuons] = recDimuon->get_chisq();
+    dimuon_x_vtx[n_dimuons] = (recDimuon->vtx).X();
+    dimuon_y_vtx[n_dimuons] = (recDimuon->vtx).Y();
+    dimuon_z_vtx[n_dimuons] = (recDimuon->vtx).Z();
+    dimuon_px[n_dimuons] = (recDimuon->get_mom()).X();
+    dimuon_py[n_dimuons] = (recDimuon->get_mom()).Y();
+    dimuon_pz[n_dimuons] = (recDimuon->get_mom()).Z();
+    dimuon_pmom_x[n_dimuons] = (recDimuon->p_pos).Px(); //4-momentum of the muon tracks after vertex fit
+    dimuon_pmom_y[n_dimuons] = (recDimuon->p_pos).Py();
+    dimuon_pmom_z[n_dimuons] = (recDimuon->p_pos).Pz();
+    dimuon_nmom_x[n_dimuons] = (recDimuon->p_neg).Px();
+    dimuon_nmom_y[n_dimuons] = (recDimuon->p_neg).Py();
+    dimuon_nmom_z[n_dimuons] = (recDimuon->p_neg).Pz();
+    dimuon_ppos_x[n_dimuons] = (recDimuon->vtx_pos).X(); // vertex position
+    dimuon_ppos_y[n_dimuons] = (recDimuon->vtx_pos).Y();
+    dimuon_ppos_z[n_dimuons] = (recDimuon->vtx_pos).Z();
+    dimuon_npos_x[n_dimuons] = (recDimuon->vtx_neg).X(); 
+    dimuon_npos_y[n_dimuons] = (recDimuon->vtx_neg).Y();
+    dimuon_npos_z[n_dimuons] = (recDimuon->vtx_neg).Z();
+
+    ++n_dimuons;
+    if(n_dimuons >= 100) break;
   }
   
   n_showers = 0;
