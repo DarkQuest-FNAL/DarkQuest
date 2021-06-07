@@ -22,45 +22,52 @@ R__LOAD_LIBRARY(libsim_ana)
 using namespace std;
 
 /*
- * Macro used to analyze dimuons in SpinQuest
+ * Macro used to analyze simulation in SpinQuest
  * isim = 1 to run on Aprime to dimuon signal
- * isim = 2 to run on single muon gun
- * isim = 3 to run on DY to dimuon sample generated with Pythia
- * isim = 4 to run on J/psi to dimuon sample generated with Pythia
- * isim = 5 to run on cosmic sample
+ * isim = 2 to run on Aprime to dielectron signal
+ * isim = 3 to run on single gun (default is muon, see gun options below)
+ * isim = 4 to run on DY to dimuon sample generated with Pythia
+ * isim = 5 to run on J/psi to dimuon sample generated with Pythia
+ * isim = 6 to run on cosmic sample
  *
  * is_displaced decides to run with the displaced config or not.
- * For Aprime signal, always run with is_displaced to True
+ * do_analysis runs the analysis ntuple
+ * for Aprime signal, always run with is_displaced to True
  */
 
-int Fun4Sim_Muons(const int nevent = 200, 
-                  const int isim = 1,
-                  bool is_displaced = false,
-                  std::string ifile = "Brem_2.750000_z500_600_eps_-6.4") {
+int RecoE1039Sim(const int nevent = 200,
+		 const int isim = 1,
+		 bool is_displaced = true,
+		 const bool do_analysis = true,
+		 std::string ifile="Brem_2.750000_z500_600_eps_-6.4"
+		 )
+{
   // input simulation
-  bool do_aprime{false}, do_gun{false}, do_dy{false}, do_jpsi{false},
-      do_cosmic(false);
-  switch (isim) {
-  case 1:
-    do_aprime = true;
+  bool do_aprime_muon{false},do_aprime_electron{false},do_gun{false},do_dy{false},do_jpsi{false},do_cosmic{false},do_pion{false};
+  switch(isim){
+  case 1: 
+    do_aprime_muon = true;
+    is_displaced = true; 
     break;
   case 2:
-    do_gun = true;
+    do_aprime_electron = true;
+    is_displaced = true;
     break;
   case 3:
-    do_dy = true;
+    do_gun = true;
     break;
   case 4:
-    do_jpsi = true;
+    do_dy = true;
     break;
   case 5:
+    do_jpsi = true;
+    break;
+  case 6:
     do_cosmic = true;
     break;
-  }
-
-  if (do_aprime) {
-    is_displaced = true;
-    std::cout << "For Aprime signal, always run on displaced mode" << std::endl;
+  case 7:
+    do_pion = true;
+    break;
   }
 
   // print more information with debug mode
@@ -72,19 +79,18 @@ int Fun4Sim_Muons(const int nevent = 200,
   const int verbosity = 0;
 
   // legacy rec container
-  const bool legacy_rec_container = false; // if true that is for e906 format?
+  const bool legacy_rec_container =  true; // false is for e1039 format
 
   // setup detectors in SpinQuest
   const bool do_collimator = true;
-  const bool do_target = true;
-  const bool do_shielding = true;
-  const bool do_fmag = true;
-  const bool do_kmag = true;
-  const bool do_absorber = true;
-  const bool do_dphodo = true;
-  const bool do_station1DC =
-      false; // station-1 drift chamber should be turned off by default
-  const bool doEMCal = true; // emcal turn on by default
+  const bool do_target     = true;
+  const bool do_shielding  = true;
+  const bool do_fmag       = true;
+  const bool do_kmag       = true;
+  const bool do_absorber   = true;
+  const bool do_dphodo     = true;
+  const bool do_station1DC = false; // station-1 drift chamber should be turned off by default
+  const bool doEMCal       = true; // emcal turned on by default
 
   // SpinQuest constants
   const double target_coil_pos_z = -300;
@@ -156,17 +162,30 @@ int Fun4Sim_Muons(const int nevent = 200,
   se->Verbosity(verbosity);
 
   // input to the simulation
-  if (do_aprime) { // aprime to displaced muons
+  if(do_aprime_muon){ // aprime to displaced muons
     HepMCNodeReader *hr = new HepMCNodeReader();
     hr->set_particle_filter_on(true);
     hr->insert_particle_filter_pid(13); // filter muons
     hr->insert_particle_filter_pid(13 * -1);
     se->registerSubsystem(hr);
-  } else if (do_gun) { // particle gun
+  }
+  else if(do_aprime_electron){ // aprime to displaced electrons
+    HepMCNodeReader *hr = new HepMCNodeReader();
+    hr->set_particle_filter_on(true);
+    hr->insert_particle_filter_pid(11);
+    hr->insert_particle_filter_pid(11*-1);
+    se->registerSubsystem(hr);
+  }
+  else if(do_gun){ // particle gun
     PHG4SimpleEventGenerator *genp = new PHG4SimpleEventGenerator("MUP");
-    genp->add_particles("mu+", 1); // mu+,mu-,e+,proton,pi+,Upsilon
-    if (is_displaced) {
-      // set uniform vertex/momentum distribution (at 500)
+    genp->add_particles("mu+", 1);  // mu+
+    //genp->add_particles("mu-", 1); // mu-
+    //genp->add_particles("e+", 1); // positron
+    //genp->add_particles("pi+", 1); // pions
+    //genp->add_particles("kaon0L", 1); // k0long
+    //genp->add_particles("proton", 1); // protons
+    //genp->add_particles("Upsilon", 1); // upsilon
+    if(is_displaced){
       genp->set_vertex_distribution_function(PHG4SimpleEventGenerator::Uniform,
                                              PHG4SimpleEventGenerator::Uniform,
                                              PHG4SimpleEventGenerator::Uniform);
@@ -174,6 +193,7 @@ int Fun4Sim_Muons(const int nevent = 200,
     } else {
       genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z);
     }
+
     genp->set_vertex_distribution_width(0.0, 0.0, 0.0);
     genp->set_vertex_size_function(PHG4SimpleEventGenerator::Uniform);
     genp->set_vertex_size_parameters(0.0, 0.0);
@@ -273,70 +293,71 @@ int Fun4Sim_Muons(const int nevent = 200,
   }
   se->registerSubsystem(digitizer);
 
-  // event filter
-  // EvtFilter *evt_filter = new EvtFilter();
-  // evt_filter->Verbosity(verbosity);
-  // evt_filter->set_trigger_req(1<<5);
-  // se->registerSubsystem(evt_filter);
-
   // tracking module
   std::cout << "*********** Start SQReco step now..." << std::endl;
-  SQReco *reco = new SQReco();
+  SQReco* reco = new SQReco();
   reco->Verbosity(verbosity);
-  // reco->set_legacy_rec_container(legacy_rec_container);
-  // reco->set_geom_file_name("support/geom.root"); // not needed as it's
-  // created on the fly
-  reco->set_enable_KF(true); // Kalman filter not needed for the track finding,
-                             // disabling KF saves a lot of initialization time
-  reco->setInputTy(SQReco::E1039); // options are SQReco::E906 and SQReco::E1039
-  reco->setFitterTy(
-      SQReco::KFREF); // not relevant for the track finding, options are
-                      // SQReco::KFREF and SQReco::LEGACY
-  reco->set_evt_reducer_opt(
-      "none"); // if not provided, event reducer will be using JobOptsSvc to
-               // intialize; to turn off, set it to "none", for normal tracking,
-               // set to something like "aoc"
-  reco->set_enable_eval(false); // set to true to generate evaluation file which
-                                // includes final track candidates
-  reco->set_eval_file_name("eval.root"); // evaluation filename
-  reco->set_enable_eval_dst(
-      false); // set to true to include final track candidates in the DST tree
-  // reco->add_eval_list(
-  //    3); // include back partial tracks in eval tree for debuging
-  // reco->add_eval_list(2); // include station-3+/- in eval tree for debuging
-  // reco->add_eval_list(1); // include station-2 in eval tree for debugging
+  reco->set_legacy_rec_container(legacy_rec_container);
+  //reco->set_geom_file_name("support/geom.root"); // not needed as it's created on the fly
+  reco->set_enable_KF(true);                      // Kalman filter not needed for the track finding, disabling KF saves a lot of initialization time
+  reco->setInputTy(SQReco::E1039);                // options are SQReco::E906 and SQReco::E1039
+  reco->setFitterTy(SQReco::KFREF);               // not relevant for the track finding, options are SQReco::KFREF and SQReco::LEGACY
+  reco->set_evt_reducer_opt("none");              // if not provided, event reducer will be using JobOptsSvc to intialize; to turn off, set it to "none", for normal tracking, set to something like "aoc"
+  reco->set_enable_eval(false);                   // set to true to generate evaluation file which includes final track candidates 
+  reco->set_eval_file_name("eval.root");          // evaluation filename
+  reco->set_enable_eval_dst(false);               // set to true to include final track candidates in the DST tree
+  //reco->add_eval_list(3);                         // include back partial tracks in eval tree for debuging
+  //reco->add_eval_list(2);                         // include station-3+/- in eval tree for debuging
+  //reco->add_eval_list(1);                         // include station-2 in eval tree for debugging
   se->registerSubsystem(reco);
 
-  // Vertex fitting for dimuon information
-  VertexFit *vertexing = new VertexFit();
-  se->registerSubsystem(vertexing);
-
-  // Truth node maker after tracking
-  TruthNodeMaker *truthMaker = new TruthNodeMaker();
-  // truthMaker->set_legacy_rec_container(legacy_rec_container);
-  truthMaker->Verbosity(verbosity);
-  if (do_aprime) {
-    // our signal input file seems to have different format than the offical one
-    // set m_do_evt_header to false so that TruthNodeMaker can run successfully
-    truthMaker->set_do_event_header(false);
+  // truth node maker after tracking
+  TruthNodeMaker* truthMaker = new TruthNodeMaker();
+  truthMaker->set_legacy_rec_container(legacy_rec_container);
+  if(do_aprime_muon or do_aprime_electron){
+    truthMaker->set_m_process_type(3); // set process type to 3 (A' -> di lepton) since we only have a 3 particle process instead of 0+1->2+3
   }
+  truthMaker->Verbosity(verbosity);
   se->registerSubsystem(truthMaker);
 
   // trigger emulator
-  // DPTriggerAnalyzer seems to need TruthNodeMaker
-  // to associate the trigger to SQEvent (?)
-  DPTriggerAnalyzer *dptrigger = new DPTriggerAnalyzer();
+  // needs TruthNodeMaker to associate the trigger to SQEvent 
+  DPTriggerAnalyzer* dptrigger = new DPTriggerAnalyzer();                                                                                                                                                 
   dptrigger->set_road_set_file_name("$E1039_RESOURCE/trigger/trigger_67.txt");
-  se->registerSubsystem(dptrigger);
+  dptrigger->Verbosity(verbosity);
+  se->registerSubsystem(dptrigger);  
 
-  // Analysis module
+  // event filter
+  EvtFilter *evt_filter = new EvtFilter();
+  evt_filter->Verbosity(verbosity);
+  evt_filter->set_trigger_req(1<<5);
+  //se->registerSubsystem(evt_filter);
+
+  // truth vertexing
+  SQTruthVertexing* truthVtx = new SQTruthVertexing();
+  truthVtx->set_legacy_rec_container(legacy_rec_container);
+  truthVtx->set_vtx_smearing(50.); // smear the truth z_vertex to mimic resolution effect, default is 0.
+  //se->registerSubsystem(truthVtx);
+
+  // vertexing for dimuon information
+  if(legacy_rec_container){
+    VertexFit* vertexing = new VertexFit();
+    se->registerSubsystem(vertexing);
+  }
+
+  // analysis module
   gSystem->Load("libsim_ana.so");
-  SimAna *sim_ana = new SimAna();
+  SimAna *sim_ana = new SimAna();  
   sim_ana->Verbosity(verbosity);
-  se->registerSubsystem(sim_ana);
+  //sim_ana->set_output_filename(Form("ana_%s_%d.root", prefix.Data(), seed));
+  sim_ana->set_legacy_rec_container(legacy_rec_container);
+  if(do_analysis){
+    se->registerSubsystem(sim_ana);    
+  }
 
-  // input - we need a dummy to drive the event loop
-  if (do_aprime) {
+  // input 
+  if(do_aprime_muon or do_aprime_electron){
+    // use hepmc input
     Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
     se->registerInputManager(in);
     stringstream ssin;
@@ -346,6 +367,7 @@ int Fun4Sim_Muons(const int nevent = 200,
     in->Verbosity(verbosity);
     se->registerInputManager(in);
   } else {
+    // need a dummy input to drive the event loop
     Fun4AllInputManager *in = new Fun4AllDummyInputManager("DUMMY");
     in->Verbosity(verbosity);
     se->registerInputManager(in);

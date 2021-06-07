@@ -29,24 +29,32 @@ public:
   int InitRun(PHCompositeNode *topNode);
   int process_event(PHCompositeNode *topNode);
   int End(PHCompositeNode *topNode);
+  int ResetEvalVars();
 
-  PHG4Hit *FindG4HitAtStation(const int trk_id, const PHG4HitContainer *g4hc);
-  std::vector<PHG4Hit *> FindG4HitsAtStation(const int trk_id,
-                                             const PHG4HitContainer *g4hc);
-  PHG4Shower *get_primary_shower(PHG4Particle *particle);
-  void checkKinematics(PHG4Particle *primary);
+  PHG4Hit* FindG4HitAtStation(const int trk_id, const PHG4HitContainer* g4hc);
+  std::vector<PHG4Hit*> FindG4HitsAtStation(const int trk_id, const PHG4HitContainer* g4hc);
+  PHG4Shower* get_primary_shower(PHG4Particle* particle);
+  int  FindCommonHitIDs(std::vector<int>& hitidvec1, std::vector<int>& hitidvec2);
+  SRecTrack* FindBestMomRecTrack(SRecEvent *recEvent, const float true_P); 
 
   void set_out_name(const char *outName) { saveNameOut = outName; }
+  void set_legacy_rec_container(bool b); 
 
 private:
-  int GetNodes(PHCompositeNode *topNode);
+  int GetNodes(PHCompositeNode* topNode);
+  bool legacyContainer;
+
   void MakeTree();
 
-  SQHitVector *hitVector;
-  SRecEvent *_recEvent;
-  PHG4TruthInfoContainer *_truth;
+  SQHitVector* _hitVector;
+  SQTrackVector* _trackVector;
+  SQDimuonVector* _dimuonVector;
 
-  SQDimuonVector *truthDimuonVector;
+  SRecEvent* _recEvent;
+  SQTrackVector*  _recTrackVector;
+  SQDimuonVector* _recDimuonVector;
+
+  PHG4TruthInfoContainer* _truth;
 
   PHG4HitContainer *g4hc_d1x;
   PHG4HitContainer *g4hc_d2xp;
@@ -100,6 +108,27 @@ private:
   float hit_truthpy[1000];
   float hit_truthpz[1000];
 
+  int n_truthtracks;
+  int truthtrack_charge[100];
+  float truthtrack_x_st1[100];
+  float truthtrack_y_st1[100];
+  float truthtrack_z_st1[100];
+  float truthtrack_px_st1[100];
+  float truthtrack_py_st1[100];
+  float truthtrack_pz_st1[100];
+  float truthtrack_x_st3[100];
+  float truthtrack_y_st3[100];
+  float truthtrack_z_st3[100];
+  float truthtrack_px_st3[100];
+  float truthtrack_py_st3[100];
+  float truthtrack_pz_st3[100];
+  float truthtrack_x_vtx[100];
+  float truthtrack_y_vtx[100];
+  float truthtrack_z_vtx[100];
+  float truthtrack_px_vtx[100];
+  float truthtrack_py_vtx[100];
+  float truthtrack_pz_vtx[100];
+
   int n_tracks;
   int track_charge[100];
   int track_nhits[100];
@@ -129,24 +158,42 @@ private:
   int track_nhits_st2[100];
   int track_nhits_st3[100];
 
-  int n_dimuons;
-  float dimuon_mass[10];
-  float dimuon_x_vtx[10];
-  float dimuon_y_vtx[10];
-  float dimuon_z_vtx[10];
-  float dimuon_px[10];
-  float dimuon_py[10];
-  float dimuon_pz[10];
-  float dimuon_chisq[10];
-
   int n_truthdimuons;
-  float truthdimuon_mass[10];
-  float truthdimuon_x_vtx[10];
-  float truthdimuon_y_vtx[10];
-  float truthdimuon_z_vtx[10];
-  float truthdimuon_px[10];
-  float truthdimuon_py[10];
-  float truthdimuon_pz[10];
+  float truthdimuon_mass[100];
+  float truthdimuon_x_vtx[100];
+  float truthdimuon_y_vtx[100];
+  float truthdimuon_z_vtx[100];
+  float truthdimuon_px[100];
+  float truthdimuon_py[100];
+  float truthdimuon_pz[100];
+  float truthdimuon_pmom_x[100];
+  float truthdimuon_pmom_y[100];
+  float truthdimuon_pmom_z[100];
+  float truthdimuon_nmom_x[100];
+  float truthdimuon_nmom_y[100];
+  float truthdimuon_nmom_z[100];
+
+  int n_dimuons;
+  float dimuon_mass[100];
+  float dimuon_chisq[100];
+  float dimuon_x_vtx[100];
+  float dimuon_y_vtx[100];
+  float dimuon_z_vtx[100];
+  float dimuon_px[100];
+  float dimuon_py[100];
+  float dimuon_pz[100];
+  float dimuon_pmom_x[100];
+  float dimuon_pmom_y[100];
+  float dimuon_pmom_z[100];
+  float dimuon_nmom_x[100];
+  float dimuon_nmom_y[100];
+  float dimuon_nmom_z[100];
+  float dimuon_ppos_x[100];
+  float dimuon_ppos_y[100];
+  float dimuon_ppos_z[100];
+  float dimuon_npos_x[100];
+  float dimuon_npos_y[100];
+  float dimuon_npos_z[100];
 
   int n_showers;
   float sx_ecal[1000];

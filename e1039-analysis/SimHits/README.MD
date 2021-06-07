@@ -7,11 +7,11 @@ Collection of code to run e1039-simulation, where
 
 ### Downloading code
 ```
-git clone git@github.com:cmantill/DarkQuest.git
+git clone git@github.com:DarkQuest-FNAL/DarkQuest.git
 cd DarkQuest/e1039-analysis/SimHits/
 ```
 
-SimHits depends on [e1039-core](https://github.com/E1039-Collaboration/e1039-core), and we have our customized version [here](https://github.com/cmantill/e1039-core). You will want to install e1039-core privately (or call the already installed official simulation).
+SimHits depends on [e1039-core](https://github.com/E1039-Collaboration/e1039-core), and we have our customized version [here](https://github.com/DarkQuest-FNAL/e1039-core). You will want to install e1039-core privately (or call the already installed official simulation).
 
 ### Installing e1039-core 
 
@@ -24,7 +24,7 @@ SimHits depends on [e1039-core](https://github.com/E1039-Collaboration/e1039-cor
   mkdir mye1039
   
   # clone repo
-  git clone git@github.com:cmantill/e1039-core.git
+  git clone git@github.com:DarkQuest-FNAL/e1039-core.git
   
   # build and install
   cd /path/to/directory_where_you_download_e1039-core
@@ -36,19 +36,20 @@ SimHits depends on [e1039-core](https://github.com/E1039-Collaboration/e1039-cor
 </details>
 
 ### Setting up e1039-core
-If you have the private version of e1039 installed, change the `MY_E1039` in `setup_mye1039.sh` to your directory; if not, you can leave it unchaged - the default will be
-yfeng's version. Then source the script:
+If you have the private version of e1039 installed, change the `MY_E1039` in `setup_mye1039.sh` to your directory. 
+If you do not have it installed you can call Yongbin's installation in `/seaquest/users/yfeng/mye1039/e1039-core/this-e1039.sh`.
+Then source the script:
 
 ```
 source setup_mye1039.sh
 ```
 
-Or just to call the official e1039-core version do:
+Or just to call the official e1039-core version (not up to date w DarkQuest) do:
 ```
 source setup.sh
 ```
 
-The source has to be done everytime you log in.
+This setup has to be done everytime you log in.
 
 ### Compiling SimAna
 To compile the analysis code under `SimAna` (after `setup_mye1039.sh`):
@@ -69,19 +70,16 @@ make
 make install
 ```
 
-### To run
+### Paths needed to run
 
-The main script `Fun4Sim.C` depends on the location of signal files that depends on `DIR_CMANTILL`, which has been setup in the source script.
+The main script is `RecoE1039Sim.C`.
+It has different input options depending on the type of simulation to run.
+For displaced A' signals, the macro depends on the location of signal files that lives on `DIR_CMANTILL`, which has been setup in the source script.
 
-To test
+### To test
 ```
 cd macro
-root -b -q Fun4Sim.C 
+root -b -q RecoE1039Sim.C
 ```
 
-The `Fun4Sim.C` runs on the Aprime to dielectron signal samples; `Fun4Sim_Ap2Muons.C` runs on the Aprime to dimuon signal samples.
-
-To run over a number of signal files, do (assuming that you are still in the `macro\` directory) `source run_electrons.sh $MECH $NEVENTS` e.g.
-```
-source run_electrons.sh Brem 10000
-```
+Look at the options in the macro.
