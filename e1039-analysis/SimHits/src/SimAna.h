@@ -118,6 +118,9 @@ private:
   float track_x_vtx[100];
   float track_y_vtx[100];
   float track_z_vtx[100];
+  float track_px_vtx[100];
+  float track_py_vtx[100];
+  float track_pz_vtx[100];
   float track_m[100];
   float track_chisq[100];
   float track_prob[100];
@@ -128,9 +131,9 @@ private:
 
   int n_dimuons;
   float dimuon_mass[10];
-  float dimuon_vtx_x[10];
-  float dimuon_vtx_y[10];
-  float dimuon_vtx_z[10];
+  float dimuon_x_vtx[10];
+  float dimuon_y_vtx[10];
+  float dimuon_z_vtx[10];
   float dimuon_px[10];
   float dimuon_py[10];
   float dimuon_pz[10];
@@ -138,9 +141,9 @@ private:
 
   int n_truthdimuons;
   float truthdimuon_mass[10];
-  float truthdimuon_vtx_x[10];
-  float truthdimuon_vtx_y[10];
-  float truthdimuon_vtx_z[10];
+  float truthdimuon_x_vtx[10];
+  float truthdimuon_y_vtx[10];
+  float truthdimuon_z_vtx[10];
   float truthdimuon_px[10];
   float truthdimuon_py[10];
   float truthdimuon_pz[10];
