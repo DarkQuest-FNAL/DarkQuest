@@ -160,9 +160,9 @@ private:
 
   int n_truthdimuons;
   float truthdimuon_mass[100];
-  float truthdimuon_vtx_x[100];
-  float truthdimuon_vtx_y[100];
-  float truthdimuon_vtx_z[100];
+  float truthdimuon_x_vtx[100];
+  float truthdimuon_y_vtx[100];
+  float truthdimuon_z_vtx[100];
   float truthdimuon_px[100];
   float truthdimuon_py[100];
   float truthdimuon_pz[100];
@@ -176,9 +176,12 @@ private:
   int n_dimuons;
   float dimuon_mass[100];
   float dimuon_chisq[100];
-  float dimuon_vtx_x[100];
-  float dimuon_vtx_y[100];
-  float dimuon_vtx_z[100];
+  float dimuon_x_vtx[100];
+  float dimuon_y_vtx[100];
+  float dimuon_z_vtx[100];
+  float dimuon_px[100];
+  float dimuon_py[100];
+  float dimuon_pz[100];
   float dimuon_pmom_x[100];
   float dimuon_pmom_y[100];
   float dimuon_pmom_z[100];

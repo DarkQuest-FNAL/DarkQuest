@@ -208,9 +208,9 @@ int SimAna::ResetEvalVars() {
   n_truthdimuons = 0;
   for(int i=0; i<100; ++i) {
     truthdimuon_mass[i]        = std::numeric_limits<float>::max();
-    truthdimuon_vtx_x[i]       = std::numeric_limits<float>::max();
-    truthdimuon_vtx_y[i]       = std::numeric_limits<float>::max();
-    truthdimuon_vtx_z[i]       = std::numeric_limits<float>::max();
+    truthdimuon_x_vtx[i]       = std::numeric_limits<float>::max();
+    truthdimuon_y_vtx[i]       = std::numeric_limits<float>::max();
+    truthdimuon_z_vtx[i]       = std::numeric_limits<float>::max();
     truthdimuon_px[i]          = std::numeric_limits<float>::max();
     truthdimuon_py[i]          = std::numeric_limits<float>::max();
     truthdimuon_pz[i]          = std::numeric_limits<float>::max();
@@ -226,9 +226,12 @@ int SimAna::ResetEvalVars() {
   for(int i=0; i<100; ++i) {
     dimuon_mass[i]       = std::numeric_limits<float>::max();
     dimuon_chisq[i]      = std::numeric_limits<float>::max();
-    dimuon_vtx_x[i]      = std::numeric_limits<float>::max();
-    dimuon_vtx_y[i]      = std::numeric_limits<float>::max();
-    dimuon_vtx_z[i]      = std::numeric_limits<float>::max();
+    dimuon_x_vtx[i]      = std::numeric_limits<float>::max();
+    dimuon_y_vtx[i]      = std::numeric_limits<float>::max();
+    dimuon_z_vtx[i]      = std::numeric_limits<float>::max();
+    dimuon_px[i]         = std::numeric_limits<float>::max();
+    dimuon_py[i]         = std::numeric_limits<float>::max();
+    dimuon_pz[i]         = std::numeric_limits<float>::max();
     dimuon_pmom_x[i]     = std::numeric_limits<float>::max();
     dimuon_pmom_y[i]     = std::numeric_limits<float>::max();
     dimuon_pmom_z[i]     = std::numeric_limits<float>::max();
@@ -422,9 +425,9 @@ int SimAna::process_event(PHCompositeNode* topNode) {
     // truth dimuon
     // from https://github.com/E1039-Collaboration/e1039-core/blob/master/simulation/g4dst/TruthNodeMaker.cc#L133-L155
     truthdimuon_mass[n_truthdimuons] = dimuon->get_mom().M();
-    truthdimuon_vtx_x[n_truthdimuons] = (dimuon->get_pos()).X();
-    truthdimuon_vtx_y[n_truthdimuons] = (dimuon->get_pos()).Y();
-    truthdimuon_vtx_z[n_truthdimuons] = (dimuon->get_pos()).Z();
+    truthdimuon_x_vtx[n_truthdimuons] = (dimuon->get_pos()).X();
+    truthdimuon_y_vtx[n_truthdimuons] = (dimuon->get_pos()).Y();
+    truthdimuon_z_vtx[n_truthdimuons] = (dimuon->get_pos()).Z();
     truthdimuon_px[n_truthdimuons] = (dimuon->get_mom()).X();
     truthdimuon_py[n_truthdimuons] = (dimuon->get_mom()).Y();
     truthdimuon_pz[n_truthdimuons] = (dimuon->get_mom()).Z();
@@ -440,9 +443,12 @@ int SimAna::process_event(PHCompositeNode* topNode) {
       SRecDimuon* recDimuon = legacyContainer ? &(_recEvent->getDimuon(recid)) : dynamic_cast<SRecDimuon*>(_recDimuonVector->at(recid));
       dimuon_mass[n_dimuons] = recDimuon->mass;
       dimuon_chisq[n_dimuons] = recDimuon->get_chisq();
-      dimuon_vtx_x[n_dimuons] = (recDimuon->vtx).X();
-      dimuon_vtx_y[n_dimuons] = (recDimuon->vtx).Y();
-      dimuon_vtx_z[n_dimuons] = (recDimuon->vtx).Z();
+      dimuon_x_vtx[n_dimuons] = (recDimuon->vtx).X();
+      dimuon_y_vtx[n_dimuons] = (recDimuon->vtx).Y();
+      dimuon_z_vtx[n_dimuons] = (recDimuon->vtx).Z();
+      dimuon_px[n_dimuons] = (recDimuon->get_mom()).X();
+      dimuon_py[n_dimuons] = (recDimuon->get_mom()).Y();
+      dimuon_pz[n_dimuons] = (recDimuon->get_mom()).Z();
       dimuon_pmom_x[n_dimuons] = (recDimuon->p_pos).Px(); //4-momentum of the muon tracks after vertex fit
       dimuon_pmom_y[n_dimuons] = (recDimuon->p_pos).Py();
       dimuon_pmom_z[n_dimuons] = (recDimuon->p_pos).Pz();
@@ -774,9 +780,12 @@ void SimAna::MakeTree()
 
   saveTree->Branch("n_truthdimuons",     &n_truthdimuons,   "n_truthdimuons/I");
   saveTree->Branch("truthdimuon_mass",   truthdimuon_mass,  "truthdimuon_mass[n_truthdimuons]/F");
-  saveTree->Branch("truthdimuon_vtx_x",  truthdimuon_vtx_x, "truthdimuon_vtx_x[n_truthdimuons]/F");
-  saveTree->Branch("truthdimuon_vtx_y",  truthdimuon_vtx_y, "truthdimuon_vtx_y[n_truthdimuons]/F");
-  saveTree->Branch("truthdimuon_vtx_z",  truthdimuon_vtx_z, "truthdimuon_vtx_z[n_truthdimuons]/F");
+  saveTree->Branch("truthdimuon_x_vtx",  truthdimuon_x_vtx, "truthdimuon_x_vtx[n_truthdimuons]/F");
+  saveTree->Branch("truthdimuon_y_vtx",  truthdimuon_y_vtx, "truthdimuon_y_vtx[n_truthdimuons]/F");
+  saveTree->Branch("truthdimuon_z_vtx",  truthdimuon_z_vtx, "truthdimuon_z_vtx[n_truthdimuons]/F");
+  saveTree->Branch("truthdimuon_px",     truthdimuon_px,    "truthdimuon_px[n_truthdimuons]/F");
+  saveTree->Branch("truthdimuon_py",     truthdimuon_py,    "truthdimuon_py[n_truthdimuons]/F");
+  saveTree->Branch("truthdimuon_pz",     truthdimuon_pz,    "truthdimuon_pz[n_truthdimuons]/F");
   saveTree->Branch("truthdimuon_pmom_x", truthdimuon_pmom_x, "truthdimuon_pmom_x[n_truthdimuons]/F");
   saveTree->Branch("truthdimuon_pmom_y", truthdimuon_pmom_y, "truthdimuon_pmom_y[n_truthdimuons]/F");
   saveTree->Branch("truthdimuon_pmom_z", truthdimuon_pmom_z, "truthdimuon_pmom_z[n_truthdimuons]/F");
@@ -784,12 +793,12 @@ void SimAna::MakeTree()
   saveTree->Branch("truthdimuon_nmom_y", truthdimuon_nmom_y, "truthdimuon_nmom_y[n_truthdimuons]/F");
   saveTree->Branch("truthdimuon_nmom_z", truthdimuon_nmom_z, "truthdimuon_nmom_z[n_truthdimuons]/F");
 
-  saveTree->Branch("n_dimuons",     &n_dimuons,   "n_dimuons/I");
-  saveTree->Branch("dimuon_mass",   dimuon_mass,  "dimuon_mass[n_dimuons]/F");
-  saveTree->Branch("dimuon_chisq",  dimuon_chisq, "dimuon_chisq[n_dimuons]/F");
-  saveTree->Branch("dimuon_vtx_x",  dimuon_vtx_x, "dimuon_vtx_x[n_dimuons]/F");
-  saveTree->Branch("dimuon_vtx_y",  dimuon_vtx_y, "dimuon_vtx_y[n_dimuons]/F");
-  saveTree->Branch("dimuon_vtx_z",  dimuon_vtx_z, "dimuon_vtx_z[n_dimuons]/F");
+  saveTree->Branch("n_dimuons",     &n_dimuons,    "n_dimuons/I");
+  saveTree->Branch("dimuon_mass",   dimuon_mass,   "dimuon_mass[n_dimuons]/F");
+  saveTree->Branch("dimuon_chisq",  dimuon_chisq,  "dimuon_chisq[n_dimuons]/F");
+  saveTree->Branch("dimuon_x_vtx",  dimuon_x_vtx,  "dimuon_x_vtx[n_dimuons]/F");
+  saveTree->Branch("dimuon_y_vtx",  dimuon_y_vtx,  "dimuon_y_vtx[n_dimuons]/F");
+  saveTree->Branch("dimuon_z_vtx",  dimuon_z_vtx,  "dimuon_z_vtx[n_dimuons]/F");
   saveTree->Branch("dimuon_pmom_x", dimuon_pmom_x, "dimuon_pmom_x[n_dimuons]/F");
   saveTree->Branch("dimuon_pmom_y", dimuon_pmom_y, "dimuon_pmom_y[n_dimuons]/F");
   saveTree->Branch("dimuon_pmom_z", dimuon_pmom_z, "dimuon_pmom_z[n_dimuons]/F");
