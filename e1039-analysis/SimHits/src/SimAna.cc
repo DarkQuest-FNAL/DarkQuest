@@ -8,6 +8,7 @@
 #include <interface_main/SQHitVector_v1.h>
 #include <interface_main/SQHit.h>
 #include <interface_main/SQTrackVector_v1.h>
+#include <interface_main/SQDimuonVector_v1.h>
 
 #include <ktracker/SRecEvent.h>
 
@@ -333,12 +334,25 @@ int SimAna::process_event(PHCompositeNode* topNode)
     track_nhits_st3[i]       = std::numeric_limits<float>::max();
   }
 
-  for(int i=0; i<100; ++i) {
+  for(int i=0; i<10; ++i) {
     dimuon_mass[i] = std::numeric_limits<float>::max();
     dimuon_vtx_x[i] = std::numeric_limits<float>::max();
     dimuon_vtx_y[i] = std::numeric_limits<float>::max();
     dimuon_vtx_z[i] = std::numeric_limits<float>::max();
+    dimuon_px[i]    = std::numeric_limits<float>::max();
+    dimuon_py[i]    = std::numeric_limits<float>::max();
+    dimuon_pz[i]    = std::numeric_limits<float>::max();
     dimuon_chisq[i] = std::numeric_limits<float>::max();
+  }
+
+  for(int i=0; i<10; ++i) {
+    truthdimuon_mass[i] = std::numeric_limits<float>::max();
+    truthdimuon_vtx_x[i] = std::numeric_limits<float>::max();
+    truthdimuon_vtx_y[i] = std::numeric_limits<float>::max();
+    truthdimuon_vtx_z[i] = std::numeric_limits<float>::max();
+    truthdimuon_px[i]    = std::numeric_limits<float>::max();
+    truthdimuon_py[i]    = std::numeric_limits<float>::max();
+    truthdimuon_pz[i]    = std::numeric_limits<float>::max();
   }
 
   n_showers =0;
@@ -437,7 +451,7 @@ int SimAna::process_event(PHCompositeNode* topNode)
     //}
   }
 
-  // tracks
+  // reco-ed tracks
   int n_recTracks = _recEvent->getNTracks();
   n_tracks = 0;
   for(int itrk = 0; itrk < n_recTracks; ++itrk) {
@@ -471,20 +485,38 @@ int SimAna::process_event(PHCompositeNode* topNode)
     if(n_tracks >= 100) break;
   }
 
-  // vertices
+  // reco-ed dimuon
   int nRecDimuons = _recEvent->getNDimuons();
-  n_Dimuons = 0;
+  n_dimuons = 0;
   for(int iDimuon = 0; iDimuon < nRecDimuons; ++iDimuon) {
     SRecDimuon* recDimuon = &_recEvent->getDimuon(iDimuon);
-    dimuon_mass[n_Dimuons] = recDimuon->get_mass();
-    dimuon_vtx_x[n_Dimuons] = (recDimuon->get_pos()).X();
-    dimuon_vtx_y[n_Dimuons] = (recDimuon->get_pos()).Y();
-    dimuon_vtx_z[n_Dimuons] = (recDimuon->get_pos()).Z();
-    dimuon_chisq[n_Dimuons] = recDimuon->get_chisq();
-    ++n_Dimuons;
-    if(n_Dimuons >= 100) break;
+    dimuon_mass[n_dimuons] = recDimuon->get_mass();
+    dimuon_vtx_x[n_dimuons] = (recDimuon->get_pos()).X();
+    dimuon_vtx_y[n_dimuons] = (recDimuon->get_pos()).Y();
+    dimuon_vtx_z[n_dimuons] = (recDimuon->get_pos()).Z();
+    dimuon_px[n_dimuons]    = (recDimuon->get_mom()).X();
+    dimuon_py[n_dimuons]    = (recDimuon->get_mom()).Y();
+    dimuon_pz[n_dimuons]    = (recDimuon->get_mom()).Z();
+    dimuon_chisq[n_dimuons] = recDimuon->get_chisq();
+    ++n_dimuons;
+    if(n_dimuons >= 10) break;
   }
-  
+
+  // truth dimuon
+  // from https://github.com/E1039-Collaboration/e1039-core/blob/master/simulation/g4dst/TruthNodeMaker.cc#L133-L155
+  n_truthdimuons = 0;
+  for(int idimuon=0; idimuon < truthDimuonVector->size(); ++idimuon) {
+    SQDimuon *truthdimuon = truthDimuonVector->at(idimuon);
+    truthdimuon_mass[n_truthdimuons] = truthdimuon->get_mass();
+    truthdimuon_vtx_x[n_truthdimuons] = (truthdimuon->get_pos()).X();
+    truthdimuon_vtx_y[n_truthdimuons] = (truthdimuon->get_pos()).Y();
+    truthdimuon_vtx_z[n_truthdimuons] = (truthdimuon->get_pos()).Z();
+    truthdimuon_px[n_truthdimuons]    = (truthdimuon->get_mom()).X();
+    truthdimuon_py[n_truthdimuons]    = (truthdimuon->get_mom()).Y();
+    truthdimuon_pz[n_truthdimuons]    = (truthdimuon->get_mom()).Z();
+    ++n_truthdimuons;
+    if (n_truthdimuons >=10 ) break;
+  }
 
   n_showers = 0;
   for(auto iter=_truth->GetPrimaryParticleRange().first; iter!=_truth->GetPrimaryParticleRange().second; ++iter) {
@@ -659,21 +691,35 @@ int SimAna::End(PHCompositeNode* topNode)
 int SimAna::GetNodes(PHCompositeNode* topNode)
 {
   hitVector    = findNode::getClass<SQHitVector>(topNode, "SQHitVector");
-  if(!hitVector) return Fun4AllReturnCodes::ABORTEVENT;
+  if(!hitVector) {
+    LogError("Failed locating SQHitVector, abort");
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
 
   //trackVector = findNode::getClass<SQTrackVector>(topNode, "SQRecTrackVector");
   //if(!trackVector) {
   //  std::cout << "did not find SQTrackVector" << std::endl;
   //  return Fun4AllReturnCodes::ABORTEVENT;
   //}
+
   _recEvent = findNode::getClass<SRecEvent>(topNode, "SRecEvent");
   if (!_recEvent) {
-    LogError("!_recEvent");
+    LogWarning("!_recEvent");
     //return Fun4AllReturnCodes::ABORTEVENT;
   }
 
   _truth = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
-  if (!_truth) return Fun4AllReturnCodes::ABORTEVENT;
+  if (!_truth) {
+    LogError("Failed locating G4TruthInfo, abort");
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  // dimuon vector from TruthNodeMaker
+  truthDimuonVector = findNode::getClass<SQDimuonVector>(topNode, "SQTruthDimuonVector");
+  if (!truthDimuonVector) {
+    LogWarning("Failed locating SQTruthDimuonVector");
+    //return Fun4AllReturnCodes::ABORTEVENT;
+  }
 
   g4hc_d1x  = findNode::getClass<PHG4HitContainer      >(topNode, "G4HIT_D1X");
   g4hc_d2xp = findNode::getClass<PHG4HitContainer      >(topNode, "G4HIT_D2Xp");
@@ -681,7 +727,7 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
   g4hc_d3mx = findNode::getClass<PHG4HitContainer      >(topNode, "G4HIT_D3mXp");
   if (! g4hc_d1x) g4hc_d1x = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D0X");
   if ( !g4hc_d1x || !g4hc_d3px || !g4hc_d3mx) {
-    std::cout << "SimAna::GetNode No drift chamber node " << std::endl;
+    LogError("No drift chamber node, abort");
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
@@ -699,7 +745,7 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
   g4hc_h4b  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H4B");
   if (!g4hc_h1t || !g4hc_h1b || !g4hc_h2t || !g4hc_h2b ||
       !g4hc_h3t || !g4hc_h3b || !g4hc_h4t || !g4hc_h4b ) {
-    std::cout << "SimAna::GetNode No hodoscope node " << std::endl;
+    LogError("No nodoscope node, abort");
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
@@ -713,13 +759,13 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
   g4hc_p2y2  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P2Y2");
   if (!g4hc_p1y1 || !g4hc_p1y2 || !g4hc_p1x1 || !g4hc_p1x2 ||
       !g4hc_p2x1 || !g4hc_p2x2 || !g4hc_p2y1 || !g4hc_p2y2   ) {
-    std::cout << "SimAna::GetNode No prototubes node " << std::endl;
+    LogError("No prototube node, abort");
     return Fun4AllReturnCodes::ABORTEVENT;
   }
 
   g4hc_ecal  = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_EMCal");
   if (!g4hc_ecal) {
-    std::cout << "SimAna::GetNode No EMCAL node " << std::endl;
+    LogWarning("No EMCal node");
     //return Fun4AllReturnCodes::ABORTEVENT;
   }
   return Fun4AllReturnCodes::EVENT_OK;
@@ -770,13 +816,24 @@ void SimAna::MakeTree()
   saveTree->Branch("track_nhits_st2",    track_nhits_st2,     "track_nhits_st2[n_tracks]/I");
   saveTree->Branch("track_nhits_st3",    track_nhits_st3,     "track_nhits_st3[n_tracks]/I");
 
-  saveTree->Branch("n_Dimuons",    &n_Dimuons,  "n_Dimuons/I");
-  saveTree->Branch("dimuon_mass",  dimuon_mass, "dimuon_mass[n_Dimuons]/F");
-  saveTree->Branch("dimuon_vtx_x", dimuon_vtx_x, "dimuon_vtx_x[n_Dimuons]/F");
-  saveTree->Branch("dimuon_vtx_y", dimuon_vtx_y, "dimuon_vtx_y[n_Dimuons]/F");
-  saveTree->Branch("dimuon_vtx_z", dimuon_vtx_z, "dimuon_vtx_z[n_Dimuons]/F");
-  saveTree->Branch("dimuon_chisq", dimuon_chisq, "dimuon_chisq[n_Dimuons]/F");
+  saveTree->Branch("n_dimuons",    &n_dimuons,  "n_dimuons/I");
+  saveTree->Branch("dimuon_mass",  dimuon_mass, "dimuon_mass[n_dimuons]/F");
+  saveTree->Branch("dimuon_vtx_x", dimuon_vtx_x, "dimuon_vtx_x[n_dimuons]/F");
+  saveTree->Branch("dimuon_vtx_y", dimuon_vtx_y, "dimuon_vtx_y[n_dimuons]/F");
+  saveTree->Branch("dimuon_vtx_z", dimuon_vtx_z, "dimuon_vtx_z[n_dimuons]/F");
+  saveTree->Branch("dimuon_px",    dimuon_px,    "dimuon_px[n_dimuons]/F");
+  saveTree->Branch("dimuon_py",    dimuon_py,    "dimuon_py[n_dimuons]/F");
+  saveTree->Branch("dimuon_pz",    dimuon_pz,    "dimuon_pz[n_dimuons]/F");
+  saveTree->Branch("dimuon_chisq", dimuon_chisq, "dimuon_chisq[n_dimuons]/F");
 
+  saveTree->Branch("n_truthdimuons",    &n_truthdimuons,   "n_truthdimuons/I");
+  saveTree->Branch("truthdimuon_mass",  truthdimuon_mass,  "dimuon_mass[n_truthdimuons]/F");
+  saveTree->Branch("truthdimuon_vtx_x", truthdimuon_vtx_x, "truthdimuon_vtx_x[n_truthdimuons]/F");
+  saveTree->Branch("truthdimuon_vtx_y", truthdimuon_vtx_y, "truthdimuon_vtx_y[n_truthdimuons]/F");
+  saveTree->Branch("truthdimuon_vtx_z", truthdimuon_vtx_z, "truthdimuon_vtx_z[n_truthdimuons]/F");
+  saveTree->Branch("truthdimuon_px",    truthdimuon_px,    "truthdimuon_px[n_truthdimuons]/F");
+  saveTree->Branch("truthdimuon_py",    truthdimuon_py,    "truthdimuon_py[n_truthdimuons]/F");
+  saveTree->Branch("truthdimuon_pz",    truthdimuon_pz,    "truthdimuon_pz[n_truthdimuons]/F");
 
   saveTree->Branch("n_showers",     &n_showers,       "n_showers/I");
   saveTree->Branch("sx_ecal",       &sx_ecal,         "sx_ecal[n_showers]/F");

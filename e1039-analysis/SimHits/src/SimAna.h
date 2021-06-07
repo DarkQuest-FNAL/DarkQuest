@@ -10,6 +10,7 @@ class TFile;
 class TTree;
 class SQHitVector;
 class SQTrackVector;
+class SQDimuonVector;
 
 class PHG4TruthInfoContainer;
 class PHG4HitContainer;
@@ -45,6 +46,8 @@ private:
   SQHitVector* hitVector;
   SRecEvent* _recEvent;
   PHG4TruthInfoContainer* _truth;
+
+  SQDimuonVector* truthDimuonVector;
 
   PHG4HitContainer *g4hc_d1x;
   PHG4HitContainer *g4hc_d2xp;
@@ -124,12 +127,24 @@ private:
   int track_nhits_st2[100];
   int track_nhits_st3[100];
 
-  int n_Dimuons;
-  float dimuon_mass[100];
-  float dimuon_vtx_x[100];
-  float dimuon_vtx_y[100];
-  float dimuon_vtx_z[100];
-  float dimuon_chisq[100];
+  int n_dimuons;
+  float dimuon_mass[10];
+  float dimuon_vtx_x[10];
+  float dimuon_vtx_y[10];
+  float dimuon_vtx_z[10];
+  float dimuon_px[10];
+  float dimuon_py[10];
+  float dimuon_pz[10];
+  float dimuon_chisq[10];
+
+  int n_truthdimuons;
+  float truthdimuon_mass[10];
+  float truthdimuon_vtx_x[10];
+  float truthdimuon_vtx_y[10];
+  float truthdimuon_vtx_z[10];
+  float truthdimuon_px[10];
+  float truthdimuon_py[10];
+  float truthdimuon_pz[10];
 
   int n_showers;
   float sx_ecal[1000];
