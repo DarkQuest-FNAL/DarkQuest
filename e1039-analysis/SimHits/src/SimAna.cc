@@ -380,7 +380,7 @@ int SimAna::process_event(PHCompositeNode* topNode) {
     int recid = track->get_rec_track_id();
     if(recid >= 0 && recid < n_recTracks) {
       SRecTrack* recTrack = legacyContainer ? &(_recEvent->getTrack(recid)) : dynamic_cast<SRecTrack*>(_recTrackVector->at(recid));
-      std::cout << "******************** (recTrack->getTargetMom()).Px() " << (recTrack->getTargetMom()).Px() << std::endl;
+      //std::cout << "******************** (recTrack->getTargetMom()).Px() " << (recTrack->getTargetMom()).Px() << std::endl;
       track_charge[n_tracks] = recTrack->getCharge();
       track_nhits[n_tracks] = recTrack->getNHits();
       track_x_target[n_tracks] = (recTrack->getTargetPos()).X();
