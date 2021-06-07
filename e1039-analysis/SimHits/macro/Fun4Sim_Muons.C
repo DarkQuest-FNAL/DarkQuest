@@ -33,9 +33,9 @@ using namespace std;
  * For Aprime signal, always run with is_displaced to True
  */
 
-int Fun4Sim_Muons(const int nevent = 20, 
+int Fun4Sim_Muons(const int nevent = 200, 
                   const int isim = 1,
-                  bool is_displaced = true,
+                  bool is_displaced = false,
                   std::string ifile = "Brem_2.750000_z500_600_eps_-6.4") {
   // input simulation
   bool do_aprime{false}, do_gun{false}, do_dy{false}, do_jpsi{false},
@@ -199,14 +199,14 @@ int Fun4Sim_Muons(const int nevent = 20,
     trigger_mup->AddParticles("-13");
     // trigger_mup->SetPxHighLow(7, 0.5);
     // trigger_mup->SetPyHighLow(6, -6);
-    trigger_mup->SetPzHighLow(120, 10);
+    trigger_mup->SetPzHighLow(120, 30);
     pythia8->register_trigger(trigger_mup);
 
     PHPy8ParticleTrigger *trigger_mum = new PHPy8ParticleTrigger();
     trigger_mum->AddParticles("13");
     // trigger_mum->SetPxHighLow(-0.5, 7);
     // trigger_mum->SetPyHighLow(6, -6);
-    trigger_mum->SetPzHighLow(120, 10);
+    trigger_mum->SetPzHighLow(120, 30);
     pythia8->register_trigger(trigger_mum);
 
     HepMCNodeReader *hr = new HepMCNodeReader();
@@ -347,9 +347,7 @@ int Fun4Sim_Muons(const int nevent = 20,
     se->registerInputManager(in);
   } else {
     Fun4AllInputManager *in = new Fun4AllDummyInputManager("DUMMY");
-    if (isDEBUG) {
-      in->Verbosity(verbosity);
-    }
+    in->Verbosity(verbosity);
     se->registerInputManager(in);
   }
 
