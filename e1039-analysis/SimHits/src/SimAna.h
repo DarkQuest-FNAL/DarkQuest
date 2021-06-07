@@ -1,10 +1,10 @@
 #ifndef _Sim_Ana__H_
 #define _Sim_Ana__H_
 
-#include <map>
-#include <fun4all/SubsysReco.h>
 #include <TString.h>
 #include <TVector3.h>
+#include <fun4all/SubsysReco.h>
+#include <map>
 
 class TFile;
 class TTree;
@@ -20,17 +20,15 @@ class PHG4Hit;
 class PHG4Shower;
 class PHG4Particle;
 
-class SimAna: public SubsysReco 
-{
+class SimAna : public SubsysReco {
 public:
-  SimAna(const std::string& name = "SimAna");
+  SimAna(const std::string &name = "SimAna");
   virtual ~SimAna();
 
-  int Init(PHCompositeNode* topNode);
-  int InitRun(PHCompositeNode* topNode);
-  int process_event(PHCompositeNode* topNode);
-  int End(PHCompositeNode* topNode);
-
+  int Init(PHCompositeNode *topNode);
+  int InitRun(PHCompositeNode *topNode);
+  int process_event(PHCompositeNode *topNode);
+  int End(PHCompositeNode *topNode);
   int ResetEvalVars();
 
   PHG4Hit* FindG4HitAtStation(const int trk_id, const PHG4HitContainer* g4hc);
@@ -39,7 +37,7 @@ public:
   int  FindCommonHitIDs(std::vector<int>& hitidvec1, std::vector<int>& hitidvec2);
   SRecTrack* FindBestMomRecTrack(SRecEvent *recEvent, const float true_P); 
 
-  void set_out_name(const TString& n); 
+  void set_out_name(const char *outName) { saveNameOut = outName; }
   void set_legacy_rec_container(bool b); 
 
 private:
@@ -91,10 +89,10 @@ private:
 
   // Output
   TString saveName;
-  const char* saveNameOut;
-  TFile* saveFile;
+  const char *saveNameOut;
+  TFile *saveFile;
   int eventID;
-  TTree* saveTree;
+  TTree *saveTree;
 
   int n_hits;
   int hit_detid[1000];
@@ -110,55 +108,74 @@ private:
   float hit_truthpy[1000];
   float hit_truthpz[1000];
 
+  int n_truthtracks;
+  int truthtrack_charge[100];
+  float truthtrack_x_st1[100];
+  float truthtrack_y_st1[100];
+  float truthtrack_z_st1[100];
+  float truthtrack_px_st1[100];
+  float truthtrack_py_st1[100];
+  float truthtrack_pz_st1[100];
+  float truthtrack_x_st3[100];
+  float truthtrack_y_st3[100];
+  float truthtrack_z_st3[100];
+  float truthtrack_px_st3[100];
+  float truthtrack_py_st3[100];
+  float truthtrack_pz_st3[100];
+  float truthtrack_x_vtx[100];
+  float truthtrack_y_vtx[100];
+  float truthtrack_z_vtx[100];
+  float truthtrack_px_vtx[100];
+  float truthtrack_py_vtx[100];
+  float truthtrack_pz_vtx[100];
+
   int n_tracks;
   int track_charge[100];
+  int track_nhits[100];
+  float track_x_target[100];
+  float track_y_target[100];
+  float track_z_target[100];
+  float track_px_target[100];
+  float track_py_target[100];
+  float track_pz_target[100];
   float track_x_st1[100];
   float track_y_st1[100];
   float track_z_st1[100];
   float track_px_st1[100];
   float track_py_st1[100];
   float track_pz_st1[100];
-  float track_x_st3[100];
-  float track_y_st3[100];
-  float track_z_st3[100];
-  float track_px_st3[100];
-  float track_py_st3[100];
-  float track_pz_st3[100];
   float track_x_vtx[100];
   float track_y_vtx[100];
   float track_z_vtx[100];
   float track_px_vtx[100];
   float track_py_vtx[100];
   float track_pz_vtx[100];
+  float track_m[100];
+  float track_chisq[100];
+  float track_prob[100];
+  float track_quality[100];
+  int track_nhits_st1[100];
+  int track_nhits_st2[100];
+  int track_nhits_st3[100];
 
-  int n_rectracks;
-  int rec_track_charge[100];
-  int rec_track_nhits[100];
-  float rec_track_x_target[100];
-  float rec_track_y_target[100];
-  float rec_track_z_target[100];
-  float rec_track_px_target[100];
-  float rec_track_py_target[100];
-  float rec_track_pz_target[100];
-  float rec_track_x_st1[100];
-  float rec_track_y_st1[100];
-  float rec_track_z_st1[100];
-  float rec_track_px_st1[100];
-  float rec_track_py_st1[100];
-  float rec_track_pz_st1[100];
-  float rec_track_x_vtx[100];
-  float rec_track_y_vtx[100];
-  float rec_track_z_vtx[100];
-  float rec_track_m[100];
-  float rec_track_chisq[100];
-  float rec_track_prob[100];
-  float rec_track_quality[100];
-  int rec_track_nhits_st1[100];
-  int rec_track_nhits_st2[100];
-  int rec_track_nhits_st3[100];
+  int n_truthdimuons;
+  float truthdimuon_mass[100];
+  float truthdimuon_vtx_x[100];
+  float truthdimuon_vtx_y[100];
+  float truthdimuon_vtx_z[100];
+  float truthdimuon_px[100];
+  float truthdimuon_py[100];
+  float truthdimuon_pz[100];
+  float truthdimuon_pmom_x[100];
+  float truthdimuon_pmom_y[100];
+  float truthdimuon_pmom_z[100];
+  float truthdimuon_nmom_x[100];
+  float truthdimuon_nmom_y[100];
+  float truthdimuon_nmom_z[100];
 
-  int n_Dimuons;
+  int n_dimuons;
   float dimuon_mass[100];
+  float dimuon_chisq[100];
   float dimuon_vtx_x[100];
   float dimuon_vtx_y[100];
   float dimuon_vtx_z[100];
@@ -168,25 +185,12 @@ private:
   float dimuon_nmom_x[100];
   float dimuon_nmom_y[100];
   float dimuon_nmom_z[100];
-
-  int n_RecDimuons;
-  float rec_dimuon_mass[100];
-  float rec_dimuon_chisq[100];
-  float rec_dimuon_vtx_x[100];
-  float rec_dimuon_vtx_y[100];
-  float rec_dimuon_vtx_z[100];
-  float rec_dimuon_pmom_x[100];
-  float rec_dimuon_pmom_y[100];
-  float rec_dimuon_pmom_z[100];
-  float rec_dimuon_nmom_x[100];
-  float rec_dimuon_nmom_y[100];
-  float rec_dimuon_nmom_z[100];
-  float rec_dimuon_ppos_x[100];
-  float rec_dimuon_ppos_y[100];
-  float rec_dimuon_ppos_z[100];
-  float rec_dimuon_npos_x[100];
-  float rec_dimuon_npos_y[100];
-  float rec_dimuon_npos_z[100];
+  float dimuon_ppos_x[100];
+  float dimuon_ppos_y[100];
+  float dimuon_ppos_z[100];
+  float dimuon_npos_x[100];
+  float dimuon_npos_y[100];
+  float dimuon_npos_z[100];
 
   int n_showers;
   float sx_ecal[1000];
