@@ -24,7 +24,7 @@ using namespace std;
 /*
  * Macro used to analyze simulation in SpinQuest
  * isim = 1 to run on Aprime to dimuon signal
- * isim = 1 to run on Aprime to dielectron signal
+ * isim = 2 to run on Aprime to dielectron signal
  * isim = 3 to run on single gun (default is muon, see gun options below)
  * isim = 4 to run on DY to dimuon sample generated with Pythia
  * isim = 5 to run on J/psi to dimuon sample generated with Pythia
