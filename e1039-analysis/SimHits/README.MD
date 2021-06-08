@@ -58,6 +58,7 @@ mkdir work
 mkdir install
 cd work
 cmake ../src/ -DCMAKE_INSTALL_PREFIX=../install
+make clean
 make
 make install
 cd ../
