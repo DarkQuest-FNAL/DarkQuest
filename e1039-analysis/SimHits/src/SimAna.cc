@@ -14,6 +14,8 @@
 
 #include <ktracker/SRecEvent.h>
 
+#include <interface_main/SQEvent_v1.h>
+
 #include <g4main/PHG4Hit.h>
 #include <g4main/PHG4HitContainer.h>
 #include <g4main/PHG4HitDefs.h>
@@ -322,6 +324,10 @@ int SimAna::ResetEvalVars() {
     gpz_h4[i] = std::numeric_limits<float>::max();
   }
 
+  for (int i = 0; i < 5; ++i) {
+    fpga_trigger[i] = 0;
+  }
+
   return 0;
 }
 
@@ -609,6 +615,15 @@ int SimAna::process_event(PHCompositeNode* topNode) {
     ++n_primaries;
   }
 
+  //dptrigger
+  //std::cout<<"DS in SimAna: "<<_sqEvent->get_trigger(SQEvent::MATRIX1)<<" "<<_sqEvent->get_trigger(SQEvent::MATRIX2)<<" "<<_sqEvent->get_trigger(SQEvent::MATRIX3)<<" "<<_sqEvent->get_trigger(SQEvent::MATRIX4)<<" "<<_sqEvent->get_trigger(SQEvent::MATRIX5)<<" "<<std::endl;
+
+  fpga_trigger[0] = _sqEvent->get_trigger(SQEvent::MATRIX1);
+  fpga_trigger[1] = _sqEvent->get_trigger(SQEvent::MATRIX2);
+  fpga_trigger[2] = _sqEvent->get_trigger(SQEvent::MATRIX3);
+  fpga_trigger[3] = _sqEvent->get_trigger(SQEvent::MATRIX4);
+  fpga_trigger[4] = _sqEvent->get_trigger(SQEvent::MATRIX5);
+
   ++eventID;
   saveTree->Fill();
 
@@ -624,6 +639,9 @@ int SimAna::End(PHCompositeNode *topNode) {
 
 int SimAna::GetNodes(PHCompositeNode* topNode)
 {
+  _sqEvent    = findNode::getClass<SQEvent_v1>(topNode, "SQEvent");
+  if(!_sqEvent) return Fun4AllReturnCodes::ABORTEVENT;
+
   _hitVector    = findNode::getClass<SQHitVector>(topNode, "SQHitVector");
   if(!_hitVector) return Fun4AllReturnCodes::ABORTEVENT;
 
@@ -894,4 +912,7 @@ void SimAna::MakeTree()
   saveTree->Branch("gpx_p1",        gpx_p1,              "gpx_p1[n_primaries]/F");
   saveTree->Branch("gpy_p1",        gpy_p1,              "gpy_p1[n_primaries]/F");
   saveTree->Branch("gpz_p1",        gpz_p1,              "gpz_p1[n_primaries]/F");
+
+  saveTree->Branch("fpga_trigger",        fpga_trigger,              "fpga_trigger[5]/O");
+
 }

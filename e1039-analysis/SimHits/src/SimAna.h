@@ -20,6 +20,8 @@ class PHG4Hit;
 class PHG4Shower;
 class PHG4Particle;
 
+class SQEvent_v1;
+
 class SimAna : public SubsysReco {
 public:
   SimAna(const std::string &name = "SimAna");
@@ -53,6 +55,8 @@ private:
   SRecEvent* _recEvent;
   SQTrackVector*  _recTrackVector;
   SQDimuonVector* _recDimuonVector;
+
+  SQEvent_v1* _sqEvent;
 
   PHG4TruthInfoContainer* _truth;
 
@@ -287,6 +291,9 @@ private:
   float gpx_h4y2r[1000];
   float gpy_h4y2r[1000];
   float gpz_h4y2r[1000];
+
+  bool fpga_trigger[5];
+
 };
 
 #endif
