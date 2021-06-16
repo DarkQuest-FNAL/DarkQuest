@@ -1,0 +1,19 @@
+name: Dimuon
+channels:
+  - defaults
+dependencies:
+  - python=3.8.3
+  - numpy=1.19.2
+  - numba=0.53.0
+  - pip=21.0.1
+  - pip:
+    - matplotlib
+    - jupyterlab
+    - mplhep
+    - coffea==0.7.1
+    - pandas==1.2.3
+    - pyyaml==5.4.1
+    - scipy==1.6.2
+    - numba-scipy==0.2.0
+    - uproot4==4.0.0
+    - awkward==1.2.0
