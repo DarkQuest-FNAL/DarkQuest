@@ -36,12 +36,12 @@ using namespace std;
  */
 
 int RecoE1039Sim(
-    std::string out_file = "output.root",
     const int nevent = 200,
 		const int isim = 1,
 		bool is_displaced = true,
 		const bool do_analysis = true,
-		std::string ifile="Brem_2.750000_z500_600_eps_-6.4"
+		std::string ifile="Brem_2.750000_z500_600_eps_-6.4",
+    std::string out_file = "output.root"
 		)
 {
   // input simulation
@@ -363,7 +363,7 @@ int RecoE1039Sim(
     Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
     se->registerInputManager(in);
     stringstream ssin;
-    ssin << "$DIR_CMANTILL/displaced_Aprime_Muons/" << ifile
+    ssin << "$DIR_CMANTILL/../../lhe/displaced_Aprime_Muons/" << ifile
          << ".txt";
     in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
     in->Verbosity(verbosity);
