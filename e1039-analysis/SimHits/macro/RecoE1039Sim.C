@@ -36,11 +36,12 @@ using namespace std;
  */
 
 int RecoE1039Sim(const int nevent = 200,
-		 const int isim = 1,
-		 bool is_displaced = true,
-		 const bool do_analysis = true,
-		 std::string ifile="Brem_2.750000_z500_600_eps_-6.4"
-		 )
+                const int isim = 1,
+                bool is_displaced = true,
+                const bool do_analysis = true,
+                std::string ifile="Brem_2.750000_z500_600_eps_-6.4",
+                std::string out_file = "output.root"
+                )
 {
   // input simulation
   bool do_aprime_muon{false},do_aprime_electron{false},do_gun{false},do_dy{false},do_jpsi{false},do_cosmic{false},do_pion{false};
@@ -349,7 +350,7 @@ int RecoE1039Sim(const int nevent = 200,
   gSystem->Load("libsim_ana.so");
   SimAna *sim_ana = new SimAna();  
   sim_ana->Verbosity(verbosity);
-  //sim_ana->set_output_filename(Form("ana_%s_%d.root", prefix.Data(), seed));
+  sim_ana->set_out_name(out_file);
   sim_ana->set_legacy_rec_container(legacy_rec_container);
   if(do_analysis){
     se->registerSubsystem(sim_ana);    
