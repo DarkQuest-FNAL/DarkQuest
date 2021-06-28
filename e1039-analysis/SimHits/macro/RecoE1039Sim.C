@@ -35,14 +35,13 @@ using namespace std;
  * for Aprime signal, always run with is_displaced to True
  */
 
-int RecoE1039Sim(
-    const int nevent = 200,
-		const int isim = 1,
-		bool is_displaced = true,
-		const bool do_analysis = true,
-		std::string ifile="Brem_2.750000_z500_600_eps_-6.4",
-    std::string out_file = "output.root"
-		)
+int RecoE1039Sim(const int nevent = 200,
+                const int isim = 1,
+                bool is_displaced = true,
+                const bool do_analysis = true,
+                std::string ifile="Brem_2.750000_z500_600_eps_-6.4",
+                std::string out_file = "output.root"
+                )
 {
   // input simulation
   bool do_aprime_muon{false},do_aprime_electron{false},do_gun{false},do_dy{false},do_jpsi{false},do_cosmic{false},do_pion{false};
@@ -180,9 +179,9 @@ int RecoE1039Sim(
   }
   else if(do_gun){ // particle gun
     PHG4SimpleEventGenerator *genp = new PHG4SimpleEventGenerator("MUP");
-    //genp->add_particles("mu+", 1);  // mu+
+    genp->add_particles("mu+", 1);  // mu+
     //genp->add_particles("mu-", 1); // mu-
-    genp->add_particles("e+", 1); // positron
+    //genp->add_particles("e+", 1); // positron
     //genp->add_particles("pi+", 1); // pions
     //genp->add_particles("kaon0L", 1); // k0long
     //genp->add_particles("proton", 1); // protons
