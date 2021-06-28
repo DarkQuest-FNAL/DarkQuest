@@ -726,7 +726,7 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
 
 void SimAna::MakeTree()
 {
-  saveFile= new TFile("output.root", "RECREATE");
+  saveFile= new TFile(saveNameOut, "RECREATE");
   saveTree = new TTree("Events", "Tree Created by SimAna");
   saveTree->Branch("eventID", &eventID, "eventID/I");
 
