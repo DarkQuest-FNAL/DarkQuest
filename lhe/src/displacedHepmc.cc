@@ -125,7 +125,8 @@ int main(int argc,char** argv)
     std::stringstream stream;    
     string epsStr = "";
 
-    int n_hepmc = 10e3;
+    //int n_hepmc = 10e3;
+    int n_sampled = 10e4;
     bool calcAcceptance=false;
 
     // int n_repeat = 2000; //number of times to sample the decay distribution for each input event
@@ -319,7 +320,8 @@ int main(int argc,char** argv)
     while(true){
         if(exit) break;
         for (vector<stdhep_event>::iterator event = input_events.begin(); event!=input_events.end();++event) {
-            exit=(n_accepted >= n_hepmc || n_sampled >= n_hepmc*1e3);
+	    exit=(n_sampled >= n_sampled);
+   	    //exit=(n_accepted >= n_hepmc || n_sampled >= n_hepmc*1e3);
             if(exit) break;
             n_sampled++;
 
