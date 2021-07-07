@@ -125,12 +125,12 @@ int main(int argc,char** argv)
     std::stringstream stream;    
     string epsStr = "";
 
-    //int n_hepmc = 10e3;
-    int n_sampled = 10e4;
-    bool calcAcceptance=false;
+    bool calcAcceptance=true;
+    bool fixedEvents=false;
 
-    // int n_repeat = 2000; //number of times to sample the decay distribution for each input event
-    // int n_repeat = 2; //number of times to sample the decay distribution for each input event
+    int n_hepmc = 10000;
+    int n_repeat = 1000;
+
     double vx_production[3] = {0.0, 2.0, 50.0}; //beamspot at y=2 cm; guess z=50 cm for mean interaction position (dump face at 25 cm, interaction length 16.77 cm)
     float min_vz = 300.0;
     float max_vz = 800.0;
@@ -209,8 +209,6 @@ int main(int argc,char** argv)
     vector<float> v_prob_simple;
 
     nevhep = 1;
-    //int n_accepted_events = 0;
-
     while (true) {     
         char line[1000];
         bool found_event = false;
@@ -281,7 +279,7 @@ int main(int argc,char** argv)
         if (temp_event.aprime && temp_event.negtrack && temp_event.postrack) {
             input_events.push_back(temp_event);
 
-            // can calc acceptance analytiaclly here, i.e. for efficient sampling
+            // can calc acceptance analytically here, i.e. for efficient sampling
             if(calcAcceptance){
                 double gamma = temp_event.aprime->phep[3]/temp_event.aprime->phep[4];
                 double beta = sqrt(1.0-pow(gamma,-2.0));
@@ -304,26 +302,33 @@ int main(int argc,char** argv)
     for(int i=0;i<v_prob.size();i++) sum_probs += v_prob.at(i);
     float mean_acceptance = sum_probs / v_prob.size();
 
+    //printf("calculate acceptance for mass %f and eps %f, and vz between %f and %f: %f \n",mass, eps,min_vz,max_vz,mean_acceptance);
+
     // writing HepMC file
     stream.str("");
     stream << std::fixed << std::setprecision(6) << mass;
     std::string massStr = stream.str();
     std::string lepStr = "Muons";
     if(iselectrons) lepStr = "Electrons";
-    string outFile = "displaced_Aprime_"+lepStr+"/"+mech+"_"+massStr+"_z"+std::to_string((int)min_vz)+"_"+std::to_string((int)max_vz)+"_eps_"+epsStr+".txt";
-    //WriterAscii output_file(outFile);
+    string outFile = "output/displaced_Aprime_"+lepStr+"/"+mech+"_"+massStr+"_z"+std::to_string((int)min_vz)+"_"+std::to_string((int)max_vz)+"_eps_"+epsStr+".txt";
     IO_GenEvent output_file(outFile);
 
-    int n_sampled=0;
     int n_accepted=0;
+    int n_sampled=0;
     bool exit=false;
     while(true){
         if(exit) break;
         for (vector<stdhep_event>::iterator event = input_events.begin(); event!=input_events.end();++event) {
-	    exit=(n_sampled >= n_sampled);
-   	    //exit=(n_accepted >= n_hepmc || n_sampled >= n_hepmc*1e3);
-            if(exit) break;
-            n_sampled++;
+	    if(fixedEvents){ 
+	      // fixed events stops looping over the set of input events when a fixed number of events is accepted or after sampling 1e3*(fixed number of events) times
+	      exit=(n_accepted >= n_hepmc || n_sampled >= n_hepmc*1e3);
+	      n_repeat = 1;
+	    }
+	    else{
+	      // n_repeat: number of times to sample the decay distribution for each input event 
+	      exit=(n_sampled == n_repeat*((int)(input_events.size())));
+	    }
+	    if(exit) break;
 
             double gamma, beta;
             gamma = event->aprime->phep[3]/event->aprime->phep[4];
@@ -348,47 +353,50 @@ int main(int argc,char** argv)
             double pt2 = event->negtrack->phep[3];
       
             // begin sampling
-            double vx[4];	
-            double vtx_displacement = gsl_ran_exponential(r,decay_length);
-            double vx_production_displ[3] = {vx_production[0],vx_production[1], 25+gsl_ran_exponential(r,16.77)};
-            for (int j=0;j<3;j++) vx[j] = vtx_displacement*event->aprime->phep[j]/p + vx_production_displ[j];
-            // this does not include fmag or kmag kick                                                                                                                                                           
-            if (vx[2]<min_vz || vx[2]>max_vz) continue;
-            n_accepted++;
+            for (int i=0;i<n_repeat;i++) {
+	      n_sampled++;
+	      double vx[4];	
+	      // get random displacement based on the decay length
+	      double vtx_displacement = gsl_ran_exponential(r,decay_length);
+	      // set vtx production displacement
+	      // for z: guess z=50 cm for mean interaction position (dump face at 25 cm, interaction length 16.77 cm)
+	      double vx_production_displ[3] = {vx_production[0],vx_production[1], 25+gsl_ran_exponential(r,16.77)};
+	      for (int j=0;j<3;j++) vx[j] = vtx_displacement*event->aprime->phep[j]/p + vx_production_displ[j];
+	      // NOTE: this does not include fmag or kmag kick, should probably modify that if vertex occurs in fmag or after kmag
+	      if (vx[2]<min_vz || vx[2]>max_vz) continue;
+
+	      n_accepted++;
 	
-            // create HepMC evt
-            GenEvent* evt = new GenEvent(Units::GEV, Units::CM);
-            evt->set_event_number(n_accepted);
+	      // create HepMC evt
+	      GenEvent* evt = new GenEvent(Units::GEV, Units::CM);
+	      evt->set_event_number(n_accepted);
+	      
+	      // create A' particle 
+	      // px      py        pz       e     pdgid status  
+	      GenParticle* paprime = new GenParticle(FourVector(px0,py0,pz0,event->aprime->phep[3]), event->aprime->idhep, event->aprime->isthep);
+	      // create postrack particle
+	      GenParticle* ppostrack = new GenParticle(FourVector(px1,py1,pz1,pt1), event->postrack->idhep, event->postrack->isthep);
+	      ppostrack->set_status(1);
+	      // create negtrack particle
+	      GenParticle* pnegtrack = new GenParticle(FourVector(px2,py2,pz2,pt2), event->negtrack->idhep, event->negtrack->isthep);
+	      pnegtrack->set_status(1);
+	      
+	      // create A' vertex
+	      // need to know where the vertex is (vx)
+	      vx[3] = sqrt(vx[0]*vx[0] + vx[1]*vx[1] + vx[2]*vx[2] + event->aprime->phep[4]*event->aprime->phep[4]);
+	      
+	      //std::cout <<  vx[0] << vx[1] << vx[2] << vx[3] << std::endl;
+	      GenVertex* vaprime = new GenVertex(FourVector(vx[0], vx[1], vx[2], vx[3]) );
+	      evt->add_vertex( vaprime );
+	      vaprime->add_particle_in( paprime );
+	      vaprime->add_particle_out( ppostrack );
+	      vaprime->add_particle_out( pnegtrack );
 	
-            // create A' particle 
-            // px      py        pz       e     pdgid status  
-            GenParticle* paprime = new GenParticle(FourVector(px0,py0,pz0,event->aprime->phep[3]), event->aprime->idhep, event->aprime->isthep);
-            // create postrack particle
-            GenParticle* ppostrack = new GenParticle(FourVector(px1,py1,pz1,pt1), event->postrack->idhep, event->postrack->isthep);
-            ppostrack->set_status(1);
-            // create negtrack particle
-            GenParticle* pnegtrack = new GenParticle(FourVector(px2,py2,pz2,pt2), event->negtrack->idhep, event->negtrack->isthep);
-            pnegtrack->set_status(1);
-	
-            // create A' vertex
-            // need to know where the vertex is (vx)
-            vx[3] = sqrt(vx[0]*vx[0] + vx[1]*vx[1] + vx[2]*vx[2] + event->aprime->phep[4]*event->aprime->phep[4]);
-	
-            //std::cout <<  vx[0] << vx[1] << vx[2] << vx[3] << std::endl;
-            GenVertex* vaprime = new GenVertex(FourVector(vx[0], vx[1], vx[2], vx[3]) );
-            evt->add_vertex( vaprime );
-            vaprime->add_particle_in( paprime );
-            vaprime->add_particle_out( ppostrack );
-            vaprime->add_particle_out( pnegtrack );
-	
-            // write file
-            output_file.write_event(evt);
+	      // write file
+	      output_file.write_event(evt);
+	    } // end sampling
         } // end lhe event loop
     }// generated all events
       
     printf("%d %d %f %e %f %f %s \n",n_accepted,n_sampled,mass,eps,min_vz,max_vz,mech.c_str());
-    // compare predicted with toy mc, binomial errors
-    // printf("%d %d %f %e %f %f %s %f %f [%f %f] \n",n_accepted,n_sampled,mass,eps,min_vz,max_vz,mech.c_str(), mean_acceptance, float(n_accepted)/n_sampled,
-    //        float(n_accepted)/n_sampled - float(n_accepted)/n_sampled * float(n_sampled-n_accepted)/n_sampled,
-    //        float(n_accepted)/n_sampled + float(n_accepted)/n_sampled * float(n_sampled-n_accepted)/n_sampled);
 }
