@@ -1,12 +1,8 @@
-# A' lhe studies
+# LHE to HEPMC
 
-## Convert LHE to HepMC
+## Setup 
 
-You will need HepMC to run the `displacedHepmc` script.
-
-If you are in `spinquestgpvm01` you can use Dylan's HepMC version here: `LDLIBS=$(ROOTLIBS) -lgsl -lgslcblas -L/seaquest/users/dylrus/HepMC2/lib/ -lHepMC  -I/seaquest/users/dylrus/HepMC2/include/`. You will need to modify this in `src/Makefile`.
-
-If not, you can install locally HepMC2:
+To install locally HepMC2:
 ```
 cd DarkQuest/lhe/
 wget https://hepmc.web.cern.ch/hepmc/releases/hepmc2.06.10.tgz
@@ -21,7 +17,7 @@ make install
 
 Then edit Makefile in `src/` to include your HepMC3 bin/include path e.g. replace `-L/Users/cristina/darkquest/DarkQuest/lhe/HepMC/lib/ -lHepMC  -I/Users/cristina/darkquest/DarkQuest/lhe/HepMC/include/`, with your paths.
 
-To setup ROOT in spinquest dir:
+To setup ROOT (in the spinquest cluster):
 ```
 source /e906/app/software/osg/software/e1039/this-e1039.sh
 ```
@@ -33,30 +29,34 @@ cd src/
 make
 ```
 
-Note, for OS, you can replace @rpath in `bin/displacedHepmc` with:
+Note, for MAC OS (e.g. if you are working locally), you can replace @rpath in `bin/displacedHepmc` with:
 ```
 sudo install_name_tool -change @rpath/libHepMC.4.dylib  /Users/cristina/darkquest/DarkQuest/lhe/HepMC3/lib/libHepMC.4.dylib bin/displacedHepmc
 ```
 
-The location of A' files lhe files should be in data:
+## Input data
+
+The location of A' files lhe files should be in the public `data/` directory in the spinquest cluster:
 ```
-data/Aprime_Electrons
-data/Aprime_Muons
+/seaquest/users/cmantill/DarkQuest/lhe/data/Aprime_Electrons/
+/seaquest/users/cmantill/DarkQuest/lhe/data/Aprime_Muons/
 ```
-and are currently in dropbox
+and can also be downloaded from dropbox:
 https://www.dropbox.com/sh/92xuab9e37gyujt/AAAogZsPCfrtvOTV1rEtAella?dl=0
 
-To run `displacedHepmc`, which creates a HepMC displaced file sampled 2000 times, create the output directories
+## Creating HepMC from LHE
+
+- The script `displacedHepmc` creates a HepMC file from the input LHE A' file. The input LHE file is sampled 2000 times 
+
+To run:
 ```
-mkdir displaced_Aprime_Muons
-mkdir displaced_Aprime_Electrons
-```
-and then run like
-```
+# create output directories
+mkdir output/displaced_Aprime_Muons/
+mkdir output/displaced_Aprime_Electrons/
+
 ./bin/displacedHepmc inputdata ${mech}_${mass}_${eps}.root ${mech} ${lep} ${rseed} ${eps} ${mass} ${vtx1} ${vtx2}
-```
-customizing it with options such as
-```
+
+# for example
 ./bin/displacedHepmc data/Aprime_Electrons/SeaQuestAprimeToElectronsLHE_Eta_mAp_0.54_GeV.txt Eta_0.54_-7.6.root Eta electron 0 -7.6 0.54 500 600
 ```
 
@@ -65,7 +65,7 @@ There are short scripts that run all masses and couplings:
 source run_dimuon.sh
 source run_dielectron.sh
 ```
-These produce inputs to the SpinQuest simulation framework. Be warned that the outputs can be quite large!
+
+## Acceptance
 
 The ratio of `number of accepted events / number of sampled events` can be used to calculate the acceptance. 
-I currently save the output of `source run_dimuons.sh` e.g. `source run_dimuons.sh > data/output_muons_500_600.txt` and draw contours using the `DQ-acceptance.ipynb` notebook.
