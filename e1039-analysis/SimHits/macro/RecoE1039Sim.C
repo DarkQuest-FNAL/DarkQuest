@@ -36,12 +36,13 @@ using namespace std;
  */
 
 int RecoE1039Sim(
-    std::string out_file = "output.root",
     const int nevent = 200,
 		const int isim = 1,
 		bool is_displaced = true,
-		const bool do_analysis = true,
-		std::string ifile="Brem_2.750000_z500_600_eps_-6.4"
+    std::string ifile="Brem_2.750000_z500_600_eps_-6.4",
+    std::string out_file = "output.root",
+    const double gun_pos = 500.,
+		const bool do_analysis = true
 		)
 {
   // input simulation
@@ -181,8 +182,10 @@ int RecoE1039Sim(
   else if(do_gun){ // particle gun
     PHG4SimpleEventGenerator *genp = new PHG4SimpleEventGenerator("MUP");
     //genp->add_particles("mu+", 1);  // mu+
-    //genp->add_particles("mu-", 1); // mu-
-    genp->add_particles("e+", 1); // positron
+    genp->add_particles("mu-", 1); // mu-
+    //genp->add_particles("e+", 1); // positron
+    //genp->add_particles("e-", 1); // positron
+    //genp->add_particles("gamma", 1); // photon
     //genp->add_particles("pi+", 1); // pions
     //genp->add_particles("kaon0L", 1); // k0long
     //genp->add_particles("proton", 1); // protons
@@ -191,7 +194,7 @@ int RecoE1039Sim(
       genp->set_vertex_distribution_function(PHG4SimpleEventGenerator::Uniform,
                                              PHG4SimpleEventGenerator::Uniform,
                                              PHG4SimpleEventGenerator::Uniform);
-      genp->set_vertex_distribution_mean(0.0, 0.0, 500.);
+      genp->set_vertex_distribution_mean(0.0, 0.0, gun_pos);
     } else {
       genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z);
     }
