@@ -352,6 +352,7 @@ int main(int argc,char** argv)
             double pz2 = event->negtrack->phep[2];
             double pt2 = event->negtrack->phep[3];
       
+	    int n_accepted_per_event = 0;
             // begin sampling
             for (int i=0;i<n_repeat;i++) {
 	      n_sampled++;
@@ -364,9 +365,11 @@ int main(int argc,char** argv)
 	      for (int j=0;j<3;j++) vx[j] = vtx_displacement*event->aprime->phep[j]/p + vx_production_displ[j];
 	      // NOTE: this does not include fmag or kmag kick, should probably modify that if vertex occurs in fmag or after kmag
 	      if (vx[2]<min_vz || vx[2]>max_vz) continue;
-
+	      if (n_accepted_per_event>0) continue;
+	      
 	      n_accepted++;
-	
+	      n_accepted_per_event++;
+
 	      // create HepMC evt
 	      GenEvent* evt = new GenEvent(Units::GEV, Units::CM);
 	      evt->set_event_number(n_accepted);
