@@ -104,6 +104,7 @@ float p_decay_simple(float offset, float decay_length, float _zlo, float _zhi){
     return p;
 }
 
+// probability to decay  and production
 float p_decay(float offset, float prod_length, float decay_length, 
               float _zlo, float _zhi){
     float lo = _zlo-offset;
@@ -225,7 +226,6 @@ int main(int argc,char** argv)
         }
 
         int nup, idprup; //number of particles, process ID
-        double xwgtup; //event weight
 	
 	int pdgID; //pdgID of decay
 	if (ismuons){
@@ -286,6 +286,7 @@ int main(int argc,char** argv)
                 double decay_length = beta*gamma*ctau;
                 double p = sqrt(pow(temp_event.aprime->phep[3],2) - pow(temp_event.aprime->phep[4],2)); // for pz/p
                 float prob_simple =  p_decay_simple(42., decay_length * temp_event.aprime->phep[3] / p, min_vz, max_vz);
+		// (dump face at 25 cm, interaction length 16.77 cm) 
                 float prob =  p_decay(25., 16.77, decay_length * temp_event.aprime->phep[3] / p, min_vz, max_vz);
                 v_prob.push_back(prob);
                 v_prob_simple.push_back(prob_simple);
@@ -369,10 +370,21 @@ int main(int argc,char** argv)
 	      
 	      n_accepted++;
 	      n_accepted_per_event++;
+	      
+	      // adding weight
+	      std::vector<double> weights;
+	      weights.push_back((double) 1/(double) i); // 1/number of times this event was sampled 
+	      const WeightContainer& wc(weights);
 
-	      // create HepMC evt
-	      GenEvent* evt = new GenEvent(Units::GEV, Units::CM);
-	      evt->set_event_number(n_accepted);
+	      // create HepMC event
+	      GenVertex* vsignal=0;
+              GenEvent* evt = new GenEvent(Units::GEV, Units::CM, 0, n_accepted, vsignal, wc);
+              //evt->set_event_number(n_accepted);
+
+	      // adding cross section
+	      //std::shared_ptr<GenCrossSection> cross_section = std::make_shared<GenCrossSection>();
+              //evt.add_attribute("GenCrossSection",cross_section);
+              //cross_section->set_cross_section(1.2,3.4);
 	      
 	      // create A' particle 
 	      // px      py        pz       e     pdgid status  
@@ -394,7 +406,7 @@ int main(int argc,char** argv)
 	      vaprime->add_particle_in( paprime );
 	      vaprime->add_particle_out( ppostrack );
 	      vaprime->add_particle_out( pnegtrack );
-	
+
 	      // write file
 	      output_file.write_event(evt);
 	    } // end sampling
