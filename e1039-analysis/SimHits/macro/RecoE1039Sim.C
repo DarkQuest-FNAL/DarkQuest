@@ -202,7 +202,7 @@ int RecoE1039Sim(
     genp->set_vertex_distribution_width(0.0, 0.0, 0.0);
     genp->set_vertex_size_function(PHG4SimpleEventGenerator::Uniform);
     genp->set_vertex_size_parameters(0.0, 0.0);
-    genp->set_pxpypz_range(-1., 1., -1., 1., 0., 100.);
+    genp->set_pxpypz_range(0.3, 0.3, 0.3, 0.3, 80., 80.);
     se->registerSubsystem(genp);
   } else if (do_dy or do_jpsi) {
     PHPythia8 *pythia8 = new PHPythia8();
@@ -366,7 +366,7 @@ int RecoE1039Sim(
     Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
     se->registerInputManager(in);
     stringstream ssin;
-    ssin << "$DIR_CMANTILL/displaced_Aprime_Muons/" << ifile
+    ssin << "$DIR_CMANTILL/fixed_sampling/displaced_Aprime_Muons/" << ifile
          << ".txt";
     in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
     in->Verbosity(verbosity);
