@@ -199,10 +199,10 @@ int RecoE1039Sim(const int nevent = 200,
     //genp->add_particles("kaon0L", 1); // k0long
     //genp->add_particles("proton", 1); // protons
     //genp->add_particles("Upsilon", 1); // upsilon
+    genp->set_vertex_distribution_function(PHG4SimpleEventGenerator::Uniform,
+					   PHG4SimpleEventGenerator::Uniform,
+					   PHG4SimpleEventGenerator::Uniform);
     if(is_displaced){
-      genp->set_vertex_distribution_function(PHG4SimpleEventGenerator::Uniform,
-                                             PHG4SimpleEventGenerator::Uniform,
-                                             PHG4SimpleEventGenerator::Uniform);
       genp->set_vertex_distribution_mean(0.0, 0.0, 500.);
     } else {
       genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z);
@@ -379,7 +379,7 @@ int RecoE1039Sim(const int nevent = 200,
     Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
     se->registerInputManager(in);
     stringstream ssin;
-    ssin << "$DIR_CMANTILL/../../lhe/displaced_Aprime_Muons/" << ifile
+    ssin << "$DIR_CMANTILL/../../lhe/output/displaced_Aprime_Muons/" << ifile
          << ".txt";
     in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
     in->Verbosity(verbosity);
@@ -389,7 +389,7 @@ int RecoE1039Sim(const int nevent = 200,
     Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
     se->registerInputManager(in);
     stringstream ssin;
-    ssin << "$DIR_CMANTILL/../../lhe/trimuon_0.5MS0gS1.hepmc";
+    ssin << "$DIR_CMANTILL/../../lhe/output/trimuon_0.5MS0gS1.hepmc";
     in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
     in->Verbosity(verbosity);
     se->registerInputManager(in);
