@@ -492,7 +492,14 @@ int SimAna::process_event(PHCompositeNode* topNode) {
       break;
   }
 
-  //_truth->identify();
+  /*
+  _truth->identify();
+  for (auto iterp = _truth->GetSecondaryParticleRange().first;
+       iterp != _truth->GetSecondaryParticleRange().second; ++iterp) {
+    PHG4Particle *secondary = iterp->second;
+    std::cout << " secondary particle " << secondary->get_pid() << " e" << secondary->get_e() << std::endl;
+  }
+  */
 
   n_primaries = 0;
   for (auto iterp = _truth->GetPrimaryParticleRange().first;
