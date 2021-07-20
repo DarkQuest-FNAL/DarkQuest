@@ -379,12 +379,14 @@ int main(int argc,char** argv)
 	      // create HepMC event
 	      GenVertex* vsignal=0;
               GenEvent* evt = new GenEvent(Units::GEV, Units::CM, 0, n_accepted, vsignal, wc);
-              //evt->set_event_number(n_accepted);
 
 	      // adding cross section
-	      //std::shared_ptr<GenCrossSection> cross_section = std::make_shared<GenCrossSection>();
-              //evt.add_attribute("GenCrossSection",cross_section);
-              //cross_section->set_cross_section(1.2,3.4);
+	      // for now, setting to 1
+	      // we would have to read BremYield.txt or EtaYield.txt (depending on the mass)
+	      // and then xsec = yield * (eps/1e-6)**2 * (POT/1.44*10^18) (although I am assuming we would want the same POT)
+	      GenCrossSection xsec;
+	      xsec.set_cross_section(1., 1); // cross section and error
+              evt->set_cross_section(xsec);
 	      
 	      // create A' particle 
 	      // px      py        pz       e     pdgid status  
