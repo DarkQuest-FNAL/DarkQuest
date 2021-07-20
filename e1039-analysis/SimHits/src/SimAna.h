@@ -21,6 +21,7 @@ class PHG4Shower;
 class PHG4Particle;
 
 class SQEvent_v1;
+class SQMCEvent;
 
 class SimAna : public SubsysReco {
 public:
@@ -57,6 +58,7 @@ private:
   SQDimuonVector* _recDimuonVector;
 
   SQEvent_v1* _sqEvent;
+  SQMCEvent* _sqMCEvent;
 
   PHG4TruthInfoContainer* _truth;
 
@@ -293,6 +295,8 @@ private:
   float gpz_h4y2r[1000];
 
   bool fpga_trigger[5];
+
+  float weight;
 
 };
 

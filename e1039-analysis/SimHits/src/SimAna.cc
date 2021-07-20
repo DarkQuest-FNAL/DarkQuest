@@ -15,6 +15,7 @@
 #include <ktracker/SRecEvent.h>
 
 #include <interface_main/SQEvent_v1.h>
+#include <interface_main/SQMCEvent.h>
 
 #include <g4main/PHG4Hit.h>
 #include <g4main/PHG4HitContainer.h>
@@ -491,6 +492,8 @@ int SimAna::process_event(PHCompositeNode* topNode) {
       break;
   }
 
+  //_truth->identify();
+
   n_primaries = 0;
   for (auto iterp = _truth->GetPrimaryParticleRange().first;
        iterp != _truth->GetPrimaryParticleRange().second; ++iterp) {
@@ -624,6 +627,8 @@ int SimAna::process_event(PHCompositeNode* topNode) {
   fpga_trigger[3] = _sqEvent->get_trigger(SQEvent::MATRIX4);
   fpga_trigger[4] = _sqEvent->get_trigger(SQEvent::MATRIX5);
 
+  weight = _sqMCEvent->get_weight();
+
   ++eventID;
   saveTree->Fill();
 
@@ -639,8 +644,11 @@ int SimAna::End(PHCompositeNode *topNode) {
 
 int SimAna::GetNodes(PHCompositeNode* topNode)
 {
-  _sqEvent    = findNode::getClass<SQEvent_v1>(topNode, "SQEvent");
+  _sqEvent   = findNode::getClass<SQEvent_v1>(topNode, "SQEvent");
   if(!_sqEvent) return Fun4AllReturnCodes::ABORTEVENT;
+
+  _sqMCEvent = findNode::getClass<SQMCEvent     >(topNode, "SQMCEvent");
+  if(!_sqMCEvent) return Fun4AllReturnCodes::ABORTEVENT;
 
   _hitVector    = findNode::getClass<SQHitVector>(topNode, "SQHitVector");
   if(!_hitVector) return Fun4AllReturnCodes::ABORTEVENT;
@@ -916,6 +924,8 @@ void SimAna::MakeTree()
   saveTree->Branch("gpy_p1",        gpy_p1,              "gpy_p1[n_primaries]/F");
   saveTree->Branch("gpz_p1",        gpz_p1,              "gpz_p1[n_primaries]/F");
 
-  saveTree->Branch("fpga_trigger",        fpga_trigger,              "fpga_trigger[5]/O");
+  saveTree->Branch("fpga_trigger",  fpga_trigger,        "fpga_trigger[5]/O");
+
+  saveTree->Branch("weight",        &weight,              "weight/F");
 
 }
