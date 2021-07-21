@@ -373,7 +373,7 @@ int main(int argc,char** argv)
 	      
 	      // adding weight
 	      std::vector<double> weights;
-	      weights.push_back((double) 1/(double) i); // 1/number of times this event was sampled 
+	      weights.push_back((double) 1/(double) (i+1)); // 1/number of times this event was sampled 
 	      const WeightContainer& wc(weights);
 
 	      // create HepMC event
