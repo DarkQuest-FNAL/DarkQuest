@@ -130,7 +130,7 @@ int main(int argc,char** argv)
     bool fixedEvents=false;
 
     int n_hepmc = 10000;
-    int n_repeat = 1000;
+    int n_repeat = 1000000;
 
     double vx_production[3] = {0.0, 2.0, 50.0}; //beamspot at y=2 cm; guess z=50 cm for mean interaction position (dump face at 25 cm, interaction length 16.77 cm)
     float min_vz = 300.0;
@@ -315,22 +315,7 @@ int main(int argc,char** argv)
     IO_GenEvent output_file(outFile);
 
     int n_accepted=0;
-    int n_sampled=0;
-    bool exit=false;
-    while(true){
-        if(exit) break;
         for (vector<stdhep_event>::iterator event = input_events.begin(); event!=input_events.end();++event) {
-	    if(fixedEvents){ 
-	      // fixed events stops looping over the set of input events when a fixed number of events is accepted or after sampling 1e3*(fixed number of events) times
-	      exit=(n_accepted >= n_hepmc || n_sampled >= n_hepmc*1e3);
-	      n_repeat = 1;
-	    }
-	    else{
-	      // n_repeat: number of times to sample the decay distribution for each input event 
-	      exit=(n_sampled == n_repeat*((int)(input_events.size())));
-	    }
-	    if(exit) break;
-
             double gamma, beta;
             gamma = event->aprime->phep[3]/event->aprime->phep[4];
             beta = sqrt(1.0-pow(gamma,-2.0));
@@ -355,25 +340,35 @@ int main(int argc,char** argv)
       
 	    int n_accepted_per_event = 0;
             // begin sampling
-            for (int i=0;i<n_repeat;i++) {
-	      n_sampled++;
 	      double vx[4];	
-	      // get random displacement based on the decay length
-	      double vtx_displacement = gsl_ran_exponential(r,decay_length);
 	      // set vtx production displacement
 	      // for z: guess z=50 cm for mean interaction position (dump face at 25 cm, interaction length 16.77 cm)
 	      double vx_production_displ[3] = {vx_production[0],vx_production[1], 25+gsl_ran_exponential(r,16.77)};
-	      for (int j=0;j<3;j++) vx[j] = vtx_displacement*event->aprime->phep[j]/p + vx_production_displ[j];
-	      // NOTE: this does not include fmag or kmag kick, should probably modify that if vertex occurs in fmag or after kmag
-	      if (vx[2]<min_vz || vx[2]>max_vz) continue;
-	      if (n_accepted_per_event>0) continue;
+          //// NOTE: this does not include fmag or kmag kick, should probably modify that if vertex occurs in fmag or after kmag
+          double vtx_displacement_min = max(0., (min_vz - vx_production_displ[2]) * p / event->aprime->phep[2]);
+          double vtx_displacement_max = (max_vz - vx_production_displ[2]) * p / event->aprime->phep[2];
+          // displacement needed for Aprime to decay between min_vz and max_vz;
+          double vtx_displacement = gsl_rng_uniform(r) * (vtx_displacement_max - vtx_displacement_min) + vtx_displacement_min;
+          // relative probability for such a displacement
+          double prob = 0.;
+          if (vtx_displacement > 0) {
+             prob = TMath::Exp(-vtx_displacement/decay_length);
+          }
+          else {
+             // negative vtx displacement is not possible, probability is zero
+             prob = 0.;
+          }
+          // vertex position
+          for (int j=0;j<3;j++) vx[j] = vtx_displacement*event->aprime->phep[j]/p + vx_production_displ[j];
+
 	      
 	      n_accepted++;
 	      n_accepted_per_event++;
 	      
 	      // adding weight
 	      std::vector<double> weights;
-	      weights.push_back((double) 1/(double) (i+1)); // 1/number of times this event was sampled 
+	      //weights.push_back((double) 1/(double) (i+1)); // 1/number of times this event was sampled 
+          weights.push_back(prob);
 	      const WeightContainer& wc(weights);
 
 	      // create HepMC event
@@ -411,9 +406,7 @@ int main(int argc,char** argv)
 
 	      // write file
 	      output_file.write_event(evt);
-	    } // end sampling
         } // end lhe event loop
-    }// generated all events
       
-    printf("%d %d %f %e %f %f %s \n",n_accepted,n_sampled,mass,eps,min_vz,max_vz,mech.c_str());
+    printf("%d %f %e %f %f %s \n",n_accepted,mass,eps,min_vz,max_vz,mech.c_str());
 }
