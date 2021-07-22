@@ -335,7 +335,6 @@ int main(int argc,char** argv)
             double pz2 = event->negtrack->phep[2];
             double pt2 = event->negtrack->phep[3];
       
-	    int n_accepted_per_event = 0;
             // begin sampling
 	      double vx[4];	
 	      // set vtx production displacement
@@ -360,7 +359,6 @@ int main(int argc,char** argv)
 
 	      
 	      n_accepted++;
-	      n_accepted_per_event++;
 	      
 	      // adding weight
 	      std::vector<double> weights;
