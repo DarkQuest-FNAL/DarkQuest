@@ -129,9 +129,6 @@ int main(int argc,char** argv)
     bool calcAcceptance=true;
     bool fixedEvents=false;
 
-    int n_hepmc = 10000;
-    int n_repeat = 1000000;
-
     double vx_production[3] = {0.0, 2.0, 50.0}; //beamspot at y=2 cm; guess z=50 cm for mean interaction position (dump face at 25 cm, interaction length 16.77 cm)
     float min_vz = 300.0;
     float max_vz = 800.0;
