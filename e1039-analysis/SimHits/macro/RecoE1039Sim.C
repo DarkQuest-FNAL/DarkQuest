@@ -107,7 +107,7 @@ int RecoE1039Sim(const int nevent = 200,
   rc->set_DoubleFlag("KMAGSTR", KMAGSTR);
   rc->set_CharFlag(
       "AlignmentMille",
-      "$DIR_CMANTILL/macro/align_mille.txt"); // alignment file needed for EMCAL
+      "align_mille.txt"); // alignment file needed for EMCAL
   rc->set_CharFlag("fMagFile",
                    "$E1039_RESOURCE/geometry/magnetic_fields/tab.Fmag");
   rc->set_CharFlag("kMagFile",
