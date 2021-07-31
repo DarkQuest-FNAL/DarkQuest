@@ -191,6 +191,12 @@ int SimAna::ResetEvalVars() {
     track_px_st1[i]      = std::numeric_limits<float>::max();
     track_py_st1[i]      = std::numeric_limits<float>::max();
     track_pz_st1[i]      = std::numeric_limits<float>::max();
+    track_x_st3[i]       = std::numeric_limits<float>::max();
+    track_y_st3[i]       = std::numeric_limits<float>::max();
+    track_z_st3[i]       = std::numeric_limits<float>::max();
+    track_px_st3[i]      = std::numeric_limits<float>::max();
+    track_py_st3[i]      = std::numeric_limits<float>::max();
+    track_pz_st3[i]      = std::numeric_limits<float>::max();
     track_x_vtx[i]       = std::numeric_limits<float>::max();
     track_y_vtx[i]       = std::numeric_limits<float>::max();
     track_z_vtx[i]       = std::numeric_limits<float>::max();
@@ -201,6 +207,7 @@ int SimAna::ResetEvalVars() {
     track_chisq[i]       = std::numeric_limits<float>::max();
     track_prob[i]        = std::numeric_limits<float>::max();
     track_quality[i]     = std::numeric_limits<float>::max();
+    track_isValid[i]     = std::numeric_limits<int>::max();
     track_nhits_st1[i]   = std::numeric_limits<float>::max();
     track_nhits_st2[i]   = std::numeric_limits<float>::max();
     track_nhits_st3[i]   = std::numeric_limits<float>::max();
@@ -401,6 +408,12 @@ int SimAna::process_event(PHCompositeNode* topNode) {
       track_px_st1[n_tracks] = (recTrack->getMomentumVecSt1()).Px();
       track_py_st1[n_tracks] = (recTrack->getMomentumVecSt1()).Py();
       track_pz_st1[n_tracks] = (recTrack->getMomentumVecSt1()).Pz();
+      track_x_st3[n_tracks] = (recTrack->getPositionVecSt3()).X();
+      track_y_st3[n_tracks] = (recTrack->getPositionVecSt3()).Y();
+      track_z_st3[n_tracks] = (recTrack->getPositionVecSt3()).Z();
+      track_px_st3[n_tracks] = (recTrack->getMomentumVecSt3()).Px();
+      track_py_st3[n_tracks] = (recTrack->getMomentumVecSt3()).Py();
+      track_pz_st3[n_tracks] = (recTrack->getMomentumVecSt3()).Pz();
       track_x_vtx[n_tracks] = (recTrack->getVertexPos()).X();
       track_y_vtx[n_tracks] = (recTrack->getVertexPos()).Y();
       track_z_vtx[n_tracks] = (recTrack->getVertexPos()).Z();
@@ -410,6 +423,7 @@ int SimAna::process_event(PHCompositeNode* topNode) {
       track_chisq[n_tracks] = recTrack->getChisq();
       track_prob[n_tracks] = recTrack->getProb();
       track_quality[n_tracks] = recTrack->getQuality();
+      track_isValid[n_tracks] = recTrack->isValid();
       track_nhits_st1[n_tracks] = recTrack->getNHitsInStation(1);
       track_nhits_st2[n_tracks] = recTrack->getNHitsInStation(2);
       track_nhits_st3[n_tracks] = recTrack->getNHitsInStation(3);
@@ -780,6 +794,12 @@ void SimAna::MakeTree()
   saveTree->Branch("track_px_st1",         track_px_st1,        "track_px_st1[n_tracks]/F");
   saveTree->Branch("track_py_st1",         track_py_st1,        "track_py_st1[n_tracks]/F");
   saveTree->Branch("track_pz_st1",         track_pz_st1,        "track_pz_st1[n_tracks]/F");
+  saveTree->Branch("track_x_st3",          track_x_st3,         "track_x_st3[n_tracks]/F");
+  saveTree->Branch("track_y_st3",          track_y_st3,         "track_y_st3[n_tracks]/F");
+  saveTree->Branch("track_z_st3",          track_z_st3,         "track_z_st3[n_tracks]/F");
+  saveTree->Branch("track_px_st3",         track_px_st3,        "track_px_st3[n_tracks]/F");
+  saveTree->Branch("track_py_st3",         track_py_st3,        "track_py_st3[n_tracks]/F");
+  saveTree->Branch("track_pz_st3",         track_pz_st3,        "track_pz_st3[n_tracks]/F");
   saveTree->Branch("track_x_vtx",          track_x_vtx,         "track_x_vtx[n_tracks]/F");
   saveTree->Branch("track_y_vtx",          track_y_vtx,         "track_y_vtx[n_tracks]/F");
   saveTree->Branch("track_z_vtx",          track_z_vtx,         "track_z_vtx[n_tracks]/F");
@@ -790,6 +810,7 @@ void SimAna::MakeTree()
   saveTree->Branch("track_chisq",          track_chisq,         "track_chisq[n_tracks]/F");
   saveTree->Branch("track_prob",           track_prob,          "track_prob[n_tracks]/F");
   saveTree->Branch("track_quality",        track_quality,       "track_quality[n_tracks]/F");
+  saveTree->Branch("track_isValid",        track_isValid,       "track_isValid[n_tracks]/I");
   saveTree->Branch("track_nhits_st1",      track_nhits_st1,     "track_nhits_st1[n_tracks]/I");
   saveTree->Branch("track_nhits_st2",      track_nhits_st2,     "track_nhits_st2[n_tracks]/I");
   saveTree->Branch("track_nhits_st3",      track_nhits_st3,     "track_nhits_st3[n_tracks]/I");
