@@ -44,7 +44,7 @@ int RecoE1039Sim(const int nevent = 200,
                 )
 {
   // input simulation
-  bool do_aprime_muon{false},do_aprime_electron{false},do_gun{false},do_dy{false},do_jpsi{false},do_cosmic{false},do_pion{false};
+  bool do_aprime_muon{false},do_aprime_electron{false},do_gun{false},do_dy{false},do_jpsi{false},do_cosmic{false},do_pion{false},do_trimuon{false};
   switch(isim){
   case 1: 
     do_aprime_muon = true;
@@ -68,6 +68,9 @@ int RecoE1039Sim(const int nevent = 200,
     break;
   case 7:
     do_pion = true;
+    break;
+  case 8:
+    do_trimuon = true;
     break;
   }
 
@@ -168,6 +171,7 @@ int RecoE1039Sim(const int nevent = 200,
     hr->set_particle_filter_on(true);
     hr->insert_particle_filter_pid(13); // filter muons
     hr->insert_particle_filter_pid(13 * -1);
+    hr->Verbosity(verbosity);
     se->registerSubsystem(hr);
   }
   else if(do_aprime_electron){ // aprime to displaced electrons
@@ -175,6 +179,15 @@ int RecoE1039Sim(const int nevent = 200,
     hr->set_particle_filter_on(true);
     hr->insert_particle_filter_pid(11);
     hr->insert_particle_filter_pid(11*-1);
+    hr->Verbosity(verbosity);
+    se->registerSubsystem(hr);
+  }
+  else if(do_trimuon){
+    HepMCNodeReader *hr = new HepMCNodeReader();
+    //hr->set_particle_filter_on(true);
+    //hr->insert_particle_filter_pid(13);
+    //hr->insert_particle_filter_pid(13 * -1);
+    hr->Verbosity(verbosity);
     se->registerSubsystem(hr);
   }
   else if(do_gun){ // particle gun
@@ -186,10 +199,10 @@ int RecoE1039Sim(const int nevent = 200,
     //genp->add_particles("kaon0L", 1); // k0long
     //genp->add_particles("proton", 1); // protons
     //genp->add_particles("Upsilon", 1); // upsilon
+    genp->set_vertex_distribution_function(PHG4SimpleEventGenerator::Uniform,
+					   PHG4SimpleEventGenerator::Uniform,
+					   PHG4SimpleEventGenerator::Uniform);
     if(is_displaced){
-      genp->set_vertex_distribution_function(PHG4SimpleEventGenerator::Uniform,
-                                             PHG4SimpleEventGenerator::Uniform,
-                                             PHG4SimpleEventGenerator::Uniform);
       genp->set_vertex_distribution_mean(0.0, 0.0, 500.);
     } else {
       genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z);
@@ -199,6 +212,7 @@ int RecoE1039Sim(const int nevent = 200,
     genp->set_vertex_size_function(PHG4SimpleEventGenerator::Uniform);
     genp->set_vertex_size_parameters(0.0, 0.0);
     genp->set_pxpypz_range(-1., 1., -1., 1., 0., 100.);
+    genp->Verbosity(verbosity);
     se->registerSubsystem(genp);
   } else if (do_dy or do_jpsi) {
     PHPythia8 *pythia8 = new PHPythia8();
@@ -318,6 +332,9 @@ int RecoE1039Sim(const int nevent = 200,
   if(do_aprime_muon or do_aprime_electron){
     truthMaker->set_m_process_type(3); // set process type to 3 (A' -> di lepton) since we only have a 3 particle process instead of 0+1->2+3
   }
+  if(do_trimuon){
+    truthMaker->set_m_process_type(3);
+  }
   truthMaker->Verbosity(verbosity);
   se->registerSubsystem(truthMaker);
 
@@ -362,12 +379,22 @@ int RecoE1039Sim(const int nevent = 200,
     Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
     se->registerInputManager(in);
     stringstream ssin;
-    ssin << "$DIR_CMANTILL/../../lhe/displaced_Aprime_Muons/" << ifile
+    ssin << "$DIR_CMANTILL/../../lhe/output/displaced_Aprime_Muons/" << ifile
          << ".txt";
     in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
     in->Verbosity(verbosity);
     se->registerInputManager(in);
-  } else {
+  } 
+  else if(do_trimuon){
+    Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
+    se->registerInputManager(in);
+    stringstream ssin;
+    ssin << "$DIR_CMANTILL/../../lhe/output/trimuon_0.5MS0gS1.hepmc";
+    in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
+    in->Verbosity(verbosity);
+    se->registerInputManager(in);
+  }
+  else {
     // need a dummy input to drive the event loop
     Fun4AllInputManager *in = new Fun4AllDummyInputManager("DUMMY");
     in->Verbosity(verbosity);
