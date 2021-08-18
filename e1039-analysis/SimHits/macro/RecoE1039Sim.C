@@ -39,6 +39,7 @@ int RecoE1039Sim(const int nevent = 200,
                 const int isim = 1,
                 bool is_displaced = true,
                 const bool do_analysis = true,
+                bool electron_tracking = false,
                 std::string ifile="Brem_2.750000_z500_600_eps_-6.4",
                 std::string out_file = "output.root"
                 )
@@ -53,6 +54,7 @@ int RecoE1039Sim(const int nevent = 200,
   case 2:
     do_aprime_electron = true;
     is_displaced = true;
+    electron_tracking = true;
     break;
   case 3:
     do_gun = true;
@@ -144,6 +146,13 @@ int RecoE1039Sim(const int nevent = 200,
         "NOT_DISPLACED",
         false); // running on displaced mode, no fitting to the target/vertex
   }
+  if(electron_tracking){
+    rc->set_BoolFlag(
+        "TRACK_ELECTRONS",
+        false); // track electrons by eliminating certain muon hit requirements
+  }
+  }
+
   if (isDEBUG) {
     rc->Print();
   }
@@ -192,9 +201,9 @@ int RecoE1039Sim(const int nevent = 200,
   }
   else if(do_gun){ // particle gun
     PHG4SimpleEventGenerator *genp = new PHG4SimpleEventGenerator("MUP");
-    genp->add_particles("mu+", 1);  // mu+
+    //genp->add_particles("mu+", 1);  // mu+
     //genp->add_particles("mu-", 1); // mu-
-    //genp->add_particles("e+", 1); // positron
+    genp->add_particles("e+", 1); // positron
     //genp->add_particles("pi+", 1); // pions
     //genp->add_particles("kaon0L", 1); // k0long
     //genp->add_particles("proton", 1); // protons
@@ -203,7 +212,7 @@ int RecoE1039Sim(const int nevent = 200,
 					   PHG4SimpleEventGenerator::Uniform,
 					   PHG4SimpleEventGenerator::Uniform);
     if(is_displaced){
-      genp->set_vertex_distribution_mean(0.0, 0.0, 500.);
+      genp->set_vertex_distribution_mean(0.0, 0.0, 520.);
     } else {
       genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z);
     }
