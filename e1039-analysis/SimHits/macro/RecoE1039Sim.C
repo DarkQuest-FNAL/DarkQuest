@@ -39,7 +39,7 @@ int RecoE1039Sim(const int nevent = 200,
                 const int isim = 1,
                 bool is_displaced = true,
                 const bool do_analysis = true,
-                bool electron_tracking = true,
+                bool electron_tracking = false,
                 std::string ifile="Brem_2.750000_z500_600_eps_-6.4",
                 std::string out_file = "output.root"
                 )
@@ -82,7 +82,7 @@ int RecoE1039Sim(const int nevent = 200,
   // https://github.com/E1039-Collaboration/e1039-core/blob/master/framework/fun4all/Fun4AllBase.h#L33-L55
   // the verbosity of different modules can also be modified separately for
   // debugging
-  const int verbosity = 110;
+  const int verbosity = 0;
 
   // legacy rec container
   const bool legacy_rec_container =  true; // false is for e1039 format
@@ -149,7 +149,7 @@ int RecoE1039Sim(const int nevent = 200,
   if(electron_tracking){
     rc->set_BoolFlag(
         "TRACK_ELECTRONS",
-        false); // track electrons by eliminating certain muon hit requirements
+        true); // track electrons by eliminating certain muon hit requirements
   }
 
   if (isDEBUG) {
