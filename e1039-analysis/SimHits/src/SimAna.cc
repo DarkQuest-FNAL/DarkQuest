@@ -305,6 +305,12 @@ int SimAna::ResetEvalVars() {
     gpx_st2[i] = std::numeric_limits<float>::max();
     gpy_st2[i] = std::numeric_limits<float>::max();
     gpz_st2[i] = std::numeric_limits<float>::max();
+    gx_st3[i] = std::numeric_limits<float>::max();
+    gy_st3[i] = std::numeric_limits<float>::max();
+    gz_st3[i] = std::numeric_limits<float>::max();
+    gpx_st3[i] = std::numeric_limits<float>::max();
+    gpy_st3[i] = std::numeric_limits<float>::max();
+    gpz_st3[i] = std::numeric_limits<float>::max();
 
     gx_h1[i] = std::numeric_limits<float>::max();
     gy_h1[i] = std::numeric_limits<float>::max();
