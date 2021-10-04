@@ -39,7 +39,8 @@ int RecoE1039Sim(const int nevent = 200,
                 const int isim = 1,
                 bool is_displaced = true,
                 const bool do_analysis = true,
-                bool electron_tracking = false,
+                bool electron_tracking = true,
+                bool displaced_tracking = true,
                 std::string ifile="Brem_2.750000_z500_600_eps_-6.4",
                 std::string out_file = "output.root"
                 )
@@ -55,9 +56,11 @@ int RecoE1039Sim(const int nevent = 200,
     do_aprime_electron = true;
     is_displaced = true;
     electron_tracking = true;
+    displaced_tracking = true;
     break;
   case 3:
     do_gun = true;
+    displaced_tracking = true;
     break;
   case 4:
     do_dy = true;
@@ -82,7 +85,7 @@ int RecoE1039Sim(const int nevent = 200,
   // https://github.com/E1039-Collaboration/e1039-core/blob/master/framework/fun4all/Fun4AllBase.h#L33-L55
   // the verbosity of different modules can also be modified separately for
   // debugging
-  const int verbosity = 0;
+  const int verbosity = 110;
 
   // legacy rec container
   const bool legacy_rec_container =  true; // false is for e1039 format
@@ -151,6 +154,11 @@ int RecoE1039Sim(const int nevent = 200,
         "TRACK_ELECTRONS",
         true); // track electrons by eliminating certain muon hit requirements
   }
+  if(displaced_tracking){
+    rc->set_BoolFlag(
+        "TRACK_DISPLACED",
+        true); // track displaced particles by removing backwards extrapolation in st2+3 to st1 tracklet connection
+  }
 
   if (isDEBUG) {
     rc->Print();
@@ -203,6 +211,7 @@ int RecoE1039Sim(const int nevent = 200,
     //genp->add_particles("mu+", 1);  // mu+
     //genp->add_particles("mu-", 1); // mu-
     genp->add_particles("e+", 1); // positron
+    //genp->add_particles("gamma", 1); // photon
     //genp->add_particles("pi+", 1); // pions
     //genp->add_particles("kaon0L", 1); // k0long
     //genp->add_particles("proton", 1); // protons
@@ -211,6 +220,7 @@ int RecoE1039Sim(const int nevent = 200,
 					   PHG4SimpleEventGenerator::Uniform,
 					   PHG4SimpleEventGenerator::Uniform);
     if(is_displaced){
+      //genp->set_vertex_distribution_mean(0.0, 0.0, 500.);
       genp->set_vertex_distribution_mean(0.0, 0.0, 520.);
     } else {
       genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z);
@@ -220,6 +230,7 @@ int RecoE1039Sim(const int nevent = 200,
     genp->set_vertex_size_function(PHG4SimpleEventGenerator::Uniform);
     genp->set_vertex_size_parameters(0.0, 0.0);
     genp->set_pxpypz_range(-1., 1., -1., 1., 0., 100.);
+    //genp->set_pxpypz_range(-1., 1., -1., 1., 0., 10.);
     genp->Verbosity(verbosity);
     se->registerSubsystem(genp);
   } else if (do_dy or do_jpsi) {
@@ -326,12 +337,12 @@ int RecoE1039Sim(const int nevent = 200,
   reco->setInputTy(SQReco::E1039);                // options are SQReco::E906 and SQReco::E1039
   reco->setFitterTy(SQReco::KFREF);               // not relevant for the track finding, options are SQReco::KFREF and SQReco::LEGACY
   reco->set_evt_reducer_opt("none");              // if not provided, event reducer will be using JobOptsSvc to intialize; to turn off, set it to "none", for normal tracking, set to something like "aoc"
-  reco->set_enable_eval(false);                   // set to true to generate evaluation file which includes final track candidates 
+  reco->set_enable_eval(true);                   // set to true to generate evaluation file which includes final track candidates 
   reco->set_eval_file_name("eval.root");          // evaluation filename
-  reco->set_enable_eval_dst(false);               // set to true to include final track candidates in the DST tree
-  //reco->add_eval_list(3);                         // include back partial tracks in eval tree for debuging
-  //reco->add_eval_list(2);                         // include station-3+/- in eval tree for debuging
-  //reco->add_eval_list(1);                         // include station-2 in eval tree for debugging
+  reco->set_enable_eval_dst(true);               // set to true to include final track candidates in the DST tree
+  reco->add_eval_list(3);                         // include back partial tracks in eval tree for debuging
+  reco->add_eval_list(2);                         // include station-3+/- in eval tree for debuging
+  reco->add_eval_list(1);                         // include station-2 in eval tree for debugging
   se->registerSubsystem(reco);
 
   // truth node maker after tracking

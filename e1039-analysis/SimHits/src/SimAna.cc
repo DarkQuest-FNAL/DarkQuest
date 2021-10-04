@@ -215,7 +215,7 @@ int SimAna::ResetEvalVars() {
     track_nhits_st1[i]   = std::numeric_limits<float>::max();
     track_nhits_st2[i]   = std::numeric_limits<float>::max();
     track_nhits_st3[i]   = std::numeric_limits<float>::max();
-    /*
+    
     st3tracklet_charge[i]      = std::numeric_limits<int>::max();
     st3tracklet_nhits[i]       = std::numeric_limits<int>::max();
     st3tracklet_x_target[i]    = std::numeric_limits<float>::max();
@@ -252,7 +252,7 @@ int SimAna::ResetEvalVars() {
     st3tracklet_nhits_st1[i]   = std::numeric_limits<float>::max();
     st3tracklet_nhits_st2[i]   = std::numeric_limits<float>::max();
     st3tracklet_nhits_st3[i]   = std::numeric_limits<float>::max();
-    */
+    
   }
 
   // dimuons
@@ -432,7 +432,7 @@ int SimAna::process_event(PHCompositeNode* topNode) {
     truthtrack_pz_vtx[n_truthtracks] = (track->get_mom_vtx()).Pz();
 
     int recid = track->get_rec_track_id();
-    std::cout<<"the recid is "<<recid<<std::endl;
+    //std::cout<<"the recid is "<<recid<<std::endl;
     if(recid >= 0 && recid < n_recTracks) {
       SRecTrack* recTrack = legacyContainer ? &(_recEvent->getTrack(recid)) : dynamic_cast<SRecTrack*>(_recTrackVector->at(recid));
       //std::cout << "******************** (recTrack->getTargetMom()).Px() " << (recTrack->getTargetMom()).Px() << std::endl;
@@ -478,9 +478,9 @@ int SimAna::process_event(PHCompositeNode* topNode) {
     if (n_truthtracks >= 100)
       break;
   }
-  /*
+  
   n_st3tracklets = 0;
-  std::cout<<"about to enter st3tracklet loop"<<std::endl;
+  //std::cout<<"about to enter st3tracklet loop"<<std::endl;
   int n_st3trackletsINDEX = legacyContainer ? _recEvent->getNSt3Tracklets() : _recSt3TrackletVector->size();
   for(int itrk = 0; itrk < n_st3trackletsINDEX; ++itrk) {
     SRecTrack* track = legacyContainer ? &(_recEvent->getSt3Tracklet(n_st3tracklets)) : dynamic_cast<SRecTrack*>(_recSt3TrackletVector->at(n_st3tracklets));
@@ -525,7 +525,7 @@ int SimAna::process_event(PHCompositeNode* topNode) {
       break;
   }
   std::cout<<"print out of n_st3tracklets: "<<n_st3tracklets<<std::endl;
-*/
+
 
   // vertices
   n_truthdimuons = 0;
@@ -790,11 +790,11 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
     if(!_recTrackVector) {
       return Fun4AllReturnCodes::ABORTEVENT;
     }
-    /*
+    
     _recSt3TrackletVector  = findNode::getClass<SQTrackVector>(topNode, "SQRecSt3TrackletVector");
     if(!_recSt3TrackletVector) {
       return Fun4AllReturnCodes::ABORTEVENT;
-      }*/
+    }
   }
 
   _truth = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
@@ -930,8 +930,8 @@ void SimAna::MakeTree()
   saveTree->Branch("track_nhits_st2",      track_nhits_st2,     "track_nhits_st2[n_tracks]/I");
   saveTree->Branch("track_nhits_st3",      track_nhits_st3,     "track_nhits_st3[n_tracks]/I");
 
-  /*
-  std::cout<<"about to make tree for st3tracklets"<<std::endl;
+  
+  //std::cout<<"about to make tree for st3tracklets"<<std::endl;
   saveTree->Branch("n_st3tracklets",              &n_st3tracklets,            "n_st3tracklets/I");
   saveTree->Branch("st3tracklet_charge",         st3tracklet_charge,        "st3tracklet_charge[n_st3tracklets]/I");
   saveTree->Branch("st3tracklet_nhits",          st3tracklet_nhits,         "st3tracklet_nhits[n_st3tracklets]/I");
@@ -969,7 +969,7 @@ void SimAna::MakeTree()
   saveTree->Branch("st3tracklet_nhits_st1",      st3tracklet_nhits_st1,     "st3tracklet_nhits_st1[n_st3tracklets]/I");
   saveTree->Branch("st3tracklet_nhits_st2",      st3tracklet_nhits_st2,     "st3tracklet_nhits_st2[n_st3tracklets]/I");
   saveTree->Branch("st3tracklet_nhits_st3",      st3tracklet_nhits_st3,     "st3tracklet_nhits_st3[n_st3tracklets]/I");
-  */
+  
   saveTree->Branch("n_truthdimuons",     &n_truthdimuons,   "n_truthdimuons/I");
   saveTree->Branch("truthdimuon_mass",   truthdimuon_mass,  "truthdimuon_mass[n_truthdimuons]/F");
   saveTree->Branch("truthdimuon_x_vtx",  truthdimuon_x_vtx, "truthdimuon_x_vtx[n_truthdimuons]/F");
