@@ -42,10 +42,12 @@ public:
 
   void set_out_name(std::string out_file) {saveNameOut = out_file.c_str();}
   void set_legacy_rec_container(bool b); 
+  void save_secondaries(bool b);
 
 private:
   int GetNodes(PHCompositeNode* topNode);
-  bool legacyContainer;
+  bool _legacyContainer;
+  bool _saveSecondaries;
 
   void MakeTree();
 
@@ -300,6 +302,18 @@ private:
   float gpx_h4y2r[1000];
   float gpy_h4y2r[1000];
   float gpz_h4y2r[1000];
+
+  int n_secondaries;
+  int gtrkid_sec[1000];
+  int gpid_sec[1000];
+  float gvx_sec[1000];
+  float gvy_sec[1000];
+  float gvz_sec[1000];
+  float gpx_sec[1000];
+  float gpy_sec[1000];
+  float gpz_sec[1000];
+  float ge_sec[1000];
+  //int nhits_ecal_sec[1000];
 
   bool fpga_trigger[5];
 

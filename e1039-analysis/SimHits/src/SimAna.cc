@@ -27,7 +27,7 @@
 
 #include "SimAna.h"
 
-SimAna::SimAna(const std::string& name): SubsysReco(name), legacyContainer(true)
+SimAna::SimAna(const std::string& name): SubsysReco(name), _legacyContainer(true), _saveSecondaries(false)
 {}
 
 SimAna::~SimAna() {}
@@ -131,7 +131,11 @@ int SimAna::FindCommonHitIDs(std::vector<int>& hitidvec1, std::vector<int>& hiti
 }
 
 void SimAna::set_legacy_rec_container(bool b) { 
-  legacyContainer = b; 
+  _legacyContainer = b; 
+}
+
+void SimAna::save_secondaries(bool b) {
+  _saveSecondaries = b;
 }
 
 int SimAna::ResetEvalVars() {
@@ -305,6 +309,12 @@ int SimAna::ResetEvalVars() {
     gpx_st2[i] = std::numeric_limits<float>::max();
     gpy_st2[i] = std::numeric_limits<float>::max();
     gpz_st2[i] = std::numeric_limits<float>::max();
+    gx_st3[i] = std::numeric_limits<float>::max();
+    gy_st3[i] = std::numeric_limits<float>::max();
+    gz_st3[i] = std::numeric_limits<float>::max();
+    gpx_st3[i] = std::numeric_limits<float>::max();
+    gpy_st3[i] = std::numeric_limits<float>::max();
+    gpz_st3[i] = std::numeric_limits<float>::max();
 
     gx_h1[i] = std::numeric_limits<float>::max();
     gy_h1[i] = std::numeric_limits<float>::max();
@@ -332,6 +342,22 @@ int SimAna::ResetEvalVars() {
     gpz_h4[i] = std::numeric_limits<float>::max();
   }
 
+  // secondary hits
+  n_secondaries = 0;
+  for (int i = 0; i < 1000; ++i) {
+    gtrkid_sec[i] = std::numeric_limits<int>::max();
+    gpid_sec[i] = std::numeric_limits<int>::max();
+    gvx_sec[i] = std::numeric_limits<float>::max();
+    gvy_sec[i] = std::numeric_limits<float>::max();
+    gvz_sec[i] = std::numeric_limits<float>::max();
+    gpx_sec[i] = std::numeric_limits<float>::max();
+    gpy_sec[i] = std::numeric_limits<float>::max();
+    gpz_sec[i] = std::numeric_limits<float>::max();
+    ge_sec[i] = std::numeric_limits<float>::max();
+    //nhits_ecal_sec[i] = 0;
+  }
+
+  // trigger
   for (int i = 0; i < 5; ++i) {
     fpga_trigger[i] = 0;
   }
@@ -365,7 +391,7 @@ int SimAna::process_event(PHCompositeNode* topNode) {
   }
 
   // tracks
-  int n_recTracks = legacyContainer ? _recEvent->getNTracks() : _recTrackVector->size();
+  int n_recTracks = _legacyContainer ? _recEvent->getNTracks() : _recTrackVector->size();
   n_truthtracks = 0;
   n_tracks = 0;
   for(int itrk = 0; itrk < _trackVector->size(); ++itrk) {
@@ -393,7 +419,7 @@ int SimAna::process_event(PHCompositeNode* topNode) {
 
     int recid = track->get_rec_track_id();
     if(recid >= 0 && recid < n_recTracks) {
-      SRecTrack* recTrack = legacyContainer ? &(_recEvent->getTrack(recid)) : dynamic_cast<SRecTrack*>(_recTrackVector->at(recid));
+      SRecTrack* recTrack = _legacyContainer ? &(_recEvent->getTrack(recid)) : dynamic_cast<SRecTrack*>(_recTrackVector->at(recid));
       //std::cout << "******************** (recTrack->getTargetMom()).Px() " << (recTrack->getTargetMom()).Px() << std::endl;
       track_charge[n_tracks] = recTrack->getCharge();
       track_nhits[n_tracks] = recTrack->getNHits();
@@ -461,9 +487,9 @@ int SimAna::process_event(PHCompositeNode* topNode) {
   }
 
   n_dimuons = 0;
-  int nRecDimuons = legacyContainer ? _recEvent->getNDimuons() : (_recDimuonVector ? _recDimuonVector->size() : -1);
+  int nRecDimuons = _legacyContainer ? _recEvent->getNDimuons() : (_recDimuonVector ? _recDimuonVector->size() : -1);
   for(int i = 0; i < nRecDimuons; ++i) {
-    SRecDimuon* recDimuon = legacyContainer ? &(_recEvent->getDimuon(i)) : dynamic_cast<SRecDimuon*>(_recDimuonVector->at(i));
+    SRecDimuon* recDimuon = _legacyContainer ? &(_recEvent->getDimuon(i)) : dynamic_cast<SRecDimuon*>(_recDimuonVector->at(i));
     dimuon_mass[n_dimuons] = recDimuon->mass;
     dimuon_chisq[n_dimuons] = recDimuon->get_chisq();
     dimuon_x_vtx[n_dimuons] = (recDimuon->vtx).X();
@@ -505,15 +531,15 @@ int SimAna::process_event(PHCompositeNode* topNode) {
     if (n_showers >= 1000)
       break;
   }
+  
+  // uncomment this to print the truth tree
+  //_truth->identify();
 
-  /*
-  _truth->identify();
-  for (auto iterp = _truth->GetSecondaryParticleRange().first;
-       iterp != _truth->GetSecondaryParticleRange().second; ++iterp) {
-    PHG4Particle *secondary = iterp->second;
-    std::cout << " secondary particle " << secondary->get_pid() << " e" << secondary->get_e() << std::endl;
-  }
-  */
+  //for (auto iterp = _truth->GetSecondaryParticleRange().first;
+  //     iterp != _truth->GetSecondaryParticleRange().second; ++iterp) {
+  //  PHG4Particle *secondary = iterp->second;
+  //std::cout << " secondary particle " << secondary->get_pid() << " e" << secondary->get_e() << std::endl;
+  //}
 
   n_primaries = 0;
   for (auto iterp = _truth->GetPrimaryParticleRange().first;
@@ -538,7 +564,6 @@ int SimAna::process_event(PHCompositeNode* topNode) {
 
     int trkID = primary->get_track_id();
     gtrkid[n_primaries] = trkID;
-
 
     // G4Hits at different stations                                                                                                                                                                       
     if(g4hc_ecal){
@@ -639,6 +664,47 @@ int SimAna::process_event(PHCompositeNode* topNode) {
     ++n_primaries;
   }
 
+  /*
+  _saveSecondaries = true;
+  if(_saveSecondaries){
+    n_secondaries = 0;
+    for (auto iterp = _truth->GetSecondaryParticleRange().first;
+         iterp != _truth->GetSecondaryParticleRange().second; ++iterp) {
+      PHG4Particle *secondary = iterp->second;
+      //if(secondary->get_pid()==13 || secondary->get_pid()==-13){ // save only muons for now
+      //std::cout << secondary->get_pid() << " " << secondary->get_track_id() << std::endl;
+      gpid_sec[n_secondaries] = secondary->get_pid();
+      //int vtx_id = secondary->get_vtx_id();
+      //PHG4VtxPoint *vtx = _truth->GetVtx(vtx_id);
+      //gvx_sec[n_secondaries] = vtx->get_x();
+      //gvy_sec[n_secondaries] = vtx->get_y();
+      //gvz_sec[n_secondaries] = vtx->get_z();
+      
+      gpx_sec[n_secondaries] = secondary->get_px();
+      gpy_sec[n_secondaries] = secondary->get_py();
+      gpz_sec[n_secondaries] = secondary->get_pz();
+      ge_sec[n_secondaries] = secondary->get_e();
+      
+      //int trkID = secondary->get_track_id();
+      //gtrkid_sec[n_secondaries] = trkID;
+      
+      //nhits_ecal_sec[n_secondaries] =0;                                                                                                                                                                                                                                   
+
+      if(g4hc_ecal){
+	std::vector<PHG4Hit*> g4hits = FindG4HitsAtStation(trkID, g4hc_ecal);
+	for(int iecal=0; iecal<g4hits.size(); ++iecal) {
+	  PHG4Hit* g4hit = g4hits[iecal];
+	  ++nhits_ecal_sec[n_secondaries];
+	}
+      }
+
+
+      ++n_secondaries;
+      //}
+    }
+  }
+  */
+
   //dptrigger
   //std::cout<<"DS in SimAna: "<<_sqEvent->get_trigger(SQEvent::MATRIX1)<<" "<<_sqEvent->get_trigger(SQEvent::MATRIX2)<<" "<<_sqEvent->get_trigger(SQEvent::MATRIX3)<<" "<<_sqEvent->get_trigger(SQEvent::MATRIX4)<<" "<<_sqEvent->get_trigger(SQEvent::MATRIX5)<<" "<<std::endl;
 
@@ -684,7 +750,7 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
     std::cout << "ERROR:: did not find SQTruthDimuonVector" << std::endl;
   }
 
-  if(legacyContainer) {
+  if(_legacyContainer) {
     _recEvent = findNode::getClass<SRecEvent>(topNode, "SRecEvent");
     if(!_recEvent) {
       _recEvent = nullptr;
@@ -952,8 +1018,21 @@ void SimAna::MakeTree()
   saveTree->Branch("gpy_p1",        gpy_p1,              "gpy_p1[n_primaries]/F");
   saveTree->Branch("gpz_p1",        gpz_p1,              "gpz_p1[n_primaries]/F");
 
+  if(_saveSecondaries){
+    saveTree->Branch("n_secondaries",     &n_secondaries,          "n_secondaries/I");
+    //saveTree->Branch("gtrkid_sec",        gtrkid_sec,              "gtrkid_sec[n_secondaries]/I");
+    saveTree->Branch("gpid_sec",          gpid_sec,                "gpid_sec[n_secondaries]/I");
+    //saveTree->Branch("gvx_sec",           gvx_sec,                 "gvx_sec[n_secondaries]/F");
+    //saveTree->Branch("gvy_sec",           gvy_sec,                 "gvy_sec[n_secondaries]/F");
+    //saveTree->Branch("gvz_sec",           gvz_sec,                 "gvz_sec[n_secondaries]/F");
+    saveTree->Branch("gpx_sec",           gpx_sec,                 "gpx_sec[n_secondaries]/F");
+    saveTree->Branch("gpy_sec",           gpy_sec,                 "gpy_sec[n_secondaries]/F");
+    saveTree->Branch("gpz_sec",           gpz_sec,                 "gpz_sec[n_secondaries]/F");
+    saveTree->Branch("ge_sec",            ge_sec,                  "ge_sec[n_secondaries]/F");
+    //saveTree->Branch("nhits_ecal_sec",    nhits_ecal_sec,          "nhits_ecal_sec[n_secondaries]/I");
+  }
+
   saveTree->Branch("fpga_trigger",  fpga_trigger,        "fpga_trigger[5]/O");
 
   saveTree->Branch("weight",        &weight,              "weight/F");
-
 }
