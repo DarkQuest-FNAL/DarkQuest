@@ -55,6 +55,7 @@ private:
 
   SRecEvent* _recEvent;
   SQTrackVector*  _recTrackVector;
+  SQTrackVector*  _recSt3TrackletVector;
   SQDimuonVector* _recDimuonVector;
 
   SQEvent_v1* _sqEvent;
@@ -163,6 +164,8 @@ private:
   float track_py_vtx[100];
   float track_pz_vtx[100];
   float track_m[100];
+  float track_x_CAL[100];
+  float track_y_CAL[100];
   float track_chisq[100];
   float track_prob[100];
   float track_quality[100];
@@ -170,6 +173,45 @@ private:
   int track_nhits_st1[100];
   int track_nhits_st2[100];
   int track_nhits_st3[100];
+
+  int n_st3tracklets;
+  float st3tracklet_x_CAL[100];
+  float st3tracklet_y_CAL[100];
+  float st3tracklet_chisq[100];
+  float st3tracklet_prob[100];
+  float st3tracklet_quality[100];
+  int st3tracklet_isValid[100];
+  int st3tracklet_nhits_st1[100];
+  int st3tracklet_nhits_st2[100];
+  int st3tracklet_nhits_st3[100];
+  int st3tracklet_nhits[100];
+  float st3tracklet_x_target[100];
+  float st3tracklet_y_target[100];
+  float st3tracklet_z_target[100];
+  float st3tracklet_px_target[100];
+  float st3tracklet_py_target[100];
+  float st3tracklet_pz_target[100];
+  float st3tracklet_x_st1[100];
+  float st3tracklet_y_st1[100];
+  float st3tracklet_z_st1[100];
+  float st3tracklet_px_st1[100];
+  float st3tracklet_py_st1[100];
+  float st3tracklet_pz_st1[100];
+  float st3tracklet_x_st3[100];
+  float st3tracklet_y_st3[100];
+  float st3tracklet_z_st3[100];
+  float st3tracklet_px_st3[100];
+  float st3tracklet_py_st3[100];
+  float st3tracklet_pz_st3[100];
+  float st3tracklet_x_vtx[100];
+  float st3tracklet_y_vtx[100];
+  float st3tracklet_z_vtx[100];
+  float st3tracklet_px_vtx[100];
+  float st3tracklet_py_vtx[100];
+  float st3tracklet_pz_vtx[100];
+  float st3tracklet_m[100];
+  int st3tracklet_charge[100];
+
 
   int n_truthdimuons;
   float truthdimuon_mass[100];

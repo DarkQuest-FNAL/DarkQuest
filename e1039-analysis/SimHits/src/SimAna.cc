@@ -154,6 +154,7 @@ int SimAna::ResetEvalVars() {
   // truth tracks and rec tracks
   n_truthtracks = 0;
   n_tracks = 0;
+  n_st3tracklets = 0;
 
   for(int i=0; i<100; ++i) {
     truthtrack_charge[i] = std::numeric_limits<int>::max();
@@ -205,6 +206,8 @@ int SimAna::ResetEvalVars() {
     track_py_vtx[i]      = std::numeric_limits<float>::max();
     track_pz_vtx[i]      = std::numeric_limits<float>::max();
     track_m[i]           = std::numeric_limits<float>::max();
+    track_x_CAL[i]       = std::numeric_limits<float>::max();
+    track_y_CAL[i]       = std::numeric_limits<float>::max();
     track_chisq[i]       = std::numeric_limits<float>::max();
     track_prob[i]        = std::numeric_limits<float>::max();
     track_quality[i]     = std::numeric_limits<float>::max();
@@ -212,6 +215,44 @@ int SimAna::ResetEvalVars() {
     track_nhits_st1[i]   = std::numeric_limits<float>::max();
     track_nhits_st2[i]   = std::numeric_limits<float>::max();
     track_nhits_st3[i]   = std::numeric_limits<float>::max();
+    
+    st3tracklet_charge[i]      = std::numeric_limits<int>::max();
+    st3tracklet_nhits[i]       = std::numeric_limits<int>::max();
+    st3tracklet_x_target[i]    = std::numeric_limits<float>::max();
+    st3tracklet_y_target[i]    = std::numeric_limits<float>::max();
+    st3tracklet_z_target[i]    = std::numeric_limits<float>::max();
+    st3tracklet_px_target[i]   = std::numeric_limits<float>::max();
+    st3tracklet_py_target[i]   = std::numeric_limits<float>::max();
+    st3tracklet_pz_target[i]   = std::numeric_limits<float>::max();
+    st3tracklet_x_st1[i]       = std::numeric_limits<float>::max();
+    st3tracklet_y_st1[i]       = std::numeric_limits<float>::max();
+    st3tracklet_z_st1[i]       = std::numeric_limits<float>::max();
+    st3tracklet_px_st1[i]      = std::numeric_limits<float>::max();
+    st3tracklet_py_st1[i]      = std::numeric_limits<float>::max();
+    st3tracklet_pz_st1[i]      = std::numeric_limits<float>::max();
+    st3tracklet_x_st3[i]       = std::numeric_limits<float>::max();
+    st3tracklet_y_st3[i]       = std::numeric_limits<float>::max();
+    st3tracklet_z_st3[i]       = std::numeric_limits<float>::max();
+    st3tracklet_px_st3[i]      = std::numeric_limits<float>::max();
+    st3tracklet_py_st3[i]      = std::numeric_limits<float>::max();
+    st3tracklet_pz_st3[i]      = std::numeric_limits<float>::max();
+    st3tracklet_x_vtx[i]       = std::numeric_limits<float>::max();
+    st3tracklet_y_vtx[i]       = std::numeric_limits<float>::max();
+    st3tracklet_z_vtx[i]       = std::numeric_limits<float>::max();
+    st3tracklet_px_vtx[i]      = std::numeric_limits<float>::max();
+    st3tracklet_py_vtx[i]      = std::numeric_limits<float>::max();
+    st3tracklet_pz_vtx[i]      = std::numeric_limits<float>::max();
+    st3tracklet_m[i]           = std::numeric_limits<float>::max();
+    st3tracklet_x_CAL[i]       = std::numeric_limits<float>::max();
+    st3tracklet_y_CAL[i]       = std::numeric_limits<float>::max();
+    st3tracklet_chisq[i]       = std::numeric_limits<float>::max();
+    st3tracklet_prob[i]        = std::numeric_limits<float>::max();
+    st3tracklet_quality[i]     = std::numeric_limits<float>::max();
+    st3tracklet_isValid[i]     = std::numeric_limits<int>::max();
+    st3tracklet_nhits_st1[i]   = std::numeric_limits<float>::max();
+    st3tracklet_nhits_st2[i]   = std::numeric_limits<float>::max();
+    st3tracklet_nhits_st3[i]   = std::numeric_limits<float>::max();
+    
   }
 
   // dimuons
@@ -373,7 +414,6 @@ int SimAna::process_event(PHCompositeNode* topNode) {
   // tracks
   int n_recTracks = legacyContainer ? _recEvent->getNTracks() : _recTrackVector->size();
   n_truthtracks = 0;
-  n_tracks = 0;
   for(int itrk = 0; itrk < _trackVector->size(); ++itrk) {
     SQTrack* track = _trackVector->at(itrk);
 
@@ -398,6 +438,7 @@ int SimAna::process_event(PHCompositeNode* topNode) {
     truthtrack_pz_vtx[n_truthtracks] = (track->get_mom_vtx()).Pz();
 
     int recid = track->get_rec_track_id();
+    //std::cout<<"the recid is "<<recid<<std::endl;
     if(recid >= 0 && recid < n_recTracks) {
       SRecTrack* recTrack = legacyContainer ? &(_recEvent->getTrack(recid)) : dynamic_cast<SRecTrack*>(_recTrackVector->at(recid));
       //std::cout << "******************** (recTrack->getTargetMom()).Px() " << (recTrack->getTargetMom()).Px() << std::endl;
@@ -427,6 +468,8 @@ int SimAna::process_event(PHCompositeNode* topNode) {
       track_px_vtx[n_tracks] = (recTrack->getVertexMom()).X();
       track_py_vtx[n_tracks] = (recTrack->getVertexMom()).Y();
       track_pz_vtx[n_tracks] = (recTrack->getVertexMom()).Z();
+      track_x_CAL[n_tracks] = track_x_st3[n_tracks] + (track_px_st3[n_tracks]/track_pz_st3[n_tracks])*(1930.-track_z_st3[n_tracks]);
+      track_y_CAL[n_tracks] = track_y_st3[n_tracks] + (track_py_st3[n_tracks]/track_pz_st3[n_tracks])*(1930.-track_z_st3[n_tracks]);
       track_chisq[n_tracks] = recTrack->getChisq();
       track_prob[n_tracks] = recTrack->getProb();
       track_quality[n_tracks] = recTrack->getQuality();
@@ -441,6 +484,54 @@ int SimAna::process_event(PHCompositeNode* topNode) {
     if (n_truthtracks >= 100)
       break;
   }
+  
+  n_st3tracklets = 0;
+  //std::cout<<"about to enter st3tracklet loop"<<std::endl;
+  int n_st3trackletsINDEX = legacyContainer ? _recEvent->getNSt3Tracklets() : _recSt3TrackletVector->size();
+  for(int itrk = 0; itrk < n_st3trackletsINDEX; ++itrk) {
+    SRecTrack* track = legacyContainer ? &(_recEvent->getSt3Tracklet(n_st3tracklets)) : dynamic_cast<SRecTrack*>(_recSt3TrackletVector->at(n_st3tracklets));
+    st3tracklet_charge[n_st3tracklets] = track->getCharge();
+    st3tracklet_nhits[n_st3tracklets] = track->getNHits();
+    st3tracklet_x_target[n_st3tracklets] = (track->getTargetPos()).X();
+    st3tracklet_y_target[n_st3tracklets] = (track->getTargetPos()).Y();
+    st3tracklet_z_target[n_st3tracklets] = (track->getTargetPos()).Z();
+    st3tracklet_px_target[n_st3tracklets] = (track->getTargetMom()).Px();
+    st3tracklet_py_target[n_st3tracklets] = (track->getTargetMom()).Py();
+    st3tracklet_pz_target[n_st3tracklets] = (track->getTargetMom()).Pz();
+    st3tracklet_x_st1[n_st3tracklets] = (track->getPositionVecSt1()).X();
+    st3tracklet_y_st1[n_st3tracklets] = (track->getPositionVecSt1()).Y();
+    st3tracklet_z_st1[n_st3tracklets] = (track->getPositionVecSt1()).Z();
+    st3tracklet_px_st1[n_st3tracklets] = (track->getMomentumVecSt1()).Px();
+    st3tracklet_py_st1[n_st3tracklets] = (track->getMomentumVecSt1()).Py();
+    st3tracklet_pz_st1[n_st3tracklets] = (track->getMomentumVecSt1()).Pz();
+    st3tracklet_x_st3[n_st3tracklets] = (track->getPositionVecSt3()).X();
+    st3tracklet_y_st3[n_st3tracklets] = (track->getPositionVecSt3()).Y();
+    st3tracklet_z_st3[n_st3tracklets] = (track->getPositionVecSt3()).Z();
+    st3tracklet_px_st3[n_st3tracklets] = (track->getMomentumVecSt3()).Px();
+    st3tracklet_py_st3[n_st3tracklets] = (track->getMomentumVecSt3()).Py();
+    st3tracklet_pz_st3[n_st3tracklets] = (track->getMomentumVecSt3()).Pz();
+    st3tracklet_x_vtx[n_st3tracklets] = (track->getVertexPos()).X();
+    st3tracklet_y_vtx[n_st3tracklets] = (track->getVertexPos()).Y();
+    st3tracklet_z_vtx[n_st3tracklets] = (track->getVertexPos()).Z();
+    st3tracklet_px_vtx[n_st3tracklets] = (track->getVertexMom()).X();
+    st3tracklet_py_vtx[n_st3tracklets] = (track->getVertexMom()).Y();
+    st3tracklet_pz_vtx[n_st3tracklets] = (track->getVertexMom()).Z();
+    st3tracklet_x_CAL[n_st3tracklets] = st3tracklet_x_st3[n_st3tracklets] + (st3tracklet_px_st3[n_st3tracklets]/st3tracklet_pz_st3[n_st3tracklets])*(1930.-st3tracklet_z_st3[n_st3tracklets]);
+    st3tracklet_y_CAL[n_st3tracklets] = st3tracklet_y_st3[n_st3tracklets] + (st3tracklet_py_st3[n_st3tracklets]/st3tracklet_pz_st3[n_st3tracklets])*(1930.-st3tracklet_z_st3[n_st3tracklets]);
+    st3tracklet_chisq[n_st3tracklets] = track->getChisq();
+    st3tracklet_prob[n_st3tracklets] = track->getProb();
+    st3tracklet_quality[n_st3tracklets] = track->getQuality();
+    st3tracklet_isValid[n_st3tracklets] = track->isValid();
+    st3tracklet_nhits_st1[n_st3tracklets] = track->getNHitsInStation(1);
+    st3tracklet_nhits_st2[n_st3tracklets] = track->getNHitsInStation(2);
+    st3tracklet_nhits_st3[n_st3tracklets] = track->getNHitsInStation(3);
+    
+    ++n_st3tracklets;
+    if (n_st3tracklets >= 100)
+      break;
+  }
+  std::cout<<"print out of n_st3tracklets: "<<n_st3tracklets<<std::endl;
+
 
   // vertices
   n_truthdimuons = 0;
@@ -513,11 +604,12 @@ int SimAna::process_event(PHCompositeNode* topNode) {
   }
 
   /*
+  std::cout<<"ABOUT TO look at the shower"<<std::endl;
   _truth->identify();
   for (auto iterp = _truth->GetSecondaryParticleRange().first;
        iterp != _truth->GetSecondaryParticleRange().second; ++iterp) {
     PHG4Particle *secondary = iterp->second;
-    std::cout << " secondary particle " << secondary->get_pid() << " e" << secondary->get_e() << std::endl;
+    std::cout << " secondary particle " << secondary->get_pid() << " e" << secondary->get_e() << " vtx id: " << secondary->get_vtx_id() << std::endl;
   }
   */
 
@@ -704,6 +796,11 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
     if(!_recTrackVector) {
       return Fun4AllReturnCodes::ABORTEVENT;
     }
+    
+    _recSt3TrackletVector  = findNode::getClass<SQTrackVector>(topNode, "SQRecSt3TrackletVector");
+    if(!_recSt3TrackletVector) {
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
   }
 
   _truth = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
@@ -761,6 +858,7 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
 
 void SimAna::MakeTree()
 {
+  std::cout<<"FILE name here is? "<<saveNameOut<<std::endl;
   saveFile= new TFile(saveNameOut, "RECREATE");
   saveTree = new TTree("Events", "Tree Created by SimAna");
   saveTree->Branch("eventID", &eventID, "eventID/I");
@@ -828,6 +926,8 @@ void SimAna::MakeTree()
   saveTree->Branch("track_py_vtx",         track_py_vtx,        "track_py_vtx[n_tracks]/F");
   saveTree->Branch("track_pz_vtx",         track_pz_vtx,        "track_pz_vtx[n_tracks]/F");
   saveTree->Branch("track_m",              track_m,             "track_m[n_tracks]/F");
+  saveTree->Branch("track_x_CAL",          track_x_CAL,         "track_x_CAL[n_tracks]/F");
+  saveTree->Branch("track_y_CAL",          track_y_CAL,         "track_y_CAL[n_tracks]/F");
   saveTree->Branch("track_chisq",          track_chisq,         "track_chisq[n_tracks]/F");
   saveTree->Branch("track_prob",           track_prob,          "track_prob[n_tracks]/F");
   saveTree->Branch("track_quality",        track_quality,       "track_quality[n_tracks]/F");
@@ -836,6 +936,46 @@ void SimAna::MakeTree()
   saveTree->Branch("track_nhits_st2",      track_nhits_st2,     "track_nhits_st2[n_tracks]/I");
   saveTree->Branch("track_nhits_st3",      track_nhits_st3,     "track_nhits_st3[n_tracks]/I");
 
+  
+  //std::cout<<"about to make tree for st3tracklets"<<std::endl;
+  saveTree->Branch("n_st3tracklets",              &n_st3tracklets,            "n_st3tracklets/I");
+  saveTree->Branch("st3tracklet_charge",         st3tracklet_charge,        "st3tracklet_charge[n_st3tracklets]/I");
+  saveTree->Branch("st3tracklet_nhits",          st3tracklet_nhits,         "st3tracklet_nhits[n_st3tracklets]/I");
+  saveTree->Branch("st3tracklet_x_target",       st3tracklet_x_target,      "st3tracklet_x_target[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_y_target",       st3tracklet_y_target,      "st3tracklet_y_target[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_z_target",       st3tracklet_z_target,      "st3tracklet_z_target[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_px_target",      st3tracklet_px_target,     "st3tracklet_px_target[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_py_target",      st3tracklet_py_target,     "st3tracklet_py_target[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_pz_target",      st3tracklet_pz_target,     "st3tracklet_pz_target[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_x_st1",          st3tracklet_x_st1,         "st3tracklet_x_st1[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_y_st1",          st3tracklet_y_st1,         "st3tracklet_y_st1[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_z_st1",          st3tracklet_z_st1,         "st3tracklet_z_st1[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_px_st1",         st3tracklet_px_st1,        "st3tracklet_px_st1[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_py_st1",         st3tracklet_py_st1,        "st3tracklet_py_st1[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_pz_st1",         st3tracklet_pz_st1,        "st3tracklet_pz_st1[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_x_st3",          st3tracklet_x_st3,         "st3tracklet_x_st3[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_y_st3",          st3tracklet_y_st3,         "st3tracklet_y_st3[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_z_st3",          st3tracklet_z_st3,         "st3tracklet_z_st3[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_px_st3",         st3tracklet_px_st3,        "st3tracklet_px_st3[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_py_st3",         st3tracklet_py_st3,        "st3tracklet_py_st3[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_pz_st3",         st3tracklet_pz_st3,        "st3tracklet_pz_st3[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_x_vtx",          st3tracklet_x_vtx,         "st3tracklet_x_vtx[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_y_vtx",          st3tracklet_y_vtx,         "st3tracklet_y_vtx[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_z_vtx",          st3tracklet_z_vtx,         "st3tracklet_z_vtx[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_px_vtx",         st3tracklet_px_vtx,        "st3tracklet_px_vtx[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_py_vtx",         st3tracklet_py_vtx,        "st3tracklet_py_vtx[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_pz_vtx",         st3tracklet_pz_vtx,        "st3tracklet_pz_vtx[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_m",              st3tracklet_m,             "st3tracklet_m[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_x_CAL",          st3tracklet_x_CAL,         "st3tracklet_x_CAL[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_y_CAL",          st3tracklet_y_CAL,         "st3tracklet_y_CAL[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_chisq",          st3tracklet_chisq,         "st3tracklet_chisq[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_prob",           st3tracklet_prob,          "st3tracklet_prob[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_quality",        st3tracklet_quality,       "st3tracklet_quality[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_isValid",        st3tracklet_isValid,       "st3tracklet_isValid[n_st3tracklets]/I");
+  saveTree->Branch("st3tracklet_nhits_st1",      st3tracklet_nhits_st1,     "st3tracklet_nhits_st1[n_st3tracklets]/I");
+  saveTree->Branch("st3tracklet_nhits_st2",      st3tracklet_nhits_st2,     "st3tracklet_nhits_st2[n_st3tracklets]/I");
+  saveTree->Branch("st3tracklet_nhits_st3",      st3tracklet_nhits_st3,     "st3tracklet_nhits_st3[n_st3tracklets]/I");
+  
   saveTree->Branch("n_truthdimuons",     &n_truthdimuons,   "n_truthdimuons/I");
   saveTree->Branch("truthdimuon_mass",   truthdimuon_mass,  "truthdimuon_mass[n_truthdimuons]/F");
   saveTree->Branch("truthdimuon_x_vtx",  truthdimuon_x_vtx, "truthdimuon_x_vtx[n_truthdimuons]/F");
