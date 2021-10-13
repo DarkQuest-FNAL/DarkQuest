@@ -25,69 +25,115 @@ using namespace std;
  * Macro used to analyze simulation in SpinQuest
  * isim = 1 to run on Aprime to dimuon signal
  * isim = 2 to run on Aprime to dielectron signal
- * isim = 3 to run on single gun (default is muon, see gun options below)
+ * isim = 3 to run on single particle gun:
+ * - igun = 1: muon
+ * - igun = 2: electron
+ * - igun = 3: positron
+ * - igun = 4: proton
+ * - igun = 5: gamma
+ * - igun = 6: pi+
+ * - igun = 7: pi-
+ * - igun = 8: klong
  * isim = 4 to run on DY to dimuon sample generated with Pythia
  * isim = 5 to run on J/psi to dimuon sample generated with Pythia
  * isim = 6 to run on cosmic sample
  * isim = 7 to run on trimuon sample
- * isim = 8 to run on proton gun
  *
- * is_displaced decides to run with the displaced config or not.
- * do_analysis runs the analysis ntuple
- * for Aprime signal, always run with is_displaced to True
+ * do_displaced_tracking: to run tracking - if particle is e+/e-/gamma then electron_tracking is set to true by default too
+ * do_analysis: to produce the analysis ntuple
+ * for Aprime signal, is_displaced to always set to True
  */
 
-int RecoE1039Sim(const int nevent = 10,
+int RecoE1039Sim(const int nevent = 200,
 		 const int isim = 1,
-		 bool is_displaced = false,
+		 const int igun = 0,
+		 const double zvertex = -300, // target_coil_pos_z
+		 const bool do_displaced_tracking = true,
 		 const bool do_analysis = true,
-		 std::string input_file = "Brem_0.470915_z500_600_eps_-6.4",
-		 std::string input_path = "/seaquest/users/cmantill/DarkQuest/lhe/output/displaced_Aprime_Electrons_z500-600/",
+		 std::string input_file = "Brem_2.750000_z500_600_eps_-6.4",
+		 std::string input_path = "/seaquest/users/cmantill/DarkQuest/lhe/output/displaced_Aprime_Muons_z500-600/",
 		 std::string out_file = "output.root",
-		 std::string out_path = "./"
+		 std::string out_path = "./",
+		 const int verbosity = 1
                 )
 {
   // input simulation
-  bool do_aprime_muon{false},do_aprime_electron{false},do_gun{false},do_dy{false},do_jpsi{false},do_cosmic{false},do_trimuon{false},do_protongun{false};
+  bool do_aprime_muon{false},do_aprime_electron{false};
+  bool do_gun{false};
+  bool do_dy{false},do_jpsi{false},do_cosmic{false},do_trimuon{false};
+
+  // tracking options
+  bool electron_tracking{false};
+
+  // gun options
+  std::string particle_name;
+  
   switch(isim){
   case 1: 
     do_aprime_muon = true;
-    is_displaced = true; 
     std::cout << " DISPLACED A' TO MUONS " << std::endl;
     break;
   case 2:
     do_aprime_electron = true;
-    is_displaced = true;
+    electron_tracking = true;
     std::cout << " DISPLACED A' TO ELECTRONS " << std::endl;
     break;
   case 3:
     do_gun = true;
-    std::cout << " GUN " << std::endl;
+    switch(igun){
+    case 1: // muon gun
+      particle_name = "mu-";
+      break;
+    case 2: // electron gun
+      particle_name = "e-";
+      electron_tracking = true;
+      break;
+    case 3: // positron gun
+      particle_name = "e+";
+      electron_tracking = true;
+      break;
+    case 4: // proton gun
+      particle_name = "proton";
+      break;
+    case 5: // photon gun
+      particle_name = "gamma";
+      electron_tracking = true;
+      break;
+    case 6: // pi+ gun
+      particle_name = "pi+";
+      break;
+    case 7: // pi- gun
+      particle_name = "pi-";
+      break;
+    case 8: // klong gun
+      particle_name = "klong";
+      break;
+    }
+    std::cout << " " << particle_name << " GUN " << std::endl;
     break;
   case 4:
     do_dy = true;
+    std::cout << " DO DY " << std::endl;
     break;
   case 5:
     do_jpsi = true;
+    std::cout << " DO J/PSI " << std::endl;
     break;
   case 6:
     do_cosmic = true;
+    std::cout << " DO COSMIC " << std::endl;
     break;
   case 7:
     do_trimuon = true;
-    break;
-  case 8:
-    do_protongun = true;
+    std::cout << " DO TRIMUON " << std::endl;
     break;
   }
 
-  // print more information with debug mode
-  const bool isDEBUG = false;
-  // verbosity option
-  // https://github.com/E1039-Collaboration/e1039-core/blob/master/framework/fun4all/Fun4AllBase.h#L33-L55
-  // the verbosity of different modules can also be modified separately for
-  // debugging
-  const int verbosity = 0;
+  /** Verbosity (https://github.com/E1039-Collaboration/e1039-core/blob/master/framework/fun4all/Fun4AllBase.h#L33-L55)
+   *  the verbosity of different modules can also be modified separately for debugging
+   */
+  bool isDEBUG = false;
+  if(verbosity > 0)  isDEBUG = true;
 
   // legacy rec container
   const bool legacy_rec_container =  true; // false is for e1039 format
@@ -101,7 +147,7 @@ int RecoE1039Sim(const int nevent = 10,
   const bool do_absorber   = true;
   const bool do_dphodo     = true;
   const bool do_station1DC = false; // station-1 drift chamber should be turned off by default
-  const bool doEMCal       = true; // emcal turned on by default
+  const bool doEMCal       = true; // emcal turned on by default (for DarkQuest!)
 
   // SpinQuest constants
   const double target_coil_pos_z = -300;
@@ -132,27 +178,17 @@ int RecoE1039Sim(const int nevent = 10,
     rc->set_DoubleFlag("FMAGSTR", 0.);
   }
 
-  // track quality cuts (change these parameters for displaced tracking)
-  // code from
-  // https://cdcvs.fnal.gov/redmine/projects/seaquest-ktracker/repository/revisions/2a8f6204797b6ce142297ea2e158756fdd151552/diff
-  // these parameters affect how we reconstruct tracklets (a straight line
-  // segment in a single station) and St23 (combinations of pairs of tracklets
-  // from St2 and 3) we usually try to minimize tracklets  (x,y,tx,ty)
-  // parameters
-  if (is_displaced) {
-    rc->set_DoubleFlag("TX_MAX",
-                       0.32);          // maximum allowed x slope for a tracklet
-    rc->set_DoubleFlag("TY_MAX", 0.2); // maximum allowed y slope for a tracklet
-    rc->set_DoubleFlag("X0_MAX",
-                       500.0); // maximum allowed x position for a tracklet
-    rc->set_DoubleFlag("Y0_MAX",
-                       400.0); // maximum allowed y position for a tracklet
-    rc->set_DoubleFlag("INVP_MAX",
-                       0.5); // maximum inverse momentum (invp = 1/momentum)
+  if(electron_tracking){
     rc->set_BoolFlag(
-        "NOT_DISPLACED",
-        false); // running on displaced mode, no fitting to the target/vertex
+        "TRACK_ELECTRONS",
+        true); // track electrons by eliminating certain muon hit requirements
   }
+  if(do_displaced_tracking){
+    rc->set_BoolFlag(
+        "TRACK_DISPLACED",
+        true); // track displaced particles by removing backwards extrapolation in st2+3 to st1 tracklet connection
+  }
+
   if (isDEBUG) {
     rc->Print();
   }
@@ -161,13 +197,13 @@ int RecoE1039Sim(const int nevent = 10,
   GeomSvc::UseDbSvc(true);
   GeomSvc *geom_svc = GeomSvc::instance();
   if (isDEBUG) {
-    // std::cout << "print geometry information" << std::endl;
+    std::cout << "print geometry information" << std::endl;
     geom_svc->printWirePosition();
-    // std::cout << " align printing " << std::endl;
+    std::cout << " align printing " << std::endl;
     geom_svc->printAlignPar();
-    // std::cout << " table printing" << std::endl;
+    std::cout << " table printing" << std::endl;
     geom_svc->printTable();
-    // std::cout << "done geometry printing" << std::endl;
+    std::cout << "done geometry printing" << std::endl;
   }
 
   // make the Server
@@ -186,59 +222,30 @@ int RecoE1039Sim(const int nevent = 10,
   else if(do_aprime_electron){ // aprime to displaced electrons
     HepMCNodeReader *hr = new HepMCNodeReader();
     hr->set_particle_filter_on(true);
-    hr->insert_particle_filter_pid(11);
+    hr->insert_particle_filter_pid(11); // filter electrons
     hr->insert_particle_filter_pid(11*-1);
     hr->Verbosity(verbosity);
     se->registerSubsystem(hr);
   }
   else if(do_trimuon){
     HepMCNodeReader *hr = new HepMCNodeReader();
-    //hr->set_particle_filter_on(true);
-    //hr->insert_particle_filter_pid(13);
-    //hr->insert_particle_filter_pid(13 * -1);
     hr->Verbosity(verbosity);
     se->registerSubsystem(hr);
   }
-  else if(do_protongun){
-    PHG4SimpleEventGenerator *genp = new PHG4SimpleEventGenerator("MUP");
-    genp->add_particles("proton", 1); 
-    genp->set_vertex_distribution_function(PHG4SimpleEventGenerator::Uniform,
-                                           PHG4SimpleEventGenerator::Uniform,
-                                           PHG4SimpleEventGenerator::Uniform);
-    //genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z);
-    genp->set_vertex_distribution_mean(0.0, 0.0, 0);
-    //genp->set_vertex_distribution_mean(0.0, 0.0, 500);
-    genp->set_vertex_distribution_width(0.0, 0.0, 10.0);
-    genp->set_vertex_size_function(PHG4SimpleEventGenerator::Uniform);
-    genp->set_vertex_size_parameters(0.0, 0.0);
-    //genp->set_pxpypz_range(-3,6, -3,3, 10,100);
-    genp->set_pxpypz_range(-1., 1., -1., 1., 0., 100.);
-    genp->Verbosity(verbosity);
-    se->registerSubsystem(genp);
-  }
-  else if(do_gun){ // particle gun
-    PHG4SimpleEventGenerator *genp = new PHG4SimpleEventGenerator("MUP");
-    //genp->add_particles("mu+", 1);  // mu+
-    //genp->add_particles("mu-", 1); // mu-
-    //genp->add_particles("e+", 1); // positron
-    //genp->add_particles("pi+", 1); // pions
-    genp->add_particles("kaon0L", 1); // k0long
-    //genp->add_particles("Upsilon", 1); // upsilon
-    //genp->add_particles("gamma", 1); // single photon
+  else if(do_gun){ // single particle gun
+    PHG4SimpleEventGenerator *genp = new PHG4SimpleEventGenerator("PARTICLEGUN");
+    genp->add_particles(particle_name.c_str(), 1); 
+
     genp->set_vertex_distribution_function(PHG4SimpleEventGenerator::Uniform,
 					   PHG4SimpleEventGenerator::Uniform,
 					   PHG4SimpleEventGenerator::Uniform);
-    if(is_displaced){
-      genp->set_vertex_distribution_mean(0.0, 0.0, 520.); // after FMAG
-    } else {
-      genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z); 
-      //genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z);
-    }
-
-    genp->set_vertex_distribution_width(0.0, 0.0, 0.0);
+    genp->set_vertex_distribution_mean(0.0, 0.0, zvertex); // to set after FMAG: zvertex: 520
+    genp->set_vertex_distribution_width(0.0, 0.0, 0.0); // for protons set to 10.0 in z?
     genp->set_vertex_size_function(PHG4SimpleEventGenerator::Uniform);
     genp->set_vertex_size_parameters(0.0, 0.0);
+
     genp->set_pxpypz_range(-1., 1., -1., 1., 0., 100.);
+
     genp->Verbosity(verbosity);
     se->registerSubsystem(genp);
   } else if (do_dy or do_jpsi) {
@@ -248,26 +255,18 @@ int RecoE1039Sim(const int nevent = 10,
       pythia8->set_config_file("phpythia8_DY.cfg");
     else
       pythia8->set_config_file("phpythia8_Jpsi.cfg");
-    if (is_displaced) {
-      pythia8->set_vertex_distribution_mean(0.0, 0.0, 500., 0);
-    } else {
-      pythia8->set_vertex_distribution_mean(0, 0, target_coil_pos_z, 0);
-    }
+    pythia8->set_vertex_distribution_mean(0.0, 0.0, zvertex, 0);
     pythia8->set_embedding_id(1);
     se->registerSubsystem(pythia8);
 
     pythia8->set_trigger_AND();
     PHPy8ParticleTrigger *trigger_mup = new PHPy8ParticleTrigger();
     trigger_mup->AddParticles("-13");
-    // trigger_mup->SetPxHighLow(7, 0.5);
-    // trigger_mup->SetPyHighLow(6, -6);
     trigger_mup->SetPzHighLow(120, 30);
     pythia8->register_trigger(trigger_mup);
 
     PHPy8ParticleTrigger *trigger_mum = new PHPy8ParticleTrigger();
     trigger_mum->AddParticles("13");
-    // trigger_mum->SetPxHighLow(-0.5, 7);
-    // trigger_mum->SetPyHighLow(6, -6);
     trigger_mum->SetPzHighLow(120, 30);
     pythia8->register_trigger(trigger_mum);
 
@@ -344,12 +343,12 @@ int RecoE1039Sim(const int nevent = 10,
   reco->setInputTy(SQReco::E1039);                // options are SQReco::E906 and SQReco::E1039
   reco->setFitterTy(SQReco::KFREF);               // not relevant for the track finding, options are SQReco::KFREF and SQReco::LEGACY
   reco->set_evt_reducer_opt("none");              // if not provided, event reducer will be using JobOptsSvc to intialize; to turn off, set it to "none", for normal tracking, set to something like "aoc"
-  reco->set_enable_eval(false);                   // set to true to generate evaluation file which includes final track candidates 
+  reco->set_enable_eval(true);                    // set to true to generate evaluation file which includes final track candidates 
   reco->set_eval_file_name("eval.root");          // evaluation filename
-  reco->set_enable_eval_dst(false);               // set to true to include final track candidates in the DST tree
-  //reco->add_eval_list(3);                         // include back partial tracks in eval tree for debuging
-  //reco->add_eval_list(2);                         // include station-3+/- in eval tree for debuging
-  //reco->add_eval_list(1);                         // include station-2 in eval tree for debugging
+  reco->set_enable_eval_dst(true);                // set to true to include final track candidates in the DST tree
+  reco->add_eval_list(3);                         // include back partial tracks in eval tree for debuging
+  reco->add_eval_list(2);                         // include station-3+/- in eval tree for debuging
+  reco->add_eval_list(1);                         // include station-2 in eval tree for debugging
   se->registerSubsystem(reco);
 
   // truth node maker after tracking
@@ -405,9 +404,7 @@ int RecoE1039Sim(const int nevent = 10,
   }
   sim_ana->set_out_name(ofile);
   sim_ana->set_legacy_rec_container(legacy_rec_container);
-  if(do_protongun){
-    sim_ana->save_secondaries(true);
-  }
+  sim_ana->save_secondaries(false); // set to true to save secondaries
   if(do_analysis){
     se->registerSubsystem(sim_ana);    
   }
@@ -419,6 +416,7 @@ int RecoE1039Sim(const int nevent = 10,
     se->registerInputManager(in);
     stringstream ssin;
     ssin << input_path << input_file << ".txt";
+    std::cout << "Aprime Input path " << ssin.str().c_str() << std::endl;
     in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
     in->Verbosity(verbosity);
     se->registerInputManager(in);
@@ -428,6 +426,7 @@ int RecoE1039Sim(const int nevent = 10,
     se->registerInputManager(in);
     stringstream ssin;
     ssin << input_path << input_file << ".hepmc";
+    std::cout << "Trimuon Input path " << ssin.str().c_str() << std::endl;
     in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
     in->Verbosity(verbosity);
     se->registerInputManager(in);

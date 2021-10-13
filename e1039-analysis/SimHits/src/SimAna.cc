@@ -139,187 +139,234 @@ void SimAna::save_secondaries(bool b) {
 }
 
 int SimAna::ResetEvalVars() {
-  // hits
+  /** Hits
+   */
   for(int i=0; i<1000; ++i) {
-    hit_detid[i]        = std::numeric_limits<short>::max();
-    hit_elmid[i]        = std::numeric_limits<short>::max();
-    hit_trkid[i]        = std::numeric_limits<short>::max();
-    hit_driftdis[i]     = std::numeric_limits<float>::max();
-    hit_pos[i]          = std::numeric_limits<float>::max();
-    hit_edep[i]         = std::numeric_limits<float>::max();
-    hit_truthx[i]       = std::numeric_limits<float>::max();
-    hit_truthy[i]       = std::numeric_limits<float>::max();
-    hit_truthz[i]       = std::numeric_limits<float>::max();
-    hit_truthpx[i]      = std::numeric_limits<float>::max();
-    hit_truthpy[i]      = std::numeric_limits<float>::max();
-    hit_truthpz[i]      = std::numeric_limits<float>::max();
+    hit_detid[i]        = std::numeric_limits<short>::max(); // detector ID
+    hit_elmid[i]        = std::numeric_limits<short>::max(); // element ID
+    hit_trkid[i]        = std::numeric_limits<short>::max(); // track ID
+    hit_driftdis[i]     = std::numeric_limits<float>::max(); // drift distance
+    hit_pos[i]          = std::numeric_limits<float>::max(); // hit position
+    hit_edep[i]         = std::numeric_limits<float>::max(); // hit deposited energy
+    hit_truthx[i]       = std::numeric_limits<float>::max(); // truth position of hit (x)
+    hit_truthy[i]       = std::numeric_limits<float>::max(); // truth position of hit (y) 
+    hit_truthz[i]       = std::numeric_limits<float>::max(); // truth position of hit (z) 
+    hit_truthpx[i]      = std::numeric_limits<float>::max(); // truth momentum of hit (x)
+    hit_truthpy[i]      = std::numeric_limits<float>::max(); // truth momentum of hit (y) 
+    hit_truthpz[i]      = std::numeric_limits<float>::max(); // truth momentum of hit (z) 
   }
 
-  // truth tracks and rec tracks
-  n_truthtracks = 0;
-  n_tracks = 0;
-
+  /** Tracks:
+      - Truth tracks (truthtrack_*)
+      - Reconstructed tracks (track_*)
+      - Station 3 tracklets 
+   */
+  n_truthtracks = 0; // number of truth tracks
+  n_tracks = 0; // number of reconstructed tracks
+  n_st3tracklets = 0; // number of station 3 tracklets
   for(int i=0; i<100; ++i) {
-    truthtrack_charge[i] = std::numeric_limits<int>::max();
-    truthtrack_x_st1[i] = std::numeric_limits<int>::max();
-    truthtrack_y_st1[i] = std::numeric_limits<int>::max();
-    truthtrack_z_st1[i] = std::numeric_limits<int>::max();
-    truthtrack_px_st1[i] = std::numeric_limits<int>::max();
-    truthtrack_py_st1[i] = std::numeric_limits<int>::max();
-    truthtrack_pz_st1[i] = std::numeric_limits<int>::max();
-    truthtrack_x_st3[i] = std::numeric_limits<int>::max();
-    truthtrack_y_st3[i] = std::numeric_limits<int>::max();
-    truthtrack_z_st3[i] = std::numeric_limits<int>::max();
-    truthtrack_px_st3[i] = std::numeric_limits<int>::max();
-    truthtrack_py_st3[i] = std::numeric_limits<int>::max();
-    truthtrack_pz_st3[i] = std::numeric_limits<int>::max();
-    truthtrack_x_vtx[i] = std::numeric_limits<int>::max();
-    truthtrack_y_vtx[i] = std::numeric_limits<int>::max();
-    truthtrack_z_vtx[i] = std::numeric_limits<int>::max();
-    truthtrack_px_vtx[i] = std::numeric_limits<int>::max();
-    truthtrack_py_vtx[i] = std::numeric_limits<int>::max();
-    truthtrack_pz_vtx[i] = std::numeric_limits<int>::max();
+    truthtrack_charge[i] = std::numeric_limits<int>::max(); // truth track charge
+    truthtrack_x_st1[i] = std::numeric_limits<int>::max(); // position of truth track at station 1 (x)
+    truthtrack_y_st1[i] = std::numeric_limits<int>::max(); // position of truth track at station 1 (y) 
+    truthtrack_z_st1[i] = std::numeric_limits<int>::max(); // position of truth track at station 1 (z) 
+    truthtrack_px_st1[i] = std::numeric_limits<int>::max(); // momentum of truth track at station 1 (x)
+    truthtrack_py_st1[i] = std::numeric_limits<int>::max(); // momentum of truth track at station 1 (y) 
+    truthtrack_pz_st1[i] = std::numeric_limits<int>::max(); // momentum of truth track at station 1 (z) 
+    truthtrack_x_st3[i] = std::numeric_limits<int>::max(); // position of truth track at station 3 (x)
+    truthtrack_y_st3[i] = std::numeric_limits<int>::max(); // position of truth track at station 3 (y)
+    truthtrack_z_st3[i] = std::numeric_limits<int>::max(); // position of truth track at station 3 (z)
+    truthtrack_px_st3[i] = std::numeric_limits<int>::max(); // momentum of truth track at station 3 (x)
+    truthtrack_py_st3[i] = std::numeric_limits<int>::max(); // momentum of truth track at station 3 (y)
+    truthtrack_pz_st3[i] = std::numeric_limits<int>::max(); // momentum of truth track at station 3 (z)
+    truthtrack_x_vtx[i] = std::numeric_limits<int>::max(); // position of vertex associated with truth track (x)
+    truthtrack_y_vtx[i] = std::numeric_limits<int>::max(); // position of vertex associated with truth track (y)
+    truthtrack_z_vtx[i] = std::numeric_limits<int>::max(); // position of vertex associated with truth track (z)
+    truthtrack_px_vtx[i] = std::numeric_limits<int>::max(); // momentum of vertex associated with truth track (x)
+    truthtrack_py_vtx[i] = std::numeric_limits<int>::max(); // momentum of vertex associated with truth track (y)
+    truthtrack_pz_vtx[i] = std::numeric_limits<int>::max(); // momentum of vertex associated with truth track (z)
+
+    track_charge[i]      = std::numeric_limits<int>::max(); // track charge
+    track_nhits[i]       = std::numeric_limits<int>::max(); // number of hits associated with track
+    track_x_target[i]    = std::numeric_limits<float>::max(); // position of track at target (x)
+    track_y_target[i]    = std::numeric_limits<float>::max(); // position of track at target (y)
+    track_z_target[i]    = std::numeric_limits<float>::max(); // position of track at target (z)
+    track_px_target[i]   = std::numeric_limits<float>::max(); // momentum of track at target (x)
+    track_py_target[i]   = std::numeric_limits<float>::max(); // momentum of track at target (y)
+    track_pz_target[i]   = std::numeric_limits<float>::max(); // momentum of track at target (z)
+    track_x_st1[i]       = std::numeric_limits<float>::max(); // position of track at station 1 (x)
+    track_y_st1[i]       = std::numeric_limits<float>::max(); // position of track at station 1 (y)
+    track_z_st1[i]       = std::numeric_limits<float>::max(); // position of track at station 1 (z)
+    track_px_st1[i]      = std::numeric_limits<float>::max(); // momentum of track at station 1 (x)
+    track_py_st1[i]      = std::numeric_limits<float>::max(); // momentum of track at station 1 (y)
+    track_pz_st1[i]      = std::numeric_limits<float>::max(); // momentum of track at station 1 (z)
+    track_x_st3[i]       = std::numeric_limits<float>::max(); // position of track at station 3 (x)
+    track_y_st3[i]       = std::numeric_limits<float>::max(); // position of track at station 3 (y)
+    track_z_st3[i]       = std::numeric_limits<float>::max(); // position of track at station 3 (z)
+    track_px_st3[i]      = std::numeric_limits<float>::max(); // momentum of track at station 3 (x)
+    track_py_st3[i]      = std::numeric_limits<float>::max(); // momentum of track at station 3 (y)
+    track_pz_st3[i]      = std::numeric_limits<float>::max(); //  momentum of track at station 3 (z)
+    track_x_vtx[i]       = std::numeric_limits<float>::max(); // position of vertex associated with track (x)
+    track_y_vtx[i]       = std::numeric_limits<float>::max(); // position of vertex associated with track (y)
+    track_z_vtx[i]       = std::numeric_limits<float>::max(); // position of vertex associated with track (z)
+    track_px_vtx[i]      = std::numeric_limits<float>::max(); // momentum of vertex associated with track (x)
+    track_py_vtx[i]      = std::numeric_limits<float>::max(); // momentum of vertex associated with track (y)
+    track_pz_vtx[i]      = std::numeric_limits<float>::max(); // momentum of vertex associated with track (z)
+    track_x_CAL[i]       = std::numeric_limits<float>::max(); // extrapolation of position of track at EMCAL calorimeter (x)
+    track_y_CAL[i]       = std::numeric_limits<float>::max(); // extrapolation of position of track at EMCAL calorimeter (y)
+    track_chisq[i]       = std::numeric_limits<float>::max(); // chi square of track (associated w. track quality)
+    track_prob[i]        = std::numeric_limits<float>::max(); // probability of track (associated w. track quality)
+    track_quality[i]     = std::numeric_limits<float>::max(); // track quality (based on number of hits and chi-square)
+    track_isValid[i]     = std::numeric_limits<int>::max(); // is the track valid? Based on https://github.com/E1039-Collaboration/e1039-core/blob/d9fdd60cefa8f099f62fed8e8794feac1aedc348/packages/reco/interface/SRecEvent.cxx
+    track_nhits_st1[i]   = std::numeric_limits<float>::max(); // number of hits in station 1
+    track_nhits_st2[i]   = std::numeric_limits<float>::max(); // number of hits in station 2
+    track_nhits_st3[i]   = std::numeric_limits<float>::max(); // number of hits in station 3
+    
+    // see above definitions but apply them to a station 3 tracklet
+    st3tracklet_charge[i]      = std::numeric_limits<int>::max(); 
+    st3tracklet_nhits[i]       = std::numeric_limits<int>::max(); 
+    st3tracklet_x_target[i]    = std::numeric_limits<float>::max();
+    st3tracklet_y_target[i]    = std::numeric_limits<float>::max();
+    st3tracklet_z_target[i]    = std::numeric_limits<float>::max();
+    st3tracklet_px_target[i]   = std::numeric_limits<float>::max();
+    st3tracklet_py_target[i]   = std::numeric_limits<float>::max();
+    st3tracklet_pz_target[i]   = std::numeric_limits<float>::max();
+    st3tracklet_x_st1[i]       = std::numeric_limits<float>::max();
+    st3tracklet_y_st1[i]       = std::numeric_limits<float>::max();
+    st3tracklet_z_st1[i]       = std::numeric_limits<float>::max();
+    st3tracklet_px_st1[i]      = std::numeric_limits<float>::max();
+    st3tracklet_py_st1[i]      = std::numeric_limits<float>::max();
+    st3tracklet_pz_st1[i]      = std::numeric_limits<float>::max();
+    st3tracklet_x_st3[i]       = std::numeric_limits<float>::max();
+    st3tracklet_y_st3[i]       = std::numeric_limits<float>::max();
+    st3tracklet_z_st3[i]       = std::numeric_limits<float>::max();
+    st3tracklet_px_st3[i]      = std::numeric_limits<float>::max();
+    st3tracklet_py_st3[i]      = std::numeric_limits<float>::max();
+    st3tracklet_pz_st3[i]      = std::numeric_limits<float>::max();
+    st3tracklet_x_vtx[i]       = std::numeric_limits<float>::max();
+    st3tracklet_y_vtx[i]       = std::numeric_limits<float>::max();
+    st3tracklet_z_vtx[i]       = std::numeric_limits<float>::max();
+    st3tracklet_px_vtx[i]      = std::numeric_limits<float>::max();
+    st3tracklet_py_vtx[i]      = std::numeric_limits<float>::max();
+    st3tracklet_pz_vtx[i]      = std::numeric_limits<float>::max();
+    st3tracklet_m[i]           = std::numeric_limits<float>::max();
+    st3tracklet_x_CAL[i]       = std::numeric_limits<float>::max();
+    st3tracklet_y_CAL[i]       = std::numeric_limits<float>::max();
+    st3tracklet_chisq[i]       = std::numeric_limits<float>::max();
+    st3tracklet_prob[i]        = std::numeric_limits<float>::max();
+    st3tracklet_quality[i]     = std::numeric_limits<float>::max();
+    st3tracklet_isValid[i]     = std::numeric_limits<int>::max();
+    st3tracklet_nhits_st1[i]   = std::numeric_limits<float>::max();
+    st3tracklet_nhits_st2[i]   = std::numeric_limits<float>::max();
+    st3tracklet_nhits_st3[i]   = std::numeric_limits<float>::max();
+    
   }
 
-  for(int i=0; i<100; ++i) {
-    track_charge[i]      = std::numeric_limits<int>::max();
-    track_nhits[i]       = std::numeric_limits<int>::max();
-    track_x_target[i]    = std::numeric_limits<float>::max();
-    track_y_target[i]    = std::numeric_limits<float>::max();
-    track_z_target[i]    = std::numeric_limits<float>::max();
-    track_px_target[i]   = std::numeric_limits<float>::max();
-    track_py_target[i]   = std::numeric_limits<float>::max();
-    track_pz_target[i]   = std::numeric_limits<float>::max();
-    track_x_st1[i]       = std::numeric_limits<float>::max();
-    track_y_st1[i]       = std::numeric_limits<float>::max();
-    track_z_st1[i]       = std::numeric_limits<float>::max();
-    track_px_st1[i]      = std::numeric_limits<float>::max();
-    track_py_st1[i]      = std::numeric_limits<float>::max();
-    track_pz_st1[i]      = std::numeric_limits<float>::max();
-    track_x_st3[i]       = std::numeric_limits<float>::max();
-    track_y_st3[i]       = std::numeric_limits<float>::max();
-    track_z_st3[i]       = std::numeric_limits<float>::max();
-    track_px_st3[i]      = std::numeric_limits<float>::max();
-    track_py_st3[i]      = std::numeric_limits<float>::max();
-    track_pz_st3[i]      = std::numeric_limits<float>::max();
-    track_x_vtx[i]       = std::numeric_limits<float>::max();
-    track_y_vtx[i]       = std::numeric_limits<float>::max();
-    track_z_vtx[i]       = std::numeric_limits<float>::max();
-    track_px_vtx[i]      = std::numeric_limits<float>::max();
-    track_py_vtx[i]      = std::numeric_limits<float>::max();
-    track_pz_vtx[i]      = std::numeric_limits<float>::max();
-    track_m[i]           = std::numeric_limits<float>::max();
-    track_chisq[i]       = std::numeric_limits<float>::max();
-    track_prob[i]        = std::numeric_limits<float>::max();
-    track_quality[i]     = std::numeric_limits<float>::max();
-    track_isValid[i]     = std::numeric_limits<int>::max();
-    track_nhits_st1[i]   = std::numeric_limits<float>::max();
-    track_nhits_st2[i]   = std::numeric_limits<float>::max();
-    track_nhits_st3[i]   = std::numeric_limits<float>::max();
-  }
-
-  // dimuons
+  /** Dimuons:
+      - Truth dimuons
+      - Reconstructed dimuons
+   */
   n_truthdimuons = 0;
-  for(int i=0; i<100; ++i) {
-    truthdimuon_mass[i]        = std::numeric_limits<float>::max();
-    truthdimuon_x_vtx[i]       = std::numeric_limits<float>::max();
-    truthdimuon_y_vtx[i]       = std::numeric_limits<float>::max();
-    truthdimuon_z_vtx[i]       = std::numeric_limits<float>::max();
-    truthdimuon_px[i]          = std::numeric_limits<float>::max();
-    truthdimuon_py[i]          = std::numeric_limits<float>::max();
-    truthdimuon_pz[i]          = std::numeric_limits<float>::max();
-    truthdimuon_pmom_x[i]      = std::numeric_limits<float>::max();
-    truthdimuon_pmom_y[i]      = std::numeric_limits<float>::max();
-    truthdimuon_pmom_z[i]      = std::numeric_limits<float>::max();
-    truthdimuon_nmom_x[i]      = std::numeric_limits<float>::max();
-    truthdimuon_nmom_y[i]      = std::numeric_limits<float>::max();
-    truthdimuon_nmom_z[i]      = std::numeric_limits<float>::max();
-  }
-
   n_dimuons = 0;
   for(int i=0; i<100; ++i) {
-    dimuon_mass[i]       = std::numeric_limits<float>::max();
-    dimuon_chisq[i]      = std::numeric_limits<float>::max();
-    dimuon_x_vtx[i]      = std::numeric_limits<float>::max();
-    dimuon_y_vtx[i]      = std::numeric_limits<float>::max();
-    dimuon_z_vtx[i]      = std::numeric_limits<float>::max();
-    dimuon_px[i]         = std::numeric_limits<float>::max();
-    dimuon_py[i]         = std::numeric_limits<float>::max();
-    dimuon_pz[i]         = std::numeric_limits<float>::max();
-    dimuon_pmom_x[i]     = std::numeric_limits<float>::max();
-    dimuon_pmom_y[i]     = std::numeric_limits<float>::max();
-    dimuon_pmom_z[i]     = std::numeric_limits<float>::max();
-    dimuon_nmom_x[i]     = std::numeric_limits<float>::max();
-    dimuon_nmom_y[i]     = std::numeric_limits<float>::max();
-    dimuon_nmom_z[i]     = std::numeric_limits<float>::max();
-    dimuon_ppos_x[i]     = std::numeric_limits<float>::max();
-    dimuon_ppos_y[i]     = std::numeric_limits<float>::max();
-    dimuon_ppos_z[i]     = std::numeric_limits<float>::max();
-    dimuon_npos_x[i]     = std::numeric_limits<float>::max();
-    dimuon_npos_y[i]     = std::numeric_limits<float>::max();
-    dimuon_npos_z[i]     = std::numeric_limits<float>::max();
+    truthdimuon_mass[i]        = std::numeric_limits<float>::max(); // mass of truth dimuon system
+    truthdimuon_x_vtx[i]       = std::numeric_limits<float>::max(); // position of vertex of truth dimuon system (x) 
+    truthdimuon_y_vtx[i]       = std::numeric_limits<float>::max(); // position of vertex of truth dimuon system (y)
+    truthdimuon_z_vtx[i]       = std::numeric_limits<float>::max(); // position of vertex of truth dimuon system (z)
+    truthdimuon_px[i]          = std::numeric_limits<float>::max(); // momentum of truth dimuon system (x)
+    truthdimuon_py[i]          = std::numeric_limits<float>::max(); // momentum of truth dimuon system (y)
+    truthdimuon_pz[i]          = std::numeric_limits<float>::max(); // momentum of truth dimuon system (z)
+    truthdimuon_pmom_x[i]      = std::numeric_limits<float>::max(); // momentum of positive muon in truth dimuon pair (x) - see https://github.com/E1039-Collaboration/e1039-core/blob/6f13d8621dd6577aa7427ba835ca12f28d04f5f6/interface_main/SQDimuon_v1.h#L36-L40 
+    truthdimuon_pmom_y[i]      = std::numeric_limits<float>::max(); // momentum of positive muon in truth dimuon pair (y)
+    truthdimuon_pmom_z[i]      = std::numeric_limits<float>::max(); // momentum of positive muon in truth dimuon pair (z)
+    truthdimuon_nmom_x[i]      = std::numeric_limits<float>::max(); // momentum of negative muon in truth dimuon pair (x)
+    truthdimuon_nmom_y[i]      = std::numeric_limits<float>::max(); // momentum of negative muon in truth dimuon pair (y)
+    truthdimuon_nmom_z[i]      = std::numeric_limits<float>::max(); // momentum of negative muon in truth dimuon pair (z)
+
+    dimuon_mass[i]       = std::numeric_limits<float>::max(); // mass of dimuon system
+    dimuon_chisq[i]      = std::numeric_limits<float>::max(); // chi-square of dimuon system
+    dimuon_x_vtx[i]      = std::numeric_limits<float>::max(); // position of vertex of dimuon system (x)
+    dimuon_y_vtx[i]      = std::numeric_limits<float>::max(); // position of vertex of dimuon system (y)
+    dimuon_z_vtx[i]      = std::numeric_limits<float>::max(); // position of vertex of dimuon system (z)
+    dimuon_px[i]         = std::numeric_limits<float>::max(); // momentum of dimuon system (x)
+    dimuon_py[i]         = std::numeric_limits<float>::max(); // momentum of dimuon system (y)
+    dimuon_pz[i]         = std::numeric_limits<float>::max(); // momentum of dimuon system (z)
+    dimuon_pmom_x[i]     = std::numeric_limits<float>::max(); // momentum of positive muon in dimuon pair (x)
+    dimuon_pmom_y[i]     = std::numeric_limits<float>::max(); // momentum of positive muon in dimuon pair (y)
+    dimuon_pmom_z[i]     = std::numeric_limits<float>::max(); // momentum of positive muon in dimuon pair (z)
+    dimuon_nmom_x[i]     = std::numeric_limits<float>::max(); // momentum of negative muon in dimuon pair (x) 
+    dimuon_nmom_y[i]     = std::numeric_limits<float>::max(); // momentum of negative muon in dimuon pair (y)
+    dimuon_nmom_z[i]     = std::numeric_limits<float>::max(); // momentum of negative muon in dimuon pair (z)
+    dimuon_ppos_x[i]     = std::numeric_limits<float>::max(); // position of positive muon in dimuon pair (x)
+    dimuon_ppos_y[i]     = std::numeric_limits<float>::max(); // position of positive muon in dimuon pair (y)
+    dimuon_ppos_z[i]     = std::numeric_limits<float>::max(); // position of positive muon in dimuon pair (z) 
+    dimuon_npos_x[i]     = std::numeric_limits<float>::max(); // position of negative muon in dimuon pair (x)
+    dimuon_npos_y[i]     = std::numeric_limits<float>::max(); // position of negative muon in dimuon pair (y)
+    dimuon_npos_z[i]     = std::numeric_limits<float>::max(); // position of negative muon in dimuon pair (z)
   }
 
-  // truth information
-  // g4 showers
-  n_showers =0;
+  /** Truth information:
+      - G4 Showers in emcal: s*
+      - Primary particles: g*
+        - Hits in EMCAL for each primary g*_ecal
+        - Hits in each station for each primary g*_st*
+        - Hits in each hodoscope for each primary g*_h*
+   */
+  n_showers =0; // number of g4 showers in EMCAL
+  n_primaries = 0; // number of hits of primary particles
+  n_secondaries = 0; // number of hits of secondary particles
   for(int i=0; i<1000; ++i) {
-    sx_ecal[i]          = std::numeric_limits<float>::max();
-    sy_ecal[i]          = std::numeric_limits<float>::max();
-    sz_ecal[i]          = std::numeric_limits<float>::max();
-    sedep_ecal[i]       = std::numeric_limits<float>::max();
-  }
+    sx_ecal[i]          = std::numeric_limits<float>::max(); // position of EMCAL truth shower (x)
+    sy_ecal[i]          = std::numeric_limits<float>::max(); // position of EMCAL truth shower (y)
+    sz_ecal[i]          = std::numeric_limits<float>::max(); // position of EMCAL truth shower (z)
+    sedep_ecal[i]       = std::numeric_limits<float>::max(); // energy deposited in EMCAL by truth shower
 
-  // primary hits
-  n_primaries = 0;
-  for (int i = 0; i < 1000; ++i) {
-    gtrkid[i] = std::numeric_limits<int>::max();
-    gpid[i] = std::numeric_limits<int>::max();
-    gvx[i] = std::numeric_limits<float>::max();
-    gvy[i] = std::numeric_limits<float>::max();
-    gvz[i] = std::numeric_limits<float>::max();
-    gpx[i] = std::numeric_limits<float>::max();
-    gpy[i] = std::numeric_limits<float>::max();
-    gpz[i] = std::numeric_limits<float>::max();
-    gpt[i] = std::numeric_limits<float>::max();
-    geta[i] = std::numeric_limits<float>::max();
-    gphi[i] = std::numeric_limits<float>::max();
-    ge[i] = std::numeric_limits<float>::max();
+    gtrkid[i] = std::numeric_limits<int>::max(); // track ID of primary particle
+    gpid[i] = std::numeric_limits<int>::max(); // particle ID of primary particle
+    gvx[i] = std::numeric_limits<float>::max(); // vertex position of primary particle (x)
+    gvy[i] = std::numeric_limits<float>::max(); // vertex position of primary particle (y)
+    gvz[i] = std::numeric_limits<float>::max(); // vertex position of primary particle (z)
+    gpx[i] = std::numeric_limits<float>::max(); // momentum of primary particle (x)
+    gpy[i] = std::numeric_limits<float>::max(); // momentum of primary particle (y)
+    gpz[i] = std::numeric_limits<float>::max(); // momentum of primary particle (z)
+    gpt[i] = std::numeric_limits<float>::max(); // transverse momentum of primary particle
+    geta[i] = std::numeric_limits<float>::max(); // eta angle of primary particle
+    gphi[i] = std::numeric_limits<float>::max(); // phi angle of primary particle
+    ge[i] = std::numeric_limits<float>::max(); // energy of primary particle
 
-    nhits_ecal[i] = 0;
+    nhits_ecal[i] = 0; // number of hits in EMCAL for a given primary
     for (int j = 0; j < 100; ++j) {
-      gx_ecal[i][j] = std::numeric_limits<int>::max();
-      gy_ecal[i][j] = std::numeric_limits<int>::max();
-      gz_ecal[i][j] = std::numeric_limits<int>::max();
-      gpx_ecal[i][j] = std::numeric_limits<int>::max();
-      gpy_ecal[i][j] = std::numeric_limits<int>::max();
-      gpz_ecal[i][j] = std::numeric_limits<int>::max();
-      gedep_ecal[i][j] = std::numeric_limits<int>::max();
+      gx_ecal[i][j] = std::numeric_limits<int>::max(); // position of associated hit in EMCAL (x)
+      gy_ecal[i][j] = std::numeric_limits<int>::max(); // position of associated hit in EMCAL (y)
+      gz_ecal[i][j] = std::numeric_limits<int>::max(); // position of associated hit in EMCAL (z)
+      gpx_ecal[i][j] = std::numeric_limits<int>::max(); // momentum of associated hit in EMCAL (x)
+      gpy_ecal[i][j] = std::numeric_limits<int>::max(); // momentum of associated hit in EMCAL (y)
+      gpz_ecal[i][j] = std::numeric_limits<int>::max(); // momentum of associated hit in EMCAL (z)
+      gedep_ecal[i][j] = std::numeric_limits<int>::max(); // energy deposited by associated hit in EMCAL
     }
 
-    gx_st1[i] = std::numeric_limits<float>::max();
-    gy_st1[i] = std::numeric_limits<float>::max();
-    gz_st1[i] = std::numeric_limits<float>::max();
-    gpx_st1[i] = std::numeric_limits<float>::max();
-    gpy_st1[i] = std::numeric_limits<float>::max();
-    gpz_st1[i] = std::numeric_limits<float>::max();
-    gx_st2[i] = std::numeric_limits<float>::max();
-    gy_st2[i] = std::numeric_limits<float>::max();
-    gz_st2[i] = std::numeric_limits<float>::max();
-    gpx_st2[i] = std::numeric_limits<float>::max();
-    gpy_st2[i] = std::numeric_limits<float>::max();
-    gpz_st2[i] = std::numeric_limits<float>::max();
-    gx_st3[i] = std::numeric_limits<float>::max();
-    gy_st3[i] = std::numeric_limits<float>::max();
-    gz_st3[i] = std::numeric_limits<float>::max();
-    gpx_st3[i] = std::numeric_limits<float>::max();
-    gpy_st3[i] = std::numeric_limits<float>::max();
-    gpz_st3[i] = std::numeric_limits<float>::max();
+    gx_st1[i] = std::numeric_limits<float>::max(); // position of truth hit at station 1 (x)
+    gy_st1[i] = std::numeric_limits<float>::max(); // position of truth hit at station 1 (y)
+    gz_st1[i] = std::numeric_limits<float>::max(); // position of truth hit at station 1 (z)
+    gpx_st1[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 1 (x)
+    gpy_st1[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 1 (y)
+    gpz_st1[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 1 (z)
+    gx_st2[i] = std::numeric_limits<float>::max(); // position of truth hit at station 2 (x) 
+    gy_st2[i] = std::numeric_limits<float>::max(); // position of truth hit at station 2 (y) 
+    gz_st2[i] = std::numeric_limits<float>::max(); // position of truth hit at station 2 (z) 
+    gpx_st2[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 2 (x)
+    gpy_st2[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 2 (y) 
+    gpz_st2[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 2 (z) 
+    gx_st3[i] = std::numeric_limits<float>::max(); // position of truth hit at station 3 (x)
+    gy_st3[i] = std::numeric_limits<float>::max(); // position of truth hit at station 3 (y)
+    gz_st3[i] = std::numeric_limits<float>::max(); // position of truth hit at station 3 (z) 
+    gpx_st3[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 3 (x)
+    gpy_st3[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 3 (y) 
+    gpz_st3[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 3 (z)  
 
-    gx_h1[i] = std::numeric_limits<float>::max();
-    gy_h1[i] = std::numeric_limits<float>::max();
-    gz_h1[i] = std::numeric_limits<float>::max();
-    gpx_h1[i] = std::numeric_limits<float>::max();
+    gx_h1[i] = std::numeric_limits<float>::max(); // position of truth hit at H1 (x)
+    gy_h1[i] = std::numeric_limits<float>::max(); // position of truth hit at H1 (y)
+    gz_h1[i] = std::numeric_limits<float>::max(); // position of truth hit at H1 (z) 
+    gpx_h1[i] = std::numeric_limits<float>::max(); // momentum of truth hit at H1 (x) 
     gpy_h1[i] = std::numeric_limits<float>::max();
     gpz_h1[i] = std::numeric_limits<float>::max();
     gx_h2[i] = std::numeric_limits<float>::max();
@@ -340,11 +387,7 @@ int SimAna::ResetEvalVars() {
     gpx_h4[i] = std::numeric_limits<float>::max();
     gpy_h4[i] = std::numeric_limits<float>::max();
     gpz_h4[i] = std::numeric_limits<float>::max();
-  }
 
-  // secondary hits
-  n_secondaries = 0;
-  for (int i = 0; i < 1000; ++i) {
     gtrkid_sec[i] = std::numeric_limits<int>::max();
     gpid_sec[i] = std::numeric_limits<int>::max();
     gvx_sec[i] = std::numeric_limits<float>::max();
@@ -354,10 +397,11 @@ int SimAna::ResetEvalVars() {
     gpy_sec[i] = std::numeric_limits<float>::max();
     gpz_sec[i] = std::numeric_limits<float>::max();
     ge_sec[i] = std::numeric_limits<float>::max();
+
     //nhits_ecal_sec[i] = 0;
   }
 
-  // trigger
+  // trigger information
   for (int i = 0; i < 5; ++i) {
     fpga_trigger[i] = 0;
   }
@@ -366,7 +410,7 @@ int SimAna::ResetEvalVars() {
 }
 
 int SimAna::process_event(PHCompositeNode* topNode) {
-
+  // reset variables to max.
   ResetEvalVars();
 
   // filling arrays
@@ -393,7 +437,6 @@ int SimAna::process_event(PHCompositeNode* topNode) {
   // tracks
   int n_recTracks = _legacyContainer ? _recEvent->getNTracks() : _recTrackVector->size();
   n_truthtracks = 0;
-  n_tracks = 0;
   for(int itrk = 0; itrk < _trackVector->size(); ++itrk) {
     SQTrack* track = _trackVector->at(itrk);
 
@@ -418,6 +461,7 @@ int SimAna::process_event(PHCompositeNode* topNode) {
     truthtrack_pz_vtx[n_truthtracks] = (track->get_mom_vtx()).Pz();
 
     int recid = track->get_rec_track_id();
+    //std::cout<<"the recid is "<<recid<<std::endl;
     if(recid >= 0 && recid < n_recTracks) {
       SRecTrack* recTrack = _legacyContainer ? &(_recEvent->getTrack(recid)) : dynamic_cast<SRecTrack*>(_recTrackVector->at(recid));
       //std::cout << "******************** (recTrack->getTargetMom()).Px() " << (recTrack->getTargetMom()).Px() << std::endl;
@@ -447,6 +491,8 @@ int SimAna::process_event(PHCompositeNode* topNode) {
       track_px_vtx[n_tracks] = (recTrack->getVertexMom()).X();
       track_py_vtx[n_tracks] = (recTrack->getVertexMom()).Y();
       track_pz_vtx[n_tracks] = (recTrack->getVertexMom()).Z();
+      track_x_CAL[n_tracks] = track_x_st3[n_tracks] + (track_px_st3[n_tracks]/track_pz_st3[n_tracks])*(1930.-track_z_st3[n_tracks]);
+      track_y_CAL[n_tracks] = track_y_st3[n_tracks] + (track_py_st3[n_tracks]/track_pz_st3[n_tracks])*(1930.-track_z_st3[n_tracks]);
       track_chisq[n_tracks] = recTrack->getChisq();
       track_prob[n_tracks] = recTrack->getProb();
       track_quality[n_tracks] = recTrack->getQuality();
@@ -461,6 +507,54 @@ int SimAna::process_event(PHCompositeNode* topNode) {
     if (n_truthtracks >= 100)
       break;
   }
+  
+  n_st3tracklets = 0;
+  //std::cout<<"about to enter st3tracklet loop"<<std::endl;
+  int n_st3trackletsINDEX = _legacyContainer ? _recEvent->getNSt3Tracklets() : _recSt3TrackletVector->size();
+  for(int itrk = 0; itrk < n_st3trackletsINDEX; ++itrk) {
+    SRecTrack* track = _legacyContainer ? &(_recEvent->getSt3Tracklet(n_st3tracklets)) : dynamic_cast<SRecTrack*>(_recSt3TrackletVector->at(n_st3tracklets));
+    st3tracklet_charge[n_st3tracklets] = track->getCharge();
+    st3tracklet_nhits[n_st3tracklets] = track->getNHits();
+    st3tracklet_x_target[n_st3tracklets] = (track->getTargetPos()).X();
+    st3tracklet_y_target[n_st3tracklets] = (track->getTargetPos()).Y();
+    st3tracklet_z_target[n_st3tracklets] = (track->getTargetPos()).Z();
+    st3tracklet_px_target[n_st3tracklets] = (track->getTargetMom()).Px();
+    st3tracklet_py_target[n_st3tracklets] = (track->getTargetMom()).Py();
+    st3tracklet_pz_target[n_st3tracklets] = (track->getTargetMom()).Pz();
+    st3tracklet_x_st1[n_st3tracklets] = (track->getPositionVecSt1()).X();
+    st3tracklet_y_st1[n_st3tracklets] = (track->getPositionVecSt1()).Y();
+    st3tracklet_z_st1[n_st3tracklets] = (track->getPositionVecSt1()).Z();
+    st3tracklet_px_st1[n_st3tracklets] = (track->getMomentumVecSt1()).Px();
+    st3tracklet_py_st1[n_st3tracklets] = (track->getMomentumVecSt1()).Py();
+    st3tracklet_pz_st1[n_st3tracklets] = (track->getMomentumVecSt1()).Pz();
+    st3tracklet_x_st3[n_st3tracklets] = (track->getPositionVecSt3()).X();
+    st3tracklet_y_st3[n_st3tracklets] = (track->getPositionVecSt3()).Y();
+    st3tracklet_z_st3[n_st3tracklets] = (track->getPositionVecSt3()).Z();
+    st3tracklet_px_st3[n_st3tracklets] = (track->getMomentumVecSt3()).Px();
+    st3tracklet_py_st3[n_st3tracklets] = (track->getMomentumVecSt3()).Py();
+    st3tracklet_pz_st3[n_st3tracklets] = (track->getMomentumVecSt3()).Pz();
+    st3tracklet_x_vtx[n_st3tracklets] = (track->getVertexPos()).X();
+    st3tracklet_y_vtx[n_st3tracklets] = (track->getVertexPos()).Y();
+    st3tracklet_z_vtx[n_st3tracklets] = (track->getVertexPos()).Z();
+    st3tracklet_px_vtx[n_st3tracklets] = (track->getVertexMom()).X();
+    st3tracklet_py_vtx[n_st3tracklets] = (track->getVertexMom()).Y();
+    st3tracklet_pz_vtx[n_st3tracklets] = (track->getVertexMom()).Z();
+    st3tracklet_x_CAL[n_st3tracklets] = st3tracklet_x_st3[n_st3tracklets] + (st3tracklet_px_st3[n_st3tracklets]/st3tracklet_pz_st3[n_st3tracklets])*(1930.-st3tracklet_z_st3[n_st3tracklets]);
+    st3tracklet_y_CAL[n_st3tracklets] = st3tracklet_y_st3[n_st3tracklets] + (st3tracklet_py_st3[n_st3tracklets]/st3tracklet_pz_st3[n_st3tracklets])*(1930.-st3tracklet_z_st3[n_st3tracklets]);
+    st3tracklet_chisq[n_st3tracklets] = track->getChisq();
+    st3tracklet_prob[n_st3tracklets] = track->getProb();
+    st3tracklet_quality[n_st3tracklets] = track->getQuality();
+    st3tracklet_isValid[n_st3tracklets] = track->isValid();
+    st3tracklet_nhits_st1[n_st3tracklets] = track->getNHitsInStation(1);
+    st3tracklet_nhits_st2[n_st3tracklets] = track->getNHitsInStation(2);
+    st3tracklet_nhits_st3[n_st3tracklets] = track->getNHitsInStation(3);
+    
+    ++n_st3tracklets;
+    if (n_st3tracklets >= 100)
+      break;
+  }
+  std::cout<<"print out of n_st3tracklets: "<<n_st3tracklets<<std::endl;
+
 
   // vertices
   n_truthdimuons = 0;
@@ -533,8 +627,8 @@ int SimAna::process_event(PHCompositeNode* topNode) {
   }
   
   // uncomment this to print the truth tree
+  // std::cout<<"ABOUT TO look at the shower"<<std::endl;
   //_truth->identify();
-
   //for (auto iterp = _truth->GetSecondaryParticleRange().first;
   //     iterp != _truth->GetSecondaryParticleRange().second; ++iterp) {
   //  PHG4Particle *secondary = iterp->second;
@@ -764,6 +858,11 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
     if(!_recTrackVector) {
       return Fun4AllReturnCodes::ABORTEVENT;
     }
+    
+    _recSt3TrackletVector  = findNode::getClass<SQTrackVector>(topNode, "SQRecSt3TrackletVector");
+    if(!_recSt3TrackletVector) {
+      return Fun4AllReturnCodes::ABORTEVENT;
+    }
   }
 
   _truth = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
@@ -821,6 +920,7 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
 
 void SimAna::MakeTree()
 {
+  std::cout<<"FILE name here is? "<<saveNameOut<<std::endl;
   saveFile= new TFile(saveNameOut, "RECREATE");
   saveTree = new TTree("Events", "Tree Created by SimAna");
   saveTree->Branch("eventID", &eventID, "eventID/I");
@@ -887,7 +987,8 @@ void SimAna::MakeTree()
   saveTree->Branch("track_px_vtx",         track_px_vtx,        "track_px_vtx[n_tracks]/F");
   saveTree->Branch("track_py_vtx",         track_py_vtx,        "track_py_vtx[n_tracks]/F");
   saveTree->Branch("track_pz_vtx",         track_pz_vtx,        "track_pz_vtx[n_tracks]/F");
-  saveTree->Branch("track_m",              track_m,             "track_m[n_tracks]/F");
+  saveTree->Branch("track_x_CAL",          track_x_CAL,         "track_x_CAL[n_tracks]/F");
+  saveTree->Branch("track_y_CAL",          track_y_CAL,         "track_y_CAL[n_tracks]/F");
   saveTree->Branch("track_chisq",          track_chisq,         "track_chisq[n_tracks]/F");
   saveTree->Branch("track_prob",           track_prob,          "track_prob[n_tracks]/F");
   saveTree->Branch("track_quality",        track_quality,       "track_quality[n_tracks]/F");
@@ -896,6 +997,46 @@ void SimAna::MakeTree()
   saveTree->Branch("track_nhits_st2",      track_nhits_st2,     "track_nhits_st2[n_tracks]/I");
   saveTree->Branch("track_nhits_st3",      track_nhits_st3,     "track_nhits_st3[n_tracks]/I");
 
+  
+  //std::cout<<"about to make tree for st3tracklets"<<std::endl;
+  saveTree->Branch("n_st3tracklets",              &n_st3tracklets,            "n_st3tracklets/I");
+  saveTree->Branch("st3tracklet_charge",         st3tracklet_charge,        "st3tracklet_charge[n_st3tracklets]/I");
+  saveTree->Branch("st3tracklet_nhits",          st3tracklet_nhits,         "st3tracklet_nhits[n_st3tracklets]/I");
+  saveTree->Branch("st3tracklet_x_target",       st3tracklet_x_target,      "st3tracklet_x_target[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_y_target",       st3tracklet_y_target,      "st3tracklet_y_target[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_z_target",       st3tracklet_z_target,      "st3tracklet_z_target[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_px_target",      st3tracklet_px_target,     "st3tracklet_px_target[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_py_target",      st3tracklet_py_target,     "st3tracklet_py_target[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_pz_target",      st3tracklet_pz_target,     "st3tracklet_pz_target[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_x_st1",          st3tracklet_x_st1,         "st3tracklet_x_st1[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_y_st1",          st3tracklet_y_st1,         "st3tracklet_y_st1[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_z_st1",          st3tracklet_z_st1,         "st3tracklet_z_st1[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_px_st1",         st3tracklet_px_st1,        "st3tracklet_px_st1[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_py_st1",         st3tracklet_py_st1,        "st3tracklet_py_st1[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_pz_st1",         st3tracklet_pz_st1,        "st3tracklet_pz_st1[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_x_st3",          st3tracklet_x_st3,         "st3tracklet_x_st3[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_y_st3",          st3tracklet_y_st3,         "st3tracklet_y_st3[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_z_st3",          st3tracklet_z_st3,         "st3tracklet_z_st3[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_px_st3",         st3tracklet_px_st3,        "st3tracklet_px_st3[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_py_st3",         st3tracklet_py_st3,        "st3tracklet_py_st3[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_pz_st3",         st3tracklet_pz_st3,        "st3tracklet_pz_st3[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_x_vtx",          st3tracklet_x_vtx,         "st3tracklet_x_vtx[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_y_vtx",          st3tracklet_y_vtx,         "st3tracklet_y_vtx[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_z_vtx",          st3tracklet_z_vtx,         "st3tracklet_z_vtx[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_px_vtx",         st3tracklet_px_vtx,        "st3tracklet_px_vtx[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_py_vtx",         st3tracklet_py_vtx,        "st3tracklet_py_vtx[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_pz_vtx",         st3tracklet_pz_vtx,        "st3tracklet_pz_vtx[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_m",              st3tracklet_m,             "st3tracklet_m[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_x_CAL",          st3tracklet_x_CAL,         "st3tracklet_x_CAL[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_y_CAL",          st3tracklet_y_CAL,         "st3tracklet_y_CAL[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_chisq",          st3tracklet_chisq,         "st3tracklet_chisq[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_prob",           st3tracklet_prob,          "st3tracklet_prob[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_quality",        st3tracklet_quality,       "st3tracklet_quality[n_st3tracklets]/F");
+  saveTree->Branch("st3tracklet_isValid",        st3tracklet_isValid,       "st3tracklet_isValid[n_st3tracklets]/I");
+  saveTree->Branch("st3tracklet_nhits_st1",      st3tracklet_nhits_st1,     "st3tracklet_nhits_st1[n_st3tracklets]/I");
+  saveTree->Branch("st3tracklet_nhits_st2",      st3tracklet_nhits_st2,     "st3tracklet_nhits_st2[n_st3tracklets]/I");
+  saveTree->Branch("st3tracklet_nhits_st3",      st3tracklet_nhits_st3,     "st3tracklet_nhits_st3[n_st3tracklets]/I");
+  
   saveTree->Branch("n_truthdimuons",     &n_truthdimuons,   "n_truthdimuons/I");
   saveTree->Branch("truthdimuon_mass",   truthdimuon_mass,  "truthdimuon_mass[n_truthdimuons]/F");
   saveTree->Branch("truthdimuon_x_vtx",  truthdimuon_x_vtx, "truthdimuon_x_vtx[n_truthdimuons]/F");
