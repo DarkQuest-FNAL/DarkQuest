@@ -85,7 +85,7 @@ int RecoE1039Sim(const int nevent = 200,
   // https://github.com/E1039-Collaboration/e1039-core/blob/master/framework/fun4all/Fun4AllBase.h#L33-L55
   // the verbosity of different modules can also be modified separately for
   // debugging
-  const int verbosity = 110;
+  const int verbosity = 0;
 
   // legacy rec container
   const bool legacy_rec_container =  true; // false is for e1039 format
@@ -398,8 +398,8 @@ int RecoE1039Sim(const int nevent = 200,
     Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
     se->registerInputManager(in);
     stringstream ssin;
-    ssin << "$DIR_CMANTILL/../../lhe/output/displaced_Aprime_Muons/" << ifile
-         << ".txt";
+    ssin << "/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits/../../lhe/output/displaced_Aprime_Muons_z500-600/" << ifile  << ".txt";
+    std::cout << "input path " << ssin.str().c_str() << std::endl;
     in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
     in->Verbosity(verbosity);
     se->registerInputManager(in);
