@@ -29,33 +29,40 @@ using namespace std;
  * isim = 4 to run on DY to dimuon sample generated with Pythia
  * isim = 5 to run on J/psi to dimuon sample generated with Pythia
  * isim = 6 to run on cosmic sample
+ * isim = 7 to run on trimuon sample
+ * isim = 8 to run on proton gun
  *
  * is_displaced decides to run with the displaced config or not.
  * do_analysis runs the analysis ntuple
  * for Aprime signal, always run with is_displaced to True
  */
 
-int RecoE1039Sim(const int nevent = 200,
-                const int isim = 1,
-                bool is_displaced = true,
-                const bool do_analysis = true,
-                std::string ifile="Brem_2.750000_z500_600_eps_-6.4",
-                std::string out_file = "output.root"
+int RecoE1039Sim(const int nevent = 10,
+		 const int isim = 1,
+		 bool is_displaced = false,
+		 const bool do_analysis = true,
+		 std::string input_file = "Brem_0.470915_z500_600_eps_-6.4",
+		 std::string input_path = "/seaquest/users/cmantill/DarkQuest/lhe/output/displaced_Aprime_Electrons_z500-600/",
+		 std::string out_file = "output.root",
+		 std::string out_path = "./"
                 )
 {
   // input simulation
-  bool do_aprime_muon{false},do_aprime_electron{false},do_gun{false},do_dy{false},do_jpsi{false},do_cosmic{false},do_pion{false},do_trimuon{false};
+  bool do_aprime_muon{false},do_aprime_electron{false},do_gun{false},do_dy{false},do_jpsi{false},do_cosmic{false},do_trimuon{false},do_protongun{false};
   switch(isim){
   case 1: 
     do_aprime_muon = true;
     is_displaced = true; 
+    std::cout << " DISPLACED A' TO MUONS " << std::endl;
     break;
   case 2:
     do_aprime_electron = true;
     is_displaced = true;
+    std::cout << " DISPLACED A' TO ELECTRONS " << std::endl;
     break;
   case 3:
     do_gun = true;
+    std::cout << " GUN " << std::endl;
     break;
   case 4:
     do_dy = true;
@@ -67,10 +74,10 @@ int RecoE1039Sim(const int nevent = 200,
     do_cosmic = true;
     break;
   case 7:
-    do_pion = true;
+    do_trimuon = true;
     break;
   case 8:
-    do_trimuon = true;
+    do_protongun = true;
     break;
   }
 
@@ -108,9 +115,11 @@ int RecoE1039Sim(const int nevent = 200,
   recoConsts *rc = recoConsts::instance();
   rc->set_DoubleFlag("FMAGSTR", FMAGSTR);
   rc->set_DoubleFlag("KMAGSTR", KMAGSTR);
-  rc->set_CharFlag(
-      "AlignmentMille",
-      "align_mille.txt"); // alignment file needed for EMCAL
+  if(doEMCal){
+    rc->set_CharFlag(
+		     "AlignmentMille",
+		     "align_mille.txt"); // alignment file needed for EMCAL
+  }
   rc->set_CharFlag("fMagFile",
                    "$E1039_RESOURCE/geometry/magnetic_fields/tab.Fmag");
   rc->set_CharFlag("kMagFile",
@@ -190,22 +199,40 @@ int RecoE1039Sim(const int nevent = 200,
     hr->Verbosity(verbosity);
     se->registerSubsystem(hr);
   }
+  else if(do_protongun){
+    PHG4SimpleEventGenerator *genp = new PHG4SimpleEventGenerator("MUP");
+    genp->add_particles("proton", 1); 
+    genp->set_vertex_distribution_function(PHG4SimpleEventGenerator::Uniform,
+                                           PHG4SimpleEventGenerator::Uniform,
+                                           PHG4SimpleEventGenerator::Uniform);
+    //genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z);
+    genp->set_vertex_distribution_mean(0.0, 0.0, 0);
+    //genp->set_vertex_distribution_mean(0.0, 0.0, 500);
+    genp->set_vertex_distribution_width(0.0, 0.0, 10.0);
+    genp->set_vertex_size_function(PHG4SimpleEventGenerator::Uniform);
+    genp->set_vertex_size_parameters(0.0, 0.0);
+    //genp->set_pxpypz_range(-3,6, -3,3, 10,100);
+    genp->set_pxpypz_range(-1., 1., -1., 1., 0., 100.);
+    genp->Verbosity(verbosity);
+    se->registerSubsystem(genp);
+  }
   else if(do_gun){ // particle gun
     PHG4SimpleEventGenerator *genp = new PHG4SimpleEventGenerator("MUP");
-    genp->add_particles("mu+", 1);  // mu+
+    //genp->add_particles("mu+", 1);  // mu+
     //genp->add_particles("mu-", 1); // mu-
     //genp->add_particles("e+", 1); // positron
     //genp->add_particles("pi+", 1); // pions
-    //genp->add_particles("kaon0L", 1); // k0long
-    //genp->add_particles("proton", 1); // protons
+    genp->add_particles("kaon0L", 1); // k0long
     //genp->add_particles("Upsilon", 1); // upsilon
+    //genp->add_particles("gamma", 1); // single photon
     genp->set_vertex_distribution_function(PHG4SimpleEventGenerator::Uniform,
 					   PHG4SimpleEventGenerator::Uniform,
 					   PHG4SimpleEventGenerator::Uniform);
     if(is_displaced){
-      genp->set_vertex_distribution_mean(0.0, 0.0, 500.);
+      genp->set_vertex_distribution_mean(0.0, 0.0, 520.); // after FMAG
     } else {
-      genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z);
+      genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z); 
+      //genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z);
     }
 
     genp->set_vertex_distribution_width(0.0, 0.0, 0.0);
@@ -286,7 +313,7 @@ int RecoE1039Sim(const int nevent = 200,
   }
   // sensitive elements of the spectrometer
   SetupSensitiveDetectors(g4Reco, do_dphodo, do_station1DC, "SQ_ArCO2",
-                          "SQ_Scintillator", 1);
+                          "SQ_Scintillator", 0);
   if (doEMCal) {
     SetupEMCal(g4Reco, "EMCal", 0., 0., 1930.);
   }
@@ -309,7 +336,6 @@ int RecoE1039Sim(const int nevent = 200,
   se->registerSubsystem(digitizer);
 
   // tracking module
-  std::cout << "*********** Start SQReco step now..." << std::endl;
   SQReco* reco = new SQReco();
   reco->Verbosity(verbosity);
   reco->set_legacy_rec_container(legacy_rec_container);
@@ -367,8 +393,21 @@ int RecoE1039Sim(const int nevent = 200,
   gSystem->Load("libsim_ana.so");
   SimAna *sim_ana = new SimAna();  
   sim_ana->Verbosity(verbosity);
-  sim_ana->set_out_name(out_file);
+  bool set_time = false; // set time for multiple jobs
+  std::string ofile = out_path + out_file;
+  if(set_time){
+    time_t     now = time(0);
+    struct tm  tstruct;
+    char buf[80];
+    tstruct = *localtime(&now);
+    strftime(buf, sizeof(buf), "%Y-%m-%d-%X", &tstruct);
+    ofile = out_path + buf + out_file; 
+  }
+  sim_ana->set_out_name(ofile);
   sim_ana->set_legacy_rec_container(legacy_rec_container);
+  if(do_protongun){
+    sim_ana->save_secondaries(true);
+  }
   if(do_analysis){
     se->registerSubsystem(sim_ana);    
   }
@@ -379,8 +418,7 @@ int RecoE1039Sim(const int nevent = 200,
     Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
     se->registerInputManager(in);
     stringstream ssin;
-    ssin << "$DIR_CMANTILL/../../lhe/output/displaced_Aprime_Muons/" << ifile
-         << ".txt";
+    ssin << input_path << input_file << ".txt";
     in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
     in->Verbosity(verbosity);
     se->registerInputManager(in);
@@ -389,7 +427,7 @@ int RecoE1039Sim(const int nevent = 200,
     Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
     se->registerInputManager(in);
     stringstream ssin;
-    ssin << "$DIR_CMANTILL/../../lhe/output/trimuon_0.5MS0gS1.hepmc";
+    ssin << input_path << input_file << ".hepmc";
     in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
     in->Verbosity(verbosity);
     se->registerInputManager(in);
@@ -409,7 +447,6 @@ int RecoE1039Sim(const int nevent = 200,
   // finish job - close and save output files
   se->End();
   se->PrintTimer();
-  std::cout << "All done" << std::endl;
 
   // cleanup - delete the server and exit
   delete se;
