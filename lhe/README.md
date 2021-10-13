@@ -59,13 +59,6 @@ mkdir output/displaced_Aprime_Electrons/
 # for example
 ./bin/displacedHepmc data/Aprime_Electrons/SeaQuestAprimeToElectronsLHE_Eta_mAp_0.54_GeV.txt Eta_0.54_-7.6.root Eta electron 0 -7.6 0.54 500 600
 ```
-
-There are short scripts that run all masses and couplings:
-```
-source run_dimuon.sh
-source run_dielectron.sh
-```
-
 ## Acceptance
 
 The ratio of `number of accepted events / number of sampled events` can be used to calculate the acceptance. 

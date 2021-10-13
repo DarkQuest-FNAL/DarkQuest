@@ -8,13 +8,14 @@ R__LOAD_LIBRARY(libktracker)
 R__LOAD_LIBRARY(libanamodule)
 
 /*
-This macro takes severl external input files to run:
+This macro takes:
 1. geom.root is the standard geometry dump from running the Fun4Sim macro;
 2. e906_run7.opts is provided
-3. /pnfs/e906/persistent/users/liuk/darkp/digit/R008/02/83/digit_028300_R008.root is E906 run6 data, can be found at /pnfs/e906/persistent/users/liuk/darkp/digit/R008/02/83/
+3. /seaquest/users/cmantill/kTracker/kTrackerDark/nimSkim_data.root
+3. /seaquest/users/cmantill/DarkQuest/e1039-analysis/DataHits/macro/nimSkim_data.root (2017 data with DP hits)
 */
 
-int RecoE906Data(const int nEvents = 20) //8518)
+int RecoE906Data(const int nEvents = 20) 
 {
   const double FMAGSTR = -1.054;
   const double KMAGSTR = -0.951;
@@ -51,12 +52,13 @@ int RecoE906Data(const int nEvents = 20) //8518)
   reco->set_evt_reducer_opt("aoce"); //if not provided, event reducer will be using JobOptsSvc to intialize; to turn off, set it to "none"
   reco->set_enable_eval(true);
   reco->set_eval_file_name("eval.root");
-  se->registerSubsystem(reco);
+  //se->registerSubsystem(reco);
 
   //analysis module
   //gSystem->Load("libanamodule.so");
   AnaModule* ana = new AnaModule();
   ana->set_output_filename("ana.root");
+  ana->set_reco(false);
   se->registerSubsystem(ana);
 
   //Now for a given detectorID, elementID, pos can be obtained by:
@@ -71,11 +73,11 @@ int RecoE906Data(const int nEvents = 20) //8518)
   in->set_tree_name("save");
   in->set_branch_name("rawEvent");
   in->enable_E1039_translation();
-  in->fileopen("/pnfs/e906/persistent/users/liuk/darkp/digit/R008/02/83/digit_028300_R008.root");
+  in->fileopen("/seaquest/users/cmantill/DarkQuest/e1039-analysis/DataHits/macro/nimSkim_data.root");
   se->registerInputManager(in);
 
   Fun4AllDstOutputManager* out = new Fun4AllDstOutputManager("DSTOUT", "result.root");
-  se->registerOutputManager(out);
+  //se->registerOutputManager(out);
   //out->Verbosity(100);
   out->Verbosity(0);
   out->AddNode("SRawEvent");
