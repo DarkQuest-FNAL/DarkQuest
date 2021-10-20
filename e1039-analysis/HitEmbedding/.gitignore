@@ -1,0 +1,10 @@
+build
+inst
+scratch
+*~
+*.bak
+*.swp
+*.png
+*.root
+macro_*/data
+macro_*/result
