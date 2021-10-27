@@ -88,3 +88,15 @@ Probably you need not generate embedding events, since the E906 NIM3 events are 
 
 Feel free to send any questions/suggestions to Kenichi Nakano.
 
+## Workflow for DQ:
+- Generate signal events (e.g. particle gun, aprime signal). 
+  - If possible generate them in batches of 5k events (easier to embed since e906 data is pre-processed in similar batches).
+  - Execute `Fun4Sim.C` macro in `macro_gen_signal/` or execute `RecoE1039Sim.C` (with `run_sim.py` in `SimHits/`).
+
+- Process events for embedding.
+  - For normal e906 data we should not need to do this step again.
+  - For a generated dataset (e.g. proton gun) we can use `macro_gen_emb/`.
+
+- Embed events.
+  - We can use the e906 2017 data that has been pre-processed.
+  - Execute `Fun4Sim.C` macro in `macro_gen_embed/`.

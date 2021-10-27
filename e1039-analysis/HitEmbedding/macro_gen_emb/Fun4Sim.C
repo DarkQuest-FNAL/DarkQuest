@@ -26,6 +26,7 @@ int Fun4Sim(const int nevent = 10)
   ///
   /// Event generator
   ///
+  const double target_coil_pos_z = -300;
   PHG4SimpleEventGenerator *genp = new PHG4SimpleEventGenerator("MUP");
   genp->add_particles("mu+", 2);
   genp->set_vertex_distribution_mean(0.0, 0.0, target_coil_pos_z);
