@@ -45,7 +45,7 @@ public:
   void save_secondaries(bool b);
   void save_primaries(bool b);
   void save_tracks(bool b);
-  void save_vertices(bool b);
+  void save_vertex(bool b);
   
 private:
   int GetNodes(PHCompositeNode* topNode);

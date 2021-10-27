@@ -44,7 +44,7 @@ using namespace std;
  * for Aprime signal, is_displaced to always set to True
  */
 
-int RecoE1039Sim(const int nevent = 200,
+int RecoE1039Sim(const int nevents = 200,
 		 const int isim = 1,
 		 const int igun = 0,
 		 const double zvertex = -300, // target_coil_pos_z
@@ -54,7 +54,7 @@ int RecoE1039Sim(const int nevent = 200,
 		 std::string input_path = "/seaquest/users/cmantill/DarkQuest/lhe/output/displaced_Aprime_Muons_z500-600/",
 		 std::string out_file = "output.root",
 		 std::string out_path = "./",
-		 const int verbosity = 1
+		 const int verbosity = 0
                 )
 {
   // input simulation
@@ -137,6 +137,9 @@ int RecoE1039Sim(const int nevent = 200,
 
   // legacy rec container
   const bool legacy_rec_container =  true; // false is for e1039 format
+
+  // save dst file 
+  const bool save_dst = true;
 
   // setup detectors in SpinQuest
   const bool do_collimator = true;
@@ -392,16 +395,7 @@ int RecoE1039Sim(const int nevent = 200,
   gSystem->Load("libsim_ana.so");
   SimAna *sim_ana = new SimAna();  
   sim_ana->Verbosity(verbosity);
-  bool set_time = false; // set time for multiple jobs
   std::string ofile = out_path + out_file;
-  if(set_time){
-    time_t     now = time(0);
-    struct tm  tstruct;
-    char buf[80];
-    tstruct = *localtime(&now);
-    strftime(buf, sizeof(buf), "%Y-%m-%d-%X", &tstruct);
-    ofile = out_path + buf + out_file; 
-  }
   sim_ana->set_out_name(ofile);
   sim_ana->set_legacy_rec_container(legacy_rec_container);
   sim_ana->save_secondaries(false); // set to true to save secondaries
@@ -438,7 +432,29 @@ int RecoE1039Sim(const int nevent = 200,
     se->registerInputManager(in);
   }
 
-  se->run(nevent);
+  // output (DST file)
+  std::string dstfile = ofile;
+  dstfile.resize(dstfile.size() - 5); // remove root from ending
+  dstfile.append("_DST.root");
+
+  Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", dstfile.c_str());
+  // these classes are needed for hit embedding
+  out->AddNode("SQEvent");
+  out->AddNode("SQHitVector");
+  out->AddNode("SRecEvent");
+  out->AddNode("SQMCEvent");
+  out->AddNode("SQTruthTrackVector");
+  out->AddNode("SQTruthDimuonVector");
+  // add these to save same content of analysis ntuples
+  // out->AddNode("SQRecTrackVector");
+  // out->AddNode("SQRecDimuonVector");
+  // out->AddNode("SQRecSt3TrackletVector");
+  // out->AddNode("PHG4HitContainer");
+  // out->AddNode("PHG4TruthInfoContainer");
+  if(save_dst){
+    se->registerOutputManager(out);
+  }
+  se->run(nevents);
 
   // export the geometry
   // PHGeomUtility::ExportGeomtry(se->topNode(),"geom.root");

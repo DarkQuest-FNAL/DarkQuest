@@ -582,7 +582,7 @@ int SimAna::process_event(PHCompositeNode* topNode) {
       if (n_st3tracklets >= 100)
 	break;
     }
-    std::cout<<"print out of n_st3tracklets: "<<n_st3tracklets<<std::endl;
+    //std::cout<<"print out of n_st3tracklets: "<<n_st3tracklets<<std::endl;
   }
 
   if(_saveVertex){
