@@ -28,3 +28,14 @@ The run-by-run output files are merged;
 ```
 ./merge-emb-file.sh
 ```
+
+## To run, file by file:
+
+For 2017 e906 data:
+- List of good runs: `/data2/production/list/R009/R009_fy2017.list`
+- Directory with files: `/pnfs/e906/production/digit/R009/`
+- e.g. for run 24180:
+
+```
+root -b -q Fun4All.C\(24180,\"/pnfs/e906/production/digit/R009/02/41/digit_024180_009.root\"\)
+```

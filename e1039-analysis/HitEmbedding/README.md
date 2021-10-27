@@ -35,6 +35,11 @@ All source codes specific to this packages are stored in `src/`.
 You have to compile them at least once by the following commands;
 ```
 source setup.sh
+# if you have DarkQuest's version of e1039-core:
+source setup_mye1039.sh
+```
+and then:
+```
 cmake-this
 make-this
 ```
@@ -63,10 +68,10 @@ Probably you need not generate embedding events, since the E906 NIM3 events are 
     |             |  [ Generate embedding events ]  ... `macro_gen_emb` or `macro_gen_emb_e906`
     |             |    |
     |             V    V
-    |           [ Embed hits ]                      ... `macro_emb`
+    |           [ Embed hits ]                      ... `macro_embed`
     |             |
     |             V
-    |           [ Reconstruct ]                     ... `macro_emb`
+    |           [ Reconstruct ]                     ... `macro_embed`
     |             |
     V             V
   [ Analyze ]   [ Analyze ]                         ... `macro_ana`

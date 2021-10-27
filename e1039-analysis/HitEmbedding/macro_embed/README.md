@@ -3,7 +3,7 @@
 This macro is to carry out the hit embedding.
 It reads
 * The signal data (`DST.root`) that you produced with `macro_gen_signal` and
-* The embedding data (`embedding_data.root`) that you procuded with `macro_gen_emb`.
+* The embedding data (`embedding_data.root`) that you procuded with `macro_gen_emb` (or `macro_gen_emb_e906`).
 
 It writes out the embedded data into a new DST file (`DST.root`).
 
@@ -53,9 +53,15 @@ source /e906/app/software/script/setup-jobsub-spinquest.sh
 ./gridsub.sh -g jpsi_20211012
 ```
 
+## To run in one file:
+Use input path of signal file and of embedding file, e.g.:
+```
+root -b -q Fun4Sim.C(\"/seaquest/users/cmantill/DarkQuest/e1039-analysis/SimHits/macro/output/Oct27/electron_gun_z520_5k_DST.root\",\"/pnfs/e1039/persistent/users/kenichi/data_emb_e906/0001/embedding_data.root\", 5000)
+```
 
 ## Event reconstruction
 
 The event reconstruction is carried out after the hit embedding.
 The setting has to be identical to the one in `macro_gen_signal/Fun4Sim.C`.
 The reconstruction here makes a result affected by the hit embedding.
+
