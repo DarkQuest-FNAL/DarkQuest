@@ -43,12 +43,18 @@ public:
   void set_out_name(std::string out_file) {saveNameOut = out_file.c_str();}
   void set_legacy_rec_container(bool b); 
   void save_secondaries(bool b);
-
+  void save_primaries(bool b);
+  void save_tracks(bool b);
+  void save_vertices(bool b);
+  
 private:
   int GetNodes(PHCompositeNode* topNode);
   bool _legacyContainer;
   bool _saveSecondaries;
-
+  bool _savePrimaries;
+  bool _saveTracks;
+  bool _saveVertex;
+  
   void MakeTree();
 
   SQHitVector* _hitVector;

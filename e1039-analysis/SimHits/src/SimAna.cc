@@ -27,7 +27,12 @@
 
 #include "SimAna.h"
 
-SimAna::SimAna(const std::string& name): SubsysReco(name), _legacyContainer(true), _saveSecondaries(false)
+SimAna::SimAna(const std::string& name): SubsysReco(name),
+					 _legacyContainer(true),
+					 _saveSecondaries(false),
+					 _savePrimaries(true),
+					 _saveTracks(true),
+					 _saveVertex(true)
 {}
 
 SimAna::~SimAna() {}
@@ -91,7 +96,7 @@ PHG4Shower *SimAna::get_primary_shower(PHG4Particle *primary) {
   return shower;
 }
 
-// find best reco track
+// find best reco track (closer to target momentum)
 SRecTrack* SimAna::FindBestMomRecTrack(SRecEvent *recEvent,  const float true_TargetP) {
   double dP = 100.; // delta(momentum)
   double hold_dP = 99999.;
@@ -136,6 +141,18 @@ void SimAna::set_legacy_rec_container(bool b) {
 
 void SimAna::save_secondaries(bool b) {
   _saveSecondaries = b;
+}
+
+void SimAna::save_primaries(bool b) {
+  _savePrimaries = b;
+}
+
+void SimAna::save_tracks(bool b) {
+  _saveTracks = b;
+}
+
+void SimAna::save_vertex(bool b) {
+  _saveVertex = b;
 }
 
 int SimAna::ResetEvalVars() {
@@ -204,7 +221,7 @@ int SimAna::ResetEvalVars() {
     track_z_st3[i]       = std::numeric_limits<float>::max(); // position of track at station 3 (z)
     track_px_st3[i]      = std::numeric_limits<float>::max(); // momentum of track at station 3 (x)
     track_py_st3[i]      = std::numeric_limits<float>::max(); // momentum of track at station 3 (y)
-    track_pz_st3[i]      = std::numeric_limits<float>::max(); //  momentum of track at station 3 (z)
+    track_pz_st3[i]      = std::numeric_limits<float>::max(); // momentum of track at station 3 (z)
     track_x_vtx[i]       = std::numeric_limits<float>::max(); // position of vertex associated with track (x)
     track_y_vtx[i]       = std::numeric_limits<float>::max(); // position of vertex associated with track (y)
     track_z_vtx[i]       = std::numeric_limits<float>::max(); // position of vertex associated with track (z)
@@ -320,20 +337,20 @@ int SimAna::ResetEvalVars() {
     sz_ecal[i]          = std::numeric_limits<float>::max(); // position of EMCAL truth shower (z)
     sedep_ecal[i]       = std::numeric_limits<float>::max(); // energy deposited in EMCAL by truth shower
 
-    gtrkid[i] = std::numeric_limits<int>::max(); // track ID of primary particle
-    gpid[i] = std::numeric_limits<int>::max(); // particle ID of primary particle
-    gvx[i] = std::numeric_limits<float>::max(); // vertex position of primary particle (x)
-    gvy[i] = std::numeric_limits<float>::max(); // vertex position of primary particle (y)
-    gvz[i] = std::numeric_limits<float>::max(); // vertex position of primary particle (z)
-    gpx[i] = std::numeric_limits<float>::max(); // momentum of primary particle (x)
-    gpy[i] = std::numeric_limits<float>::max(); // momentum of primary particle (y)
-    gpz[i] = std::numeric_limits<float>::max(); // momentum of primary particle (z)
-    gpt[i] = std::numeric_limits<float>::max(); // transverse momentum of primary particle
-    geta[i] = std::numeric_limits<float>::max(); // eta angle of primary particle
-    gphi[i] = std::numeric_limits<float>::max(); // phi angle of primary particle
-    ge[i] = std::numeric_limits<float>::max(); // energy of primary particle
+    gtrkid[i] = std::numeric_limits<int>::max(); // track ID of primary truth particle
+    gpid[i] = std::numeric_limits<int>::max(); // particle ID of primary truth particle
+    gvx[i] = std::numeric_limits<float>::max(); // vertex position of primary truth particle (x)
+    gvy[i] = std::numeric_limits<float>::max(); // vertex position of primary truth particle (y)
+    gvz[i] = std::numeric_limits<float>::max(); // vertex position of primary truth particle (z)
+    gpx[i] = std::numeric_limits<float>::max(); // momentum of primary truth particle (x)
+    gpy[i] = std::numeric_limits<float>::max(); // momentum of primary truth particle (y)
+    gpz[i] = std::numeric_limits<float>::max(); // momentum of primary truth particle (z)
+    gpt[i] = std::numeric_limits<float>::max(); // transverse momentum of primary truth particle
+    geta[i] = std::numeric_limits<float>::max(); // eta angle of primary truth particle
+    gphi[i] = std::numeric_limits<float>::max(); // phi angle of primary truth particle
+    ge[i] = std::numeric_limits<float>::max(); // energy of primary truth particle
 
-    nhits_ecal[i] = 0; // number of hits in EMCAL for a given primary
+    nhits_ecal[i] = 0; // number of hits in EMCAL for a given primary truth particle
     for (int j = 0; j < 100; ++j) {
       gx_ecal[i][j] = std::numeric_limits<int>::max(); // position of associated hit in EMCAL (x)
       gy_ecal[i][j] = std::numeric_limits<int>::max(); // position of associated hit in EMCAL (y)
@@ -363,10 +380,11 @@ int SimAna::ResetEvalVars() {
     gpy_st3[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 3 (y) 
     gpz_st3[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 3 (z)  
 
-    gx_h1[i] = std::numeric_limits<float>::max(); // position of truth hit at H1 (x)
-    gy_h1[i] = std::numeric_limits<float>::max(); // position of truth hit at H1 (y)
-    gz_h1[i] = std::numeric_limits<float>::max(); // position of truth hit at H1 (z) 
-    gpx_h1[i] = std::numeric_limits<float>::max(); // momentum of truth hit at H1 (x) 
+    // see above definitions but apply them to hodoscopes
+    gx_h1[i] = std::numeric_limits<float>::max(); 
+    gy_h1[i] = std::numeric_limits<float>::max(); 
+    gz_h1[i] = std::numeric_limits<float>::max(); 
+    gpx_h1[i] = std::numeric_limits<float>::max();
     gpy_h1[i] = std::numeric_limits<float>::max();
     gpz_h1[i] = std::numeric_limits<float>::max();
     gx_h2[i] = std::numeric_limits<float>::max();
@@ -388,24 +406,34 @@ int SimAna::ResetEvalVars() {
     gpy_h4[i] = std::numeric_limits<float>::max();
     gpz_h4[i] = std::numeric_limits<float>::max();
 
-    gtrkid_sec[i] = std::numeric_limits<int>::max();
-    gpid_sec[i] = std::numeric_limits<int>::max();
-    gvx_sec[i] = std::numeric_limits<float>::max();
-    gvy_sec[i] = std::numeric_limits<float>::max();
-    gvz_sec[i] = std::numeric_limits<float>::max();
-    gpx_sec[i] = std::numeric_limits<float>::max();
-    gpy_sec[i] = std::numeric_limits<float>::max();
-    gpz_sec[i] = std::numeric_limits<float>::max();
-    ge_sec[i] = std::numeric_limits<float>::max();
+    gtrkid_sec[i] = std::numeric_limits<int>::max(); // track ID of secondary truth particle
+    gpid_sec[i] = std::numeric_limits<int>::max(); // particle ID of secondary truth particle
+    gvx_sec[i] = std::numeric_limits<float>::max(); // vertex position (x) of secondary truth particle
+    gvy_sec[i] = std::numeric_limits<float>::max(); // vertex position (y) of secondary truth particle
+    gvz_sec[i] = std::numeric_limits<float>::max(); // vertex position (z) of secondary truth particle
+    gpx_sec[i] = std::numeric_limits<float>::max(); // momentum (x) of secondary truth particle 
+    gpy_sec[i] = std::numeric_limits<float>::max(); // momentum (y) of secondary truth particle
+    gpz_sec[i] = std::numeric_limits<float>::max(); // momentum (z) of secondary truth particle
+    ge_sec[i] = std::numeric_limits<float>::max(); // energy of secondary truth particle
 
     //nhits_ecal_sec[i] = 0;
   }
 
-  // trigger information
+  /* Trigger information
+     fpga_trigger[0]: SQEvent::MATRIX1
+     fpga_trigger[1]: SQEvent::MATRIX2
+     fpga_trigger[2]: SQEvent::MATRIX3
+     fpga_trigger[3]: SQEvent::MATRIX4
+     fpga_trigger[4]: SQEvent::MATRIX5
+   */
   for (int i = 0; i < 5; ++i) {
-    fpga_trigger[i] = 0;
+    fpga_trigger[i] = 0; // trigger bit
   }
 
+  /* Weight
+   */
+  weight = 1;
+  
   return 0;
 }
 
@@ -413,7 +441,7 @@ int SimAna::process_event(PHCompositeNode* topNode) {
   // reset variables to max.
   ResetEvalVars();
 
-  // filling arrays
+  // save hits by default
   n_hits = 0;
   for(int ihit=0; ihit<_hitVector->size(); ++ihit) {
     SQHit *hit = _hitVector->at(ihit);
@@ -435,199 +463,202 @@ int SimAna::process_event(PHCompositeNode* topNode) {
   }
 
   // tracks
-  int n_recTracks = _legacyContainer ? _recEvent->getNTracks() : _recTrackVector->size();
-  n_truthtracks = 0;
-  for(int itrk = 0; itrk < _trackVector->size(); ++itrk) {
-    SQTrack* track = _trackVector->at(itrk);
-
-    truthtrack_charge[n_truthtracks] = track->get_charge();
-    truthtrack_x_st1[n_truthtracks] = (track->get_pos_st1()).X();
-    truthtrack_y_st1[n_truthtracks] = (track->get_pos_st1()).Y();
-    truthtrack_z_st1[n_truthtracks] = (track->get_pos_st1()).Z();
-    truthtrack_px_st1[n_truthtracks] = (track->get_mom_st1()).Px();
-    truthtrack_py_st1[n_truthtracks] = (track->get_mom_st1()).Py();
-    truthtrack_pz_st1[n_truthtracks] = (track->get_mom_st1()).Pz();
-    truthtrack_x_st3[n_truthtracks] = (track->get_pos_st3()).X();
-    truthtrack_y_st3[n_truthtracks] = (track->get_pos_st3()).Y();
-    truthtrack_z_st3[n_truthtracks] = (track->get_pos_st3()).Z();
-    truthtrack_px_st3[n_truthtracks] = (track->get_mom_st3()).Px();
-    truthtrack_py_st3[n_truthtracks] = (track->get_mom_st3()).Py();
-    truthtrack_pz_st3[n_truthtracks] = (track->get_mom_st3()).Pz();
-    truthtrack_x_vtx[n_truthtracks] = (track->get_pos_vtx()).X();
-    truthtrack_y_vtx[n_truthtracks] = (track->get_pos_vtx()).Y();
-    truthtrack_z_vtx[n_truthtracks] = (track->get_pos_vtx()).Z();
-    truthtrack_px_vtx[n_truthtracks] = (track->get_mom_vtx()).Px();
-    truthtrack_py_vtx[n_truthtracks] = (track->get_mom_vtx()).Py();
-    truthtrack_pz_vtx[n_truthtracks] = (track->get_mom_vtx()).Pz();
-
-    int recid = track->get_rec_track_id();
-    //std::cout<<"the recid is "<<recid<<std::endl;
-    if(recid >= 0 && recid < n_recTracks) {
-      SRecTrack* recTrack = _legacyContainer ? &(_recEvent->getTrack(recid)) : dynamic_cast<SRecTrack*>(_recTrackVector->at(recid));
-      //std::cout << "******************** (recTrack->getTargetMom()).Px() " << (recTrack->getTargetMom()).Px() << std::endl;
-      track_charge[n_tracks] = recTrack->getCharge();
-      track_nhits[n_tracks] = recTrack->getNHits();
-      track_x_target[n_tracks] = (recTrack->getTargetPos()).X();
-      track_y_target[n_tracks] = (recTrack->getTargetPos()).Y();
-      track_z_target[n_tracks] = (recTrack->getTargetPos()).Z();
-      track_px_target[n_tracks] = (recTrack->getTargetMom()).Px();
-      track_py_target[n_tracks] = (recTrack->getTargetMom()).Py();
-      track_pz_target[n_tracks] = (recTrack->getTargetMom()).Pz();
-      track_x_st1[n_tracks] = (recTrack->getPositionVecSt1()).X();
-      track_y_st1[n_tracks] = (recTrack->getPositionVecSt1()).Y();
-      track_z_st1[n_tracks] = (recTrack->getPositionVecSt1()).Z();
-      track_px_st1[n_tracks] = (recTrack->getMomentumVecSt1()).Px();
-      track_py_st1[n_tracks] = (recTrack->getMomentumVecSt1()).Py();
-      track_pz_st1[n_tracks] = (recTrack->getMomentumVecSt1()).Pz();
-      track_x_st3[n_tracks] = (recTrack->getPositionVecSt3()).X();
-      track_y_st3[n_tracks] = (recTrack->getPositionVecSt3()).Y();
-      track_z_st3[n_tracks] = (recTrack->getPositionVecSt3()).Z();
-      track_px_st3[n_tracks] = (recTrack->getMomentumVecSt3()).Px();
-      track_py_st3[n_tracks] = (recTrack->getMomentumVecSt3()).Py();
-      track_pz_st3[n_tracks] = (recTrack->getMomentumVecSt3()).Pz();
-      track_x_vtx[n_tracks] = (recTrack->getVertexPos()).X();
-      track_y_vtx[n_tracks] = (recTrack->getVertexPos()).Y();
-      track_z_vtx[n_tracks] = (recTrack->getVertexPos()).Z();
-      track_px_vtx[n_tracks] = (recTrack->getVertexMom()).X();
-      track_py_vtx[n_tracks] = (recTrack->getVertexMom()).Y();
-      track_pz_vtx[n_tracks] = (recTrack->getVertexMom()).Z();
-      track_x_CAL[n_tracks] = track_x_st3[n_tracks] + (track_px_st3[n_tracks]/track_pz_st3[n_tracks])*(1930.-track_z_st3[n_tracks]);
-      track_y_CAL[n_tracks] = track_y_st3[n_tracks] + (track_py_st3[n_tracks]/track_pz_st3[n_tracks])*(1930.-track_z_st3[n_tracks]);
-      track_chisq[n_tracks] = recTrack->getChisq();
-      track_prob[n_tracks] = recTrack->getProb();
-      track_quality[n_tracks] = recTrack->getQuality();
-      track_isValid[n_tracks] = recTrack->isValid();
-      track_nhits_st1[n_tracks] = recTrack->getNHitsInStation(1);
-      track_nhits_st2[n_tracks] = recTrack->getNHitsInStation(2);
-      track_nhits_st3[n_tracks] = recTrack->getNHitsInStation(3);
-      ++n_tracks;
-      if(n_tracks >= 100) break;
-    }
-    ++n_truthtracks;
-    if (n_truthtracks >= 100)
-      break;
-  }
-  
-  n_st3tracklets = 0;
-  //std::cout<<"about to enter st3tracklet loop"<<std::endl;
-  int n_st3trackletsINDEX = _legacyContainer ? _recEvent->getNSt3Tracklets() : _recSt3TrackletVector->size();
-  for(int itrk = 0; itrk < n_st3trackletsINDEX; ++itrk) {
-    SRecTrack* track = _legacyContainer ? &(_recEvent->getSt3Tracklet(n_st3tracklets)) : dynamic_cast<SRecTrack*>(_recSt3TrackletVector->at(n_st3tracklets));
-    st3tracklet_charge[n_st3tracklets] = track->getCharge();
-    st3tracklet_nhits[n_st3tracklets] = track->getNHits();
-    st3tracklet_x_target[n_st3tracklets] = (track->getTargetPos()).X();
-    st3tracklet_y_target[n_st3tracklets] = (track->getTargetPos()).Y();
-    st3tracklet_z_target[n_st3tracklets] = (track->getTargetPos()).Z();
-    st3tracklet_px_target[n_st3tracklets] = (track->getTargetMom()).Px();
-    st3tracklet_py_target[n_st3tracklets] = (track->getTargetMom()).Py();
-    st3tracklet_pz_target[n_st3tracklets] = (track->getTargetMom()).Pz();
-    st3tracklet_x_st1[n_st3tracklets] = (track->getPositionVecSt1()).X();
-    st3tracklet_y_st1[n_st3tracklets] = (track->getPositionVecSt1()).Y();
-    st3tracklet_z_st1[n_st3tracklets] = (track->getPositionVecSt1()).Z();
-    st3tracklet_px_st1[n_st3tracklets] = (track->getMomentumVecSt1()).Px();
-    st3tracklet_py_st1[n_st3tracklets] = (track->getMomentumVecSt1()).Py();
-    st3tracklet_pz_st1[n_st3tracklets] = (track->getMomentumVecSt1()).Pz();
-    st3tracklet_x_st3[n_st3tracklets] = (track->getPositionVecSt3()).X();
-    st3tracklet_y_st3[n_st3tracklets] = (track->getPositionVecSt3()).Y();
-    st3tracklet_z_st3[n_st3tracklets] = (track->getPositionVecSt3()).Z();
-    st3tracklet_px_st3[n_st3tracklets] = (track->getMomentumVecSt3()).Px();
-    st3tracklet_py_st3[n_st3tracklets] = (track->getMomentumVecSt3()).Py();
-    st3tracklet_pz_st3[n_st3tracklets] = (track->getMomentumVecSt3()).Pz();
-    st3tracklet_x_vtx[n_st3tracklets] = (track->getVertexPos()).X();
-    st3tracklet_y_vtx[n_st3tracklets] = (track->getVertexPos()).Y();
-    st3tracklet_z_vtx[n_st3tracklets] = (track->getVertexPos()).Z();
-    st3tracklet_px_vtx[n_st3tracklets] = (track->getVertexMom()).X();
-    st3tracklet_py_vtx[n_st3tracklets] = (track->getVertexMom()).Y();
-    st3tracklet_pz_vtx[n_st3tracklets] = (track->getVertexMom()).Z();
-    st3tracklet_x_CAL[n_st3tracklets] = st3tracklet_x_st3[n_st3tracklets] + (st3tracklet_px_st3[n_st3tracklets]/st3tracklet_pz_st3[n_st3tracklets])*(1930.-st3tracklet_z_st3[n_st3tracklets]);
-    st3tracklet_y_CAL[n_st3tracklets] = st3tracklet_y_st3[n_st3tracklets] + (st3tracklet_py_st3[n_st3tracklets]/st3tracklet_pz_st3[n_st3tracklets])*(1930.-st3tracklet_z_st3[n_st3tracklets]);
-    st3tracklet_chisq[n_st3tracklets] = track->getChisq();
-    st3tracklet_prob[n_st3tracklets] = track->getProb();
-    st3tracklet_quality[n_st3tracklets] = track->getQuality();
-    st3tracklet_isValid[n_st3tracklets] = track->isValid();
-    st3tracklet_nhits_st1[n_st3tracklets] = track->getNHitsInStation(1);
-    st3tracklet_nhits_st2[n_st3tracklets] = track->getNHitsInStation(2);
-    st3tracklet_nhits_st3[n_st3tracklets] = track->getNHitsInStation(3);
+  if(_saveTracks){
+    int n_recTracks = _legacyContainer ? _recEvent->getNTracks() : _recTrackVector->size();
+    n_truthtracks = 0;
+    for(int itrk = 0; itrk < _trackVector->size(); ++itrk) {
+      SQTrack* track = _trackVector->at(itrk);
     
-    ++n_st3tracklets;
-    if (n_st3tracklets >= 100)
-      break;
-  }
-  std::cout<<"print out of n_st3tracklets: "<<n_st3tracklets<<std::endl;
-
-
-  // vertices
-  n_truthdimuons = 0;
-  int nDimuons = _dimuonVector->size();
-  for(int i = 0; i < nDimuons; ++i) {
-    SQDimuon* dimuon = _dimuonVector->at(i);
-    // truth dimuon
-    // from https://github.com/E1039-Collaboration/e1039-core/blob/master/simulation/g4dst/TruthNodeMaker.cc#L133-L155
-    truthdimuon_mass[n_truthdimuons] = dimuon->get_mom().M();
-    truthdimuon_x_vtx[n_truthdimuons] = (dimuon->get_pos()).X();
-    truthdimuon_y_vtx[n_truthdimuons] = (dimuon->get_pos()).Y();
-    truthdimuon_z_vtx[n_truthdimuons] = (dimuon->get_pos()).Z();
-    truthdimuon_px[n_truthdimuons] = (dimuon->get_mom()).X();
-    truthdimuon_py[n_truthdimuons] = (dimuon->get_mom()).Y();
-    truthdimuon_pz[n_truthdimuons] = (dimuon->get_mom()).Z();
-    truthdimuon_pmom_x[n_truthdimuons] = (dimuon->get_mom_pos()).Px();
-    truthdimuon_pmom_y[n_truthdimuons] = (dimuon->get_mom_pos()).Py();
-    truthdimuon_pmom_z[n_truthdimuons] = (dimuon->get_mom_pos()).Pz();
-    truthdimuon_nmom_x[n_truthdimuons] = (dimuon->get_mom_neg()).Px();
-    truthdimuon_nmom_y[n_truthdimuons] = (dimuon->get_mom_neg()).Py();
-    truthdimuon_nmom_z[n_truthdimuons] = (dimuon->get_mom_neg()).Pz();
-    ++n_truthdimuons;
-    if(n_truthdimuons >= 100) break;
-  }
-
-  n_dimuons = 0;
-  int nRecDimuons = _legacyContainer ? _recEvent->getNDimuons() : (_recDimuonVector ? _recDimuonVector->size() : -1);
-  for(int i = 0; i < nRecDimuons; ++i) {
-    SRecDimuon* recDimuon = _legacyContainer ? &(_recEvent->getDimuon(i)) : dynamic_cast<SRecDimuon*>(_recDimuonVector->at(i));
-    dimuon_mass[n_dimuons] = recDimuon->mass;
-    dimuon_chisq[n_dimuons] = recDimuon->get_chisq();
-    dimuon_x_vtx[n_dimuons] = (recDimuon->vtx).X();
-    dimuon_y_vtx[n_dimuons] = (recDimuon->vtx).Y();
-    dimuon_z_vtx[n_dimuons] = (recDimuon->vtx).Z();
-    dimuon_px[n_dimuons] = (recDimuon->get_mom()).X();
-    dimuon_py[n_dimuons] = (recDimuon->get_mom()).Y();
-    dimuon_pz[n_dimuons] = (recDimuon->get_mom()).Z();
-    dimuon_pmom_x[n_dimuons] = (recDimuon->p_pos).Px(); //4-momentum of the muon tracks after vertex fit
-    dimuon_pmom_y[n_dimuons] = (recDimuon->p_pos).Py();
-    dimuon_pmom_z[n_dimuons] = (recDimuon->p_pos).Pz();
-    dimuon_nmom_x[n_dimuons] = (recDimuon->p_neg).Px();
-    dimuon_nmom_y[n_dimuons] = (recDimuon->p_neg).Py();
-    dimuon_nmom_z[n_dimuons] = (recDimuon->p_neg).Pz();
-    dimuon_ppos_x[n_dimuons] = (recDimuon->vtx_pos).X(); // vertex position
-    dimuon_ppos_y[n_dimuons] = (recDimuon->vtx_pos).Y();
-    dimuon_ppos_z[n_dimuons] = (recDimuon->vtx_pos).Z();
-    dimuon_npos_x[n_dimuons] = (recDimuon->vtx_neg).X(); 
-    dimuon_npos_y[n_dimuons] = (recDimuon->vtx_neg).Y();
-    dimuon_npos_z[n_dimuons] = (recDimuon->vtx_neg).Z();
-
-    ++n_dimuons;
-    if(n_dimuons >= 100) break;
-  }
-  
-  n_showers = 0;
-  for (auto iter = _truth->GetPrimaryParticleRange().first;
-       iter != _truth->GetPrimaryParticleRange().second; ++iter) {
-    PHG4Particle *primary = iter->second;
-    int ECAL_volume = PHG4HitDefs::get_volume_id("G4HIT_EMCal");
-    PHG4Shower *shower = get_primary_shower(primary);
-    if (shower != 0) {
-      sx_ecal[n_showers] = shower->get_x();
-      sy_ecal[n_showers] = shower->get_y();
-      sz_ecal[n_showers] = shower->get_z();
-      sedep_ecal[n_showers] = shower->get_edep(ECAL_volume);
-      n_showers++;
+      truthtrack_charge[n_truthtracks] = track->get_charge();
+      truthtrack_x_st1[n_truthtracks] = (track->get_pos_st1()).X();
+      truthtrack_y_st1[n_truthtracks] = (track->get_pos_st1()).Y();
+      truthtrack_z_st1[n_truthtracks] = (track->get_pos_st1()).Z();
+      truthtrack_px_st1[n_truthtracks] = (track->get_mom_st1()).Px();
+      truthtrack_py_st1[n_truthtracks] = (track->get_mom_st1()).Py();
+      truthtrack_pz_st1[n_truthtracks] = (track->get_mom_st1()).Pz();
+      truthtrack_x_st3[n_truthtracks] = (track->get_pos_st3()).X();
+      truthtrack_y_st3[n_truthtracks] = (track->get_pos_st3()).Y();
+      truthtrack_z_st3[n_truthtracks] = (track->get_pos_st3()).Z();
+      truthtrack_px_st3[n_truthtracks] = (track->get_mom_st3()).Px();
+      truthtrack_py_st3[n_truthtracks] = (track->get_mom_st3()).Py();
+      truthtrack_pz_st3[n_truthtracks] = (track->get_mom_st3()).Pz();
+      truthtrack_x_vtx[n_truthtracks] = (track->get_pos_vtx()).X();
+      truthtrack_y_vtx[n_truthtracks] = (track->get_pos_vtx()).Y();
+      truthtrack_z_vtx[n_truthtracks] = (track->get_pos_vtx()).Z();
+      truthtrack_px_vtx[n_truthtracks] = (track->get_mom_vtx()).Px();
+      truthtrack_py_vtx[n_truthtracks] = (track->get_mom_vtx()).Py();
+      truthtrack_pz_vtx[n_truthtracks] = (track->get_mom_vtx()).Pz();
+      
+      int recid = track->get_rec_track_id();
+      //std::cout<<"the recid is "<<recid<<std::endl;
+      if(recid >= 0 && recid < n_recTracks) {
+	SRecTrack* recTrack = _legacyContainer ? &(_recEvent->getTrack(recid)) : dynamic_cast<SRecTrack*>(_recTrackVector->at(recid));
+	//std::cout << "******************** (recTrack->getTargetMom()).Px() " << (recTrack->getTargetMom()).Px() << std::endl;
+	track_charge[n_tracks] = recTrack->getCharge();
+	track_nhits[n_tracks] = recTrack->getNHits();
+	track_x_target[n_tracks] = (recTrack->getTargetPos()).X();
+	track_y_target[n_tracks] = (recTrack->getTargetPos()).Y();
+	track_z_target[n_tracks] = (recTrack->getTargetPos()).Z();
+	track_px_target[n_tracks] = (recTrack->getTargetMom()).Px();
+	track_py_target[n_tracks] = (recTrack->getTargetMom()).Py();
+	track_pz_target[n_tracks] = (recTrack->getTargetMom()).Pz();
+	track_x_st1[n_tracks] = (recTrack->getPositionVecSt1()).X();
+	track_y_st1[n_tracks] = (recTrack->getPositionVecSt1()).Y();
+	track_z_st1[n_tracks] = (recTrack->getPositionVecSt1()).Z();
+	track_px_st1[n_tracks] = (recTrack->getMomentumVecSt1()).Px();
+	track_py_st1[n_tracks] = (recTrack->getMomentumVecSt1()).Py();
+	track_pz_st1[n_tracks] = (recTrack->getMomentumVecSt1()).Pz();
+	track_x_st3[n_tracks] = (recTrack->getPositionVecSt3()).X();
+	track_y_st3[n_tracks] = (recTrack->getPositionVecSt3()).Y();
+	track_z_st3[n_tracks] = (recTrack->getPositionVecSt3()).Z();
+	track_px_st3[n_tracks] = (recTrack->getMomentumVecSt3()).Px();
+	track_py_st3[n_tracks] = (recTrack->getMomentumVecSt3()).Py();
+	track_pz_st3[n_tracks] = (recTrack->getMomentumVecSt3()).Pz();
+	track_x_vtx[n_tracks] = (recTrack->getVertexPos()).X();
+	track_y_vtx[n_tracks] = (recTrack->getVertexPos()).Y();
+	track_z_vtx[n_tracks] = (recTrack->getVertexPos()).Z();
+	track_px_vtx[n_tracks] = (recTrack->getVertexMom()).X();
+	track_py_vtx[n_tracks] = (recTrack->getVertexMom()).Y();
+	track_pz_vtx[n_tracks] = (recTrack->getVertexMom()).Z();
+	track_x_CAL[n_tracks] = track_x_st3[n_tracks] + (track_px_st3[n_tracks]/track_pz_st3[n_tracks])*(1930.-track_z_st3[n_tracks]);
+	track_y_CAL[n_tracks] = track_y_st3[n_tracks] + (track_py_st3[n_tracks]/track_pz_st3[n_tracks])*(1930.-track_z_st3[n_tracks]);
+	track_chisq[n_tracks] = recTrack->getChisq();
+	track_prob[n_tracks] = recTrack->getProb();
+	track_quality[n_tracks] = recTrack->getQuality();
+	track_isValid[n_tracks] = recTrack->isValid();
+	track_nhits_st1[n_tracks] = recTrack->getNHitsInStation(1);
+	track_nhits_st2[n_tracks] = recTrack->getNHitsInStation(2);
+	track_nhits_st3[n_tracks] = recTrack->getNHitsInStation(3);
+	++n_tracks;
+	if(n_tracks >= 100) break;
+      }
+      ++n_truthtracks;
+      if (n_truthtracks >= 100)
+	break;
     }
-    if (n_showers >= 1000)
-      break;
+    
+    n_st3tracklets = 0;
+    //std::cout<<"about to enter st3tracklet loop"<<std::endl;
+    int n_st3trackletsINDEX = _legacyContainer ? _recEvent->getNSt3Tracklets() : _recSt3TrackletVector->size();
+    for(int itrk = 0; itrk < n_st3trackletsINDEX; ++itrk) {
+      SRecTrack* track = _legacyContainer ? &(_recEvent->getSt3Tracklet(n_st3tracklets)) : dynamic_cast<SRecTrack*>(_recSt3TrackletVector->at(n_st3tracklets));
+      st3tracklet_charge[n_st3tracklets] = track->getCharge();
+      st3tracklet_nhits[n_st3tracklets] = track->getNHits();
+      st3tracklet_x_target[n_st3tracklets] = (track->getTargetPos()).X();
+      st3tracklet_y_target[n_st3tracklets] = (track->getTargetPos()).Y();
+      st3tracklet_z_target[n_st3tracklets] = (track->getTargetPos()).Z();
+      st3tracklet_px_target[n_st3tracklets] = (track->getTargetMom()).Px();
+      st3tracklet_py_target[n_st3tracklets] = (track->getTargetMom()).Py();
+      st3tracklet_pz_target[n_st3tracklets] = (track->getTargetMom()).Pz();
+      st3tracklet_x_st1[n_st3tracklets] = (track->getPositionVecSt1()).X();
+      st3tracklet_y_st1[n_st3tracklets] = (track->getPositionVecSt1()).Y();
+      st3tracklet_z_st1[n_st3tracklets] = (track->getPositionVecSt1()).Z();
+      st3tracklet_px_st1[n_st3tracklets] = (track->getMomentumVecSt1()).Px();
+      st3tracklet_py_st1[n_st3tracklets] = (track->getMomentumVecSt1()).Py();
+      st3tracklet_pz_st1[n_st3tracklets] = (track->getMomentumVecSt1()).Pz();
+      st3tracklet_x_st3[n_st3tracklets] = (track->getPositionVecSt3()).X();
+      st3tracklet_y_st3[n_st3tracklets] = (track->getPositionVecSt3()).Y();
+      st3tracklet_z_st3[n_st3tracklets] = (track->getPositionVecSt3()).Z();
+      st3tracklet_px_st3[n_st3tracklets] = (track->getMomentumVecSt3()).Px();
+      st3tracklet_py_st3[n_st3tracklets] = (track->getMomentumVecSt3()).Py();
+      st3tracklet_pz_st3[n_st3tracklets] = (track->getMomentumVecSt3()).Pz();
+      st3tracklet_x_vtx[n_st3tracklets] = (track->getVertexPos()).X();
+      st3tracklet_y_vtx[n_st3tracklets] = (track->getVertexPos()).Y();
+      st3tracklet_z_vtx[n_st3tracklets] = (track->getVertexPos()).Z();
+      st3tracklet_px_vtx[n_st3tracklets] = (track->getVertexMom()).X();
+      st3tracklet_py_vtx[n_st3tracklets] = (track->getVertexMom()).Y();
+      st3tracklet_pz_vtx[n_st3tracklets] = (track->getVertexMom()).Z();
+      st3tracklet_x_CAL[n_st3tracklets] = st3tracklet_x_st3[n_st3tracklets] + (st3tracklet_px_st3[n_st3tracklets]/st3tracklet_pz_st3[n_st3tracklets])*(1930.-st3tracklet_z_st3[n_st3tracklets]);
+      st3tracklet_y_CAL[n_st3tracklets] = st3tracklet_y_st3[n_st3tracklets] + (st3tracklet_py_st3[n_st3tracklets]/st3tracklet_pz_st3[n_st3tracklets])*(1930.-st3tracklet_z_st3[n_st3tracklets]);
+      st3tracklet_chisq[n_st3tracklets] = track->getChisq();
+      st3tracklet_prob[n_st3tracklets] = track->getProb();
+      st3tracklet_quality[n_st3tracklets] = track->getQuality();
+      st3tracklet_isValid[n_st3tracklets] = track->isValid();
+      st3tracklet_nhits_st1[n_st3tracklets] = track->getNHitsInStation(1);
+      st3tracklet_nhits_st2[n_st3tracklets] = track->getNHitsInStation(2);
+      st3tracklet_nhits_st3[n_st3tracklets] = track->getNHitsInStation(3);
+      
+      ++n_st3tracklets;
+      if (n_st3tracklets >= 100)
+	break;
+    }
+    std::cout<<"print out of n_st3tracklets: "<<n_st3tracklets<<std::endl;
+  }
+
+  if(_saveVertex){
+    // vertices
+    n_truthdimuons = 0;
+    int nDimuons = _dimuonVector->size();
+    for(int i = 0; i < nDimuons; ++i) {
+      SQDimuon* dimuon = _dimuonVector->at(i);
+      // truth dimuon
+      // from https://github.com/E1039-Collaboration/e1039-core/blob/master/simulation/g4dst/TruthNodeMaker.cc#L133-L155
+      truthdimuon_mass[n_truthdimuons] = dimuon->get_mom().M();
+      truthdimuon_x_vtx[n_truthdimuons] = (dimuon->get_pos()).X();
+      truthdimuon_y_vtx[n_truthdimuons] = (dimuon->get_pos()).Y();
+      truthdimuon_z_vtx[n_truthdimuons] = (dimuon->get_pos()).Z();
+      truthdimuon_px[n_truthdimuons] = (dimuon->get_mom()).X();
+      truthdimuon_py[n_truthdimuons] = (dimuon->get_mom()).Y();
+      truthdimuon_pz[n_truthdimuons] = (dimuon->get_mom()).Z();
+      truthdimuon_pmom_x[n_truthdimuons] = (dimuon->get_mom_pos()).Px();
+      truthdimuon_pmom_y[n_truthdimuons] = (dimuon->get_mom_pos()).Py();
+      truthdimuon_pmom_z[n_truthdimuons] = (dimuon->get_mom_pos()).Pz();
+      truthdimuon_nmom_x[n_truthdimuons] = (dimuon->get_mom_neg()).Px();
+      truthdimuon_nmom_y[n_truthdimuons] = (dimuon->get_mom_neg()).Py();
+      truthdimuon_nmom_z[n_truthdimuons] = (dimuon->get_mom_neg()).Pz();
+      ++n_truthdimuons;
+      if(n_truthdimuons >= 100) break;
+    }
+    
+    n_dimuons = 0;
+    int nRecDimuons = _legacyContainer ? _recEvent->getNDimuons() : (_recDimuonVector ? _recDimuonVector->size() : -1);
+    for(int i = 0; i < nRecDimuons; ++i) {
+      SRecDimuon* recDimuon = _legacyContainer ? &(_recEvent->getDimuon(i)) : dynamic_cast<SRecDimuon*>(_recDimuonVector->at(i));
+      dimuon_mass[n_dimuons] = recDimuon->mass;
+      dimuon_chisq[n_dimuons] = recDimuon->get_chisq();
+      dimuon_x_vtx[n_dimuons] = (recDimuon->vtx).X();
+      dimuon_y_vtx[n_dimuons] = (recDimuon->vtx).Y();
+      dimuon_z_vtx[n_dimuons] = (recDimuon->vtx).Z();
+      dimuon_px[n_dimuons] = (recDimuon->get_mom()).X();
+      dimuon_py[n_dimuons] = (recDimuon->get_mom()).Y();
+      dimuon_pz[n_dimuons] = (recDimuon->get_mom()).Z();
+      dimuon_pmom_x[n_dimuons] = (recDimuon->p_pos).Px(); //4-momentum of the muon tracks after vertex fit
+      dimuon_pmom_y[n_dimuons] = (recDimuon->p_pos).Py();
+      dimuon_pmom_z[n_dimuons] = (recDimuon->p_pos).Pz();
+      dimuon_nmom_x[n_dimuons] = (recDimuon->p_neg).Px();
+      dimuon_nmom_y[n_dimuons] = (recDimuon->p_neg).Py();
+      dimuon_nmom_z[n_dimuons] = (recDimuon->p_neg).Pz();
+      dimuon_ppos_x[n_dimuons] = (recDimuon->vtx_pos).X(); // vertex position
+      dimuon_ppos_y[n_dimuons] = (recDimuon->vtx_pos).Y();
+      dimuon_ppos_z[n_dimuons] = (recDimuon->vtx_pos).Z();
+      dimuon_npos_x[n_dimuons] = (recDimuon->vtx_neg).X(); 
+      dimuon_npos_y[n_dimuons] = (recDimuon->vtx_neg).Y();
+      dimuon_npos_z[n_dimuons] = (recDimuon->vtx_neg).Z();
+      
+      ++n_dimuons;
+      if(n_dimuons >= 100) break;
+    }
+    
+    n_showers = 0;
+    for (auto iter = _truth->GetPrimaryParticleRange().first;
+	 iter != _truth->GetPrimaryParticleRange().second; ++iter) {
+      PHG4Particle *primary = iter->second;
+      int ECAL_volume = PHG4HitDefs::get_volume_id("G4HIT_EMCal");
+      PHG4Shower *shower = get_primary_shower(primary);
+      if (shower != 0) {
+	sx_ecal[n_showers] = shower->get_x();
+	sy_ecal[n_showers] = shower->get_y();
+	sz_ecal[n_showers] = shower->get_z();
+	sedep_ecal[n_showers] = shower->get_edep(ECAL_volume);
+	n_showers++;
+      }
+      if (n_showers >= 1000)
+	break;
+    }
   }
   
   // uncomment this to print the truth tree
-  // std::cout<<"ABOUT TO look at the shower"<<std::endl;
+  // std::cout<<"ABOUT TO look at the secondary shower"<<std::endl;
   //_truth->identify();
   //for (auto iterp = _truth->GetSecondaryParticleRange().first;
   //     iterp != _truth->GetSecondaryParticleRange().second; ++iterp) {
@@ -635,131 +666,132 @@ int SimAna::process_event(PHCompositeNode* topNode) {
   //std::cout << " secondary particle " << secondary->get_pid() << " e" << secondary->get_e() << std::endl;
   //}
 
-  n_primaries = 0;
-  for (auto iterp = _truth->GetPrimaryParticleRange().first;
-       iterp != _truth->GetPrimaryParticleRange().second; ++iterp) {
-    PHG4Particle *primary = iterp->second;
-    gpid[n_primaries] = primary->get_pid();
-
-    int vtx_id = primary->get_vtx_id();
-    PHG4VtxPoint *vtx = _truth->GetVtx(vtx_id);
-    gvx[n_primaries] = vtx->get_x();
-    gvy[n_primaries] = vtx->get_y();
-    gvz[n_primaries] = vtx->get_z();
-
-    TVector3 mom(primary->get_px(), primary->get_py(), primary->get_pz());
-    gpx[n_primaries] = primary->get_px();
-    gpy[n_primaries] = primary->get_py();
-    gpz[n_primaries] = primary->get_pz();
-    gpt[n_primaries] = mom.Pt();
-    geta[n_primaries] = mom.Eta();
-    gphi[n_primaries] = mom.Phi();
-    ge[n_primaries] = primary->get_e();
-
-    int trkID = primary->get_track_id();
-    gtrkid[n_primaries] = trkID;
-
-    // G4Hits at different stations                                                                                                                                                                       
-    if(g4hc_ecal){
-      std::vector<PHG4Hit*> g4hits = FindG4HitsAtStation(trkID, g4hc_ecal);
-      nhits_ecal[n_primaries] =0;
-      for(int iecal=0; iecal<g4hits.size(); ++iecal) {
-	PHG4Hit* g4hit = g4hits[iecal];
-	gx_ecal[n_primaries][iecal] = g4hit->get_x(0);
-	gy_ecal[n_primaries][iecal] = g4hit->get_y(0);
-	gz_ecal[n_primaries][iecal] = g4hit->get_z(0);
-	gpx_ecal[n_primaries][iecal] = g4hit->get_px(0);
-	gpy_ecal[n_primaries][iecal] = g4hit->get_py(0);
-	gpz_ecal[n_primaries][iecal] = g4hit->get_pz(0);
-	gedep_ecal[n_primaries][iecal] = g4hit->get_edep();
-	++nhits_ecal[n_primaries];
-	if(iecal>=100){
-	  std::cout << "More than 100 hits in EMCAL " << std::endl;
-	  break;
+  if(_savePrimaries){
+    n_primaries = 0;
+    for (auto iterp = _truth->GetPrimaryParticleRange().first;
+	 iterp != _truth->GetPrimaryParticleRange().second; ++iterp) {
+      PHG4Particle *primary = iterp->second;
+      gpid[n_primaries] = primary->get_pid();
+      
+      int vtx_id = primary->get_vtx_id();
+      PHG4VtxPoint *vtx = _truth->GetVtx(vtx_id);
+      gvx[n_primaries] = vtx->get_x();
+      gvy[n_primaries] = vtx->get_y();
+      gvz[n_primaries] = vtx->get_z();
+      
+      TVector3 mom(primary->get_px(), primary->get_py(), primary->get_pz());
+      gpx[n_primaries] = primary->get_px();
+      gpy[n_primaries] = primary->get_py();
+      gpz[n_primaries] = primary->get_pz();
+      gpt[n_primaries] = mom.Pt();
+      geta[n_primaries] = mom.Eta();
+      gphi[n_primaries] = mom.Phi();
+      ge[n_primaries] = primary->get_e();
+      
+      int trkID = primary->get_track_id();
+      gtrkid[n_primaries] = trkID;
+      
+      // G4Hits at different stations                                                                                                                                                                       
+      if(g4hc_ecal){
+	std::vector<PHG4Hit*> g4hits = FindG4HitsAtStation(trkID, g4hc_ecal);
+	nhits_ecal[n_primaries] =0;
+	for(int iecal=0; iecal<g4hits.size(); ++iecal) {
+	  PHG4Hit* g4hit = g4hits[iecal];
+	  gx_ecal[n_primaries][iecal] = g4hit->get_x(0);
+	  gy_ecal[n_primaries][iecal] = g4hit->get_y(0);
+	  gz_ecal[n_primaries][iecal] = g4hit->get_z(0);
+	  gpx_ecal[n_primaries][iecal] = g4hit->get_px(0);
+	  gpy_ecal[n_primaries][iecal] = g4hit->get_py(0);
+	  gpz_ecal[n_primaries][iecal] = g4hit->get_pz(0);
+	  gedep_ecal[n_primaries][iecal] = g4hit->get_edep();
+	  ++nhits_ecal[n_primaries];
+	  if(iecal>=100){
+	    std::cout << "More than 100 hits in EMCAL " << std::endl;
+	    break;
+	  }
 	}
       }
+      
+      PHG4Hit *st1hit = FindG4HitAtStation(trkID, g4hc_d1x);
+      if (st1hit) {
+	gx_st1[n_primaries] = st1hit->get_x(0);
+	gy_st1[n_primaries] = st1hit->get_y(0);
+	gz_st1[n_primaries] = st1hit->get_z(0);
+	gpx_st1[n_primaries] = st1hit->get_px(0);
+	gpy_st1[n_primaries] = st1hit->get_py(0);
+	gpz_st1[n_primaries] = st1hit->get_pz(0);
+      }
+      PHG4Hit *st2hit = FindG4HitAtStation(trkID, g4hc_d2xp);
+      if (st2hit) {
+	gx_st2[n_primaries] = st2hit->get_x(0);
+	gy_st2[n_primaries] = st2hit->get_y(0);
+	gz_st2[n_primaries] = st2hit->get_z(0);
+	gpx_st2[n_primaries] = st2hit->get_px(0);
+	gpy_st2[n_primaries] = st2hit->get_py(0);
+	gpz_st2[n_primaries] = st2hit->get_pz(0);
+      }
+      PHG4Hit *st3hit = FindG4HitAtStation(trkID, g4hc_d3px);
+      if (!st3hit)
+	PHG4Hit *st3hit = FindG4HitAtStation(trkID, g4hc_d3mx);
+      if (st3hit) {
+	gx_st3[n_primaries] = st3hit->get_x(0);
+	gy_st3[n_primaries] = st3hit->get_y(0);
+	gz_st3[n_primaries] = st3hit->get_z(0);
+	gpx_st3[n_primaries] = st3hit->get_px(0);
+	gpy_st3[n_primaries] = st3hit->get_py(0);
+	gpz_st3[n_primaries] = st3hit->get_pz(0);
+      }
+      
+      PHG4Hit *h1hit = FindG4HitAtStation(trkID, g4hc_h1t);
+      if (!h1hit)
+	PHG4Hit *h1hit = FindG4HitAtStation(trkID, g4hc_h1b);
+      if (h1hit) {
+	gx_h1[n_primaries] = h1hit->get_x(0);
+	gy_h1[n_primaries] = h1hit->get_y(0);
+	gz_h1[n_primaries] = h1hit->get_z(0);
+	gpx_h1[n_primaries] = h1hit->get_px(0);
+	gpy_h1[n_primaries] = h1hit->get_py(0);
+	gpz_h1[n_primaries] = h1hit->get_pz(0);
+      }
+      PHG4Hit *h2hit = FindG4HitAtStation(trkID, g4hc_h2t);
+      if (!h2hit)
+	PHG4Hit *h2hit = FindG4HitAtStation(trkID, g4hc_h2b);
+      if (h2hit) {
+	gx_h2[n_primaries] = h2hit->get_x(0);
+	gy_h2[n_primaries] = h2hit->get_y(0);
+	gz_h2[n_primaries] = h2hit->get_z(0);
+	gpx_h2[n_primaries] = h2hit->get_px(0);
+	gpy_h2[n_primaries] = h2hit->get_py(0);
+	gpz_h2[n_primaries] = h2hit->get_pz(0);
+      }
+      PHG4Hit *h3hit = FindG4HitAtStation(trkID, g4hc_h3t);
+      if (!h3hit)
+	PHG4Hit *h3hit = FindG4HitAtStation(trkID, g4hc_h3b);
+      if (h3hit) {
+	gx_h3[n_primaries] = h3hit->get_x(0);
+	gy_h3[n_primaries] = h3hit->get_y(0);
+	gz_h3[n_primaries] = h3hit->get_z(0);
+	gpx_h3[n_primaries] = h3hit->get_px(0);
+	gpy_h3[n_primaries] = h3hit->get_py(0);
+	gpz_h3[n_primaries] = h3hit->get_pz(0);
+      }
+      
+      PHG4Hit *h4hit = FindG4HitAtStation(trkID, g4hc_h4t);
+      if (!h4hit)
+	PHG4Hit *h4hit = FindG4HitAtStation(trkID, g4hc_h4b);
+      if (h4hit) {
+	gx_h4[n_primaries] = h4hit->get_x(0);
+	gy_h4[n_primaries] = h4hit->get_y(0);
+	gz_h4[n_primaries] = h4hit->get_z(0);
+	gpx_h4[n_primaries] = h4hit->get_px(0);
+	gpy_h4[n_primaries] = h4hit->get_py(0);
+	gpz_h4[n_primaries] = h4hit->get_pz(0);
+      }
+      ++n_primaries;
     }
-
-    PHG4Hit *st1hit = FindG4HitAtStation(trkID, g4hc_d1x);
-    if (st1hit) {
-      gx_st1[n_primaries] = st1hit->get_x(0);
-      gy_st1[n_primaries] = st1hit->get_y(0);
-      gz_st1[n_primaries] = st1hit->get_z(0);
-      gpx_st1[n_primaries] = st1hit->get_px(0);
-      gpy_st1[n_primaries] = st1hit->get_py(0);
-      gpz_st1[n_primaries] = st1hit->get_pz(0);
-    }
-    PHG4Hit *st2hit = FindG4HitAtStation(trkID, g4hc_d2xp);
-    if (st2hit) {
-      gx_st2[n_primaries] = st2hit->get_x(0);
-      gy_st2[n_primaries] = st2hit->get_y(0);
-      gz_st2[n_primaries] = st2hit->get_z(0);
-      gpx_st2[n_primaries] = st2hit->get_px(0);
-      gpy_st2[n_primaries] = st2hit->get_py(0);
-      gpz_st2[n_primaries] = st2hit->get_pz(0);
-    }
-    PHG4Hit *st3hit = FindG4HitAtStation(trkID, g4hc_d3px);
-    if (!st3hit)
-      PHG4Hit *st3hit = FindG4HitAtStation(trkID, g4hc_d3mx);
-    if (st3hit) {
-      gx_st3[n_primaries] = st3hit->get_x(0);
-      gy_st3[n_primaries] = st3hit->get_y(0);
-      gz_st3[n_primaries] = st3hit->get_z(0);
-      gpx_st3[n_primaries] = st3hit->get_px(0);
-      gpy_st3[n_primaries] = st3hit->get_py(0);
-      gpz_st3[n_primaries] = st3hit->get_pz(0);
-    }
-
-    PHG4Hit *h1hit = FindG4HitAtStation(trkID, g4hc_h1t);
-    if (!h1hit)
-      PHG4Hit *h1hit = FindG4HitAtStation(trkID, g4hc_h1b);
-    if (h1hit) {
-      gx_h1[n_primaries] = h1hit->get_x(0);
-      gy_h1[n_primaries] = h1hit->get_y(0);
-      gz_h1[n_primaries] = h1hit->get_z(0);
-      gpx_h1[n_primaries] = h1hit->get_px(0);
-      gpy_h1[n_primaries] = h1hit->get_py(0);
-      gpz_h1[n_primaries] = h1hit->get_pz(0);
-    }
-    PHG4Hit *h2hit = FindG4HitAtStation(trkID, g4hc_h2t);
-    if (!h2hit)
-      PHG4Hit *h2hit = FindG4HitAtStation(trkID, g4hc_h2b);
-    if (h2hit) {
-      gx_h2[n_primaries] = h2hit->get_x(0);
-      gy_h2[n_primaries] = h2hit->get_y(0);
-      gz_h2[n_primaries] = h2hit->get_z(0);
-      gpx_h2[n_primaries] = h2hit->get_px(0);
-      gpy_h2[n_primaries] = h2hit->get_py(0);
-      gpz_h2[n_primaries] = h2hit->get_pz(0);
-    }
-    PHG4Hit *h3hit = FindG4HitAtStation(trkID, g4hc_h3t);
-    if (!h3hit)
-      PHG4Hit *h3hit = FindG4HitAtStation(trkID, g4hc_h3b);
-    if (h3hit) {
-      gx_h3[n_primaries] = h3hit->get_x(0);
-      gy_h3[n_primaries] = h3hit->get_y(0);
-      gz_h3[n_primaries] = h3hit->get_z(0);
-      gpx_h3[n_primaries] = h3hit->get_px(0);
-      gpy_h3[n_primaries] = h3hit->get_py(0);
-      gpz_h3[n_primaries] = h3hit->get_pz(0);
-    }
-
-    PHG4Hit *h4hit = FindG4HitAtStation(trkID, g4hc_h4t);
-    if (!h4hit)
-      PHG4Hit *h4hit = FindG4HitAtStation(trkID, g4hc_h4b);
-    if (h4hit) {
-      gx_h4[n_primaries] = h4hit->get_x(0);
-      gy_h4[n_primaries] = h4hit->get_y(0);
-      gz_h4[n_primaries] = h4hit->get_z(0);
-      gpx_h4[n_primaries] = h4hit->get_px(0);
-      gpy_h4[n_primaries] = h4hit->get_py(0);
-      gpz_h4[n_primaries] = h4hit->get_pz(0);
-    }
-    ++n_primaries;
   }
 
   /*
-  _saveSecondaries = true;
   if(_saveSecondaries){
     n_secondaries = 0;
     for (auto iterp = _truth->GetSecondaryParticleRange().first;
@@ -799,15 +831,14 @@ int SimAna::process_event(PHCompositeNode* topNode) {
   }
   */
 
-  //dptrigger
-  //std::cout<<"DS in SimAna: "<<_sqEvent->get_trigger(SQEvent::MATRIX1)<<" "<<_sqEvent->get_trigger(SQEvent::MATRIX2)<<" "<<_sqEvent->get_trigger(SQEvent::MATRIX3)<<" "<<_sqEvent->get_trigger(SQEvent::MATRIX4)<<" "<<_sqEvent->get_trigger(SQEvent::MATRIX5)<<" "<<std::endl;
-
+  // trigger
   fpga_trigger[0] = _sqEvent->get_trigger(SQEvent::MATRIX1);
   fpga_trigger[1] = _sqEvent->get_trigger(SQEvent::MATRIX2);
   fpga_trigger[2] = _sqEvent->get_trigger(SQEvent::MATRIX3);
   fpga_trigger[3] = _sqEvent->get_trigger(SQEvent::MATRIX4);
   fpga_trigger[4] = _sqEvent->get_trigger(SQEvent::MATRIX5);
 
+  // weight of MCEvent
   weight = _sqMCEvent->get_weight();
 
   ++eventID;
@@ -939,226 +970,230 @@ void SimAna::MakeTree()
   saveTree->Branch("hit_truthpy",   hit_truthpy,      "hit_truthpy[n_hits]/F");
   saveTree->Branch("hit_truthpz",   hit_truthpz,      "hit_truthpz[n_hits]/F");
 
-  saveTree->Branch("n_truthtracks",             &n_truthtracks,           "n_truthtracks/I");
-  saveTree->Branch("truthtrack_charge",         truthtrack_charge,        "truthtrack_charge[n_truthtracks]/I");
-  saveTree->Branch("truthtrack_x_st1",          truthtrack_x_st1,         "truthtrack_x_st1[n_truthtracks]/F");
-  saveTree->Branch("truthtrack_y_st1",          truthtrack_y_st1,         "truthtrack_y_st1[n_truthtracks]/F");
-  saveTree->Branch("truthtrack_z_st1",          truthtrack_z_st1,         "truthtrack_z_st1[n_truthtracks]/F");
-  saveTree->Branch("truthtrack_px_st1",         truthtrack_px_st1,        "truthtrack_px_st1[n_truthtracks]/F");
-  saveTree->Branch("truthtrack_py_st1",         truthtrack_py_st1,        "truthtrack_py_st1[n_truthtracks]/F");
-  saveTree->Branch("truthtrack_pz_st1",         truthtrack_pz_st1,        "truthtrack_pz_st1[n_truthtracks]/F");
-  saveTree->Branch("truthtrack_x_st3",          truthtrack_x_st3,         "truthtrack_x_st3[n_truthtracks]/F");
-  saveTree->Branch("truthtrack_y_st3",          truthtrack_y_st3,         "truthtrack_y_st3[n_truthtracks]/F");
-  saveTree->Branch("truthtrack_z_st3",          truthtrack_z_st3,         "truthtrack_z_st3[n_truthtracks]/F");
-  saveTree->Branch("truthtrack_px_st3",         truthtrack_px_st3,        "truthtrack_px_st3[n_truthtracks]/F");
-  saveTree->Branch("truthtrack_py_st3",         truthtrack_py_st3,        "truthtrack_py_st3[n_truthtracks]/F");
-  saveTree->Branch("truthtrack_pz_st3",         truthtrack_pz_st3,        "truthtrack_pz_st3[n_truthtracks]/F");
-  saveTree->Branch("truthtrack_x_vtx",          truthtrack_x_vtx,         "truthtrack_x_vtx[n_truthtracks]/F");
-  saveTree->Branch("truthtrack_y_vtx",          truthtrack_y_vtx,         "truthtrack_y_vtx[n_truthtracks]/F");
-  saveTree->Branch("truthtrack_z_vtx",          truthtrack_z_vtx,         "truthtrack_z_vtx[n_truthtracks]/F");
-  saveTree->Branch("truthtrack_px_vtx",         truthtrack_px_vtx,        "truthtrack_px_vtx[n_truthtracks]/F");
-  saveTree->Branch("truthtrack_py_vtx",         truthtrack_py_vtx,        "truthtrack_py_vtx[n_truthtracks]/F");
-  saveTree->Branch("truthtrack_pz_vtx",         truthtrack_pz_vtx,        "truthtrack_pz_vtx[n_truthtracks]/F");
-
-  saveTree->Branch("n_tracks",              &n_tracks,            "n_tracks/I");
-  saveTree->Branch("track_charge",         track_charge,        "track_charge[n_tracks]/I");
-  saveTree->Branch("track_nhits",          track_nhits,         "track_nhits[n_tracks]/I");
-  saveTree->Branch("track_x_target",       track_x_target,      "track_x_target[n_tracks]/F");
-  saveTree->Branch("track_y_target",       track_y_target,      "track_y_target[n_tracks]/F");
-  saveTree->Branch("track_z_target",       track_z_target,      "track_z_target[n_tracks]/F");
-  saveTree->Branch("track_px_target",      track_px_target,     "track_px_target[n_tracks]/F");
-  saveTree->Branch("track_py_target",      track_py_target,     "track_py_target[n_tracks]/F");
-  saveTree->Branch("track_pz_target",      track_pz_target,     "track_pz_target[n_tracks]/F");
-  saveTree->Branch("track_x_st1",          track_x_st1,         "track_x_st1[n_tracks]/F");
-  saveTree->Branch("track_y_st1",          track_y_st1,         "track_y_st1[n_tracks]/F");
-  saveTree->Branch("track_z_st1",          track_z_st1,         "track_z_st1[n_tracks]/F");
-  saveTree->Branch("track_px_st1",         track_px_st1,        "track_px_st1[n_tracks]/F");
-  saveTree->Branch("track_py_st1",         track_py_st1,        "track_py_st1[n_tracks]/F");
-  saveTree->Branch("track_pz_st1",         track_pz_st1,        "track_pz_st1[n_tracks]/F");
-  saveTree->Branch("track_x_st3",          track_x_st3,         "track_x_st3[n_tracks]/F");
-  saveTree->Branch("track_y_st3",          track_y_st3,         "track_y_st3[n_tracks]/F");
-  saveTree->Branch("track_z_st3",          track_z_st3,         "track_z_st3[n_tracks]/F");
-  saveTree->Branch("track_px_st3",         track_px_st3,        "track_px_st3[n_tracks]/F");
-  saveTree->Branch("track_py_st3",         track_py_st3,        "track_py_st3[n_tracks]/F");
-  saveTree->Branch("track_pz_st3",         track_pz_st3,        "track_pz_st3[n_tracks]/F");
-  saveTree->Branch("track_x_vtx",          track_x_vtx,         "track_x_vtx[n_tracks]/F");
-  saveTree->Branch("track_y_vtx",          track_y_vtx,         "track_y_vtx[n_tracks]/F");
-  saveTree->Branch("track_z_vtx",          track_z_vtx,         "track_z_vtx[n_tracks]/F");
-  saveTree->Branch("track_px_vtx",         track_px_vtx,        "track_px_vtx[n_tracks]/F");
-  saveTree->Branch("track_py_vtx",         track_py_vtx,        "track_py_vtx[n_tracks]/F");
-  saveTree->Branch("track_pz_vtx",         track_pz_vtx,        "track_pz_vtx[n_tracks]/F");
-  saveTree->Branch("track_x_CAL",          track_x_CAL,         "track_x_CAL[n_tracks]/F");
-  saveTree->Branch("track_y_CAL",          track_y_CAL,         "track_y_CAL[n_tracks]/F");
-  saveTree->Branch("track_chisq",          track_chisq,         "track_chisq[n_tracks]/F");
-  saveTree->Branch("track_prob",           track_prob,          "track_prob[n_tracks]/F");
-  saveTree->Branch("track_quality",        track_quality,       "track_quality[n_tracks]/F");
-  saveTree->Branch("track_isValid",        track_isValid,       "track_isValid[n_tracks]/I");
-  saveTree->Branch("track_nhits_st1",      track_nhits_st1,     "track_nhits_st1[n_tracks]/I");
-  saveTree->Branch("track_nhits_st2",      track_nhits_st2,     "track_nhits_st2[n_tracks]/I");
-  saveTree->Branch("track_nhits_st3",      track_nhits_st3,     "track_nhits_st3[n_tracks]/I");
-
+  if(_saveTracks){
+    saveTree->Branch("n_truthtracks",             &n_truthtracks,           "n_truthtracks/I");
+    saveTree->Branch("truthtrack_charge",         truthtrack_charge,        "truthtrack_charge[n_truthtracks]/I");
+    saveTree->Branch("truthtrack_x_st1",          truthtrack_x_st1,         "truthtrack_x_st1[n_truthtracks]/F");
+    saveTree->Branch("truthtrack_y_st1",          truthtrack_y_st1,         "truthtrack_y_st1[n_truthtracks]/F");
+    saveTree->Branch("truthtrack_z_st1",          truthtrack_z_st1,         "truthtrack_z_st1[n_truthtracks]/F");
+    saveTree->Branch("truthtrack_px_st1",         truthtrack_px_st1,        "truthtrack_px_st1[n_truthtracks]/F");
+    saveTree->Branch("truthtrack_py_st1",         truthtrack_py_st1,        "truthtrack_py_st1[n_truthtracks]/F");
+    saveTree->Branch("truthtrack_pz_st1",         truthtrack_pz_st1,        "truthtrack_pz_st1[n_truthtracks]/F");
+    saveTree->Branch("truthtrack_x_st3",          truthtrack_x_st3,         "truthtrack_x_st3[n_truthtracks]/F");
+    saveTree->Branch("truthtrack_y_st3",          truthtrack_y_st3,         "truthtrack_y_st3[n_truthtracks]/F");
+    saveTree->Branch("truthtrack_z_st3",          truthtrack_z_st3,         "truthtrack_z_st3[n_truthtracks]/F");
+    saveTree->Branch("truthtrack_px_st3",         truthtrack_px_st3,        "truthtrack_px_st3[n_truthtracks]/F");
+    saveTree->Branch("truthtrack_py_st3",         truthtrack_py_st3,        "truthtrack_py_st3[n_truthtracks]/F");
+    saveTree->Branch("truthtrack_pz_st3",         truthtrack_pz_st3,        "truthtrack_pz_st3[n_truthtracks]/F");
+    saveTree->Branch("truthtrack_x_vtx",          truthtrack_x_vtx,         "truthtrack_x_vtx[n_truthtracks]/F");
+    saveTree->Branch("truthtrack_y_vtx",          truthtrack_y_vtx,         "truthtrack_y_vtx[n_truthtracks]/F");
+    saveTree->Branch("truthtrack_z_vtx",          truthtrack_z_vtx,         "truthtrack_z_vtx[n_truthtracks]/F");
+    saveTree->Branch("truthtrack_px_vtx",         truthtrack_px_vtx,        "truthtrack_px_vtx[n_truthtracks]/F");
+    saveTree->Branch("truthtrack_py_vtx",         truthtrack_py_vtx,        "truthtrack_py_vtx[n_truthtracks]/F");
+    saveTree->Branch("truthtrack_pz_vtx",         truthtrack_pz_vtx,        "truthtrack_pz_vtx[n_truthtracks]/F");
   
-  //std::cout<<"about to make tree for st3tracklets"<<std::endl;
-  saveTree->Branch("n_st3tracklets",              &n_st3tracklets,            "n_st3tracklets/I");
-  saveTree->Branch("st3tracklet_charge",         st3tracklet_charge,        "st3tracklet_charge[n_st3tracklets]/I");
-  saveTree->Branch("st3tracklet_nhits",          st3tracklet_nhits,         "st3tracklet_nhits[n_st3tracklets]/I");
-  saveTree->Branch("st3tracklet_x_target",       st3tracklet_x_target,      "st3tracklet_x_target[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_y_target",       st3tracklet_y_target,      "st3tracklet_y_target[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_z_target",       st3tracklet_z_target,      "st3tracklet_z_target[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_px_target",      st3tracklet_px_target,     "st3tracklet_px_target[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_py_target",      st3tracklet_py_target,     "st3tracklet_py_target[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_pz_target",      st3tracklet_pz_target,     "st3tracklet_pz_target[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_x_st1",          st3tracklet_x_st1,         "st3tracklet_x_st1[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_y_st1",          st3tracklet_y_st1,         "st3tracklet_y_st1[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_z_st1",          st3tracklet_z_st1,         "st3tracklet_z_st1[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_px_st1",         st3tracklet_px_st1,        "st3tracklet_px_st1[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_py_st1",         st3tracklet_py_st1,        "st3tracklet_py_st1[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_pz_st1",         st3tracklet_pz_st1,        "st3tracklet_pz_st1[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_x_st3",          st3tracklet_x_st3,         "st3tracklet_x_st3[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_y_st3",          st3tracklet_y_st3,         "st3tracklet_y_st3[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_z_st3",          st3tracklet_z_st3,         "st3tracklet_z_st3[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_px_st3",         st3tracklet_px_st3,        "st3tracklet_px_st3[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_py_st3",         st3tracklet_py_st3,        "st3tracklet_py_st3[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_pz_st3",         st3tracklet_pz_st3,        "st3tracklet_pz_st3[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_x_vtx",          st3tracklet_x_vtx,         "st3tracklet_x_vtx[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_y_vtx",          st3tracklet_y_vtx,         "st3tracklet_y_vtx[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_z_vtx",          st3tracklet_z_vtx,         "st3tracklet_z_vtx[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_px_vtx",         st3tracklet_px_vtx,        "st3tracklet_px_vtx[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_py_vtx",         st3tracklet_py_vtx,        "st3tracklet_py_vtx[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_pz_vtx",         st3tracklet_pz_vtx,        "st3tracklet_pz_vtx[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_m",              st3tracklet_m,             "st3tracklet_m[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_x_CAL",          st3tracklet_x_CAL,         "st3tracklet_x_CAL[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_y_CAL",          st3tracklet_y_CAL,         "st3tracklet_y_CAL[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_chisq",          st3tracklet_chisq,         "st3tracklet_chisq[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_prob",           st3tracklet_prob,          "st3tracklet_prob[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_quality",        st3tracklet_quality,       "st3tracklet_quality[n_st3tracklets]/F");
-  saveTree->Branch("st3tracklet_isValid",        st3tracklet_isValid,       "st3tracklet_isValid[n_st3tracklets]/I");
-  saveTree->Branch("st3tracklet_nhits_st1",      st3tracklet_nhits_st1,     "st3tracklet_nhits_st1[n_st3tracklets]/I");
-  saveTree->Branch("st3tracklet_nhits_st2",      st3tracklet_nhits_st2,     "st3tracklet_nhits_st2[n_st3tracklets]/I");
-  saveTree->Branch("st3tracklet_nhits_st3",      st3tracklet_nhits_st3,     "st3tracklet_nhits_st3[n_st3tracklets]/I");
+    saveTree->Branch("n_tracks",              &n_tracks,            "n_tracks/I");
+    saveTree->Branch("track_charge",         track_charge,        "track_charge[n_tracks]/I");
+    saveTree->Branch("track_nhits",          track_nhits,         "track_nhits[n_tracks]/I");
+    saveTree->Branch("track_x_target",       track_x_target,      "track_x_target[n_tracks]/F");
+    saveTree->Branch("track_y_target",       track_y_target,      "track_y_target[n_tracks]/F");
+    saveTree->Branch("track_z_target",       track_z_target,      "track_z_target[n_tracks]/F");
+    saveTree->Branch("track_px_target",      track_px_target,     "track_px_target[n_tracks]/F");
+    saveTree->Branch("track_py_target",      track_py_target,     "track_py_target[n_tracks]/F");
+    saveTree->Branch("track_pz_target",      track_pz_target,     "track_pz_target[n_tracks]/F");
+    saveTree->Branch("track_x_st1",          track_x_st1,         "track_x_st1[n_tracks]/F");
+    saveTree->Branch("track_y_st1",          track_y_st1,         "track_y_st1[n_tracks]/F");
+    saveTree->Branch("track_z_st1",          track_z_st1,         "track_z_st1[n_tracks]/F");
+    saveTree->Branch("track_px_st1",         track_px_st1,        "track_px_st1[n_tracks]/F");
+    saveTree->Branch("track_py_st1",         track_py_st1,        "track_py_st1[n_tracks]/F");
+    saveTree->Branch("track_pz_st1",         track_pz_st1,        "track_pz_st1[n_tracks]/F");
+    saveTree->Branch("track_x_st3",          track_x_st3,         "track_x_st3[n_tracks]/F");
+    saveTree->Branch("track_y_st3",          track_y_st3,         "track_y_st3[n_tracks]/F");
+    saveTree->Branch("track_z_st3",          track_z_st3,         "track_z_st3[n_tracks]/F");
+    saveTree->Branch("track_px_st3",         track_px_st3,        "track_px_st3[n_tracks]/F");
+    saveTree->Branch("track_py_st3",         track_py_st3,        "track_py_st3[n_tracks]/F");
+    saveTree->Branch("track_pz_st3",         track_pz_st3,        "track_pz_st3[n_tracks]/F");
+    saveTree->Branch("track_x_vtx",          track_x_vtx,         "track_x_vtx[n_tracks]/F");
+    saveTree->Branch("track_y_vtx",          track_y_vtx,         "track_y_vtx[n_tracks]/F");
+    saveTree->Branch("track_z_vtx",          track_z_vtx,         "track_z_vtx[n_tracks]/F");
+    saveTree->Branch("track_px_vtx",         track_px_vtx,        "track_px_vtx[n_tracks]/F");
+    saveTree->Branch("track_py_vtx",         track_py_vtx,        "track_py_vtx[n_tracks]/F");
+    saveTree->Branch("track_pz_vtx",         track_pz_vtx,        "track_pz_vtx[n_tracks]/F");
+    saveTree->Branch("track_x_CAL",          track_x_CAL,         "track_x_CAL[n_tracks]/F");
+    saveTree->Branch("track_y_CAL",          track_y_CAL,         "track_y_CAL[n_tracks]/F");
+    saveTree->Branch("track_chisq",          track_chisq,         "track_chisq[n_tracks]/F");
+    saveTree->Branch("track_prob",           track_prob,          "track_prob[n_tracks]/F");
+    saveTree->Branch("track_quality",        track_quality,       "track_quality[n_tracks]/F");
+    saveTree->Branch("track_isValid",        track_isValid,       "track_isValid[n_tracks]/I");
+    saveTree->Branch("track_nhits_st1",      track_nhits_st1,     "track_nhits_st1[n_tracks]/I");
+    saveTree->Branch("track_nhits_st2",      track_nhits_st2,     "track_nhits_st2[n_tracks]/I");
+    saveTree->Branch("track_nhits_st3",      track_nhits_st3,     "track_nhits_st3[n_tracks]/I");
+    
+    saveTree->Branch("n_st3tracklets",              &n_st3tracklets,            "n_st3tracklets/I");
+    saveTree->Branch("st3tracklet_charge",         st3tracklet_charge,        "st3tracklet_charge[n_st3tracklets]/I");
+    saveTree->Branch("st3tracklet_nhits",          st3tracklet_nhits,         "st3tracklet_nhits[n_st3tracklets]/I");
+    saveTree->Branch("st3tracklet_x_target",       st3tracklet_x_target,      "st3tracklet_x_target[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_y_target",       st3tracklet_y_target,      "st3tracklet_y_target[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_z_target",       st3tracklet_z_target,      "st3tracklet_z_target[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_px_target",      st3tracklet_px_target,     "st3tracklet_px_target[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_py_target",      st3tracklet_py_target,     "st3tracklet_py_target[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_pz_target",      st3tracklet_pz_target,     "st3tracklet_pz_target[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_x_st1",          st3tracklet_x_st1,         "st3tracklet_x_st1[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_y_st1",          st3tracklet_y_st1,         "st3tracklet_y_st1[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_z_st1",          st3tracklet_z_st1,         "st3tracklet_z_st1[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_px_st1",         st3tracklet_px_st1,        "st3tracklet_px_st1[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_py_st1",         st3tracklet_py_st1,        "st3tracklet_py_st1[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_pz_st1",         st3tracklet_pz_st1,        "st3tracklet_pz_st1[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_x_st3",          st3tracklet_x_st3,         "st3tracklet_x_st3[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_y_st3",          st3tracklet_y_st3,         "st3tracklet_y_st3[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_z_st3",          st3tracklet_z_st3,         "st3tracklet_z_st3[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_px_st3",         st3tracklet_px_st3,        "st3tracklet_px_st3[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_py_st3",         st3tracklet_py_st3,        "st3tracklet_py_st3[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_pz_st3",         st3tracklet_pz_st3,        "st3tracklet_pz_st3[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_x_vtx",          st3tracklet_x_vtx,         "st3tracklet_x_vtx[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_y_vtx",          st3tracklet_y_vtx,         "st3tracklet_y_vtx[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_z_vtx",          st3tracklet_z_vtx,         "st3tracklet_z_vtx[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_px_vtx",         st3tracklet_px_vtx,        "st3tracklet_px_vtx[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_py_vtx",         st3tracklet_py_vtx,        "st3tracklet_py_vtx[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_pz_vtx",         st3tracklet_pz_vtx,        "st3tracklet_pz_vtx[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_m",              st3tracklet_m,             "st3tracklet_m[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_x_CAL",          st3tracklet_x_CAL,         "st3tracklet_x_CAL[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_y_CAL",          st3tracklet_y_CAL,         "st3tracklet_y_CAL[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_chisq",          st3tracklet_chisq,         "st3tracklet_chisq[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_prob",           st3tracklet_prob,          "st3tracklet_prob[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_quality",        st3tracklet_quality,       "st3tracklet_quality[n_st3tracklets]/F");
+    saveTree->Branch("st3tracklet_isValid",        st3tracklet_isValid,       "st3tracklet_isValid[n_st3tracklets]/I");
+    saveTree->Branch("st3tracklet_nhits_st1",      st3tracklet_nhits_st1,     "st3tracklet_nhits_st1[n_st3tracklets]/I");
+    saveTree->Branch("st3tracklet_nhits_st2",      st3tracklet_nhits_st2,     "st3tracklet_nhits_st2[n_st3tracklets]/I");
+    saveTree->Branch("st3tracklet_nhits_st3",      st3tracklet_nhits_st3,     "st3tracklet_nhits_st3[n_st3tracklets]/I");
+  }
+
+  if(_saveVertex){
+    saveTree->Branch("n_truthdimuons",     &n_truthdimuons,   "n_truthdimuons/I");
+    saveTree->Branch("truthdimuon_mass",   truthdimuon_mass,  "truthdimuon_mass[n_truthdimuons]/F");
+    saveTree->Branch("truthdimuon_x_vtx",  truthdimuon_x_vtx, "truthdimuon_x_vtx[n_truthdimuons]/F");
+    saveTree->Branch("truthdimuon_y_vtx",  truthdimuon_y_vtx, "truthdimuon_y_vtx[n_truthdimuons]/F");
+    saveTree->Branch("truthdimuon_z_vtx",  truthdimuon_z_vtx, "truthdimuon_z_vtx[n_truthdimuons]/F");
+    saveTree->Branch("truthdimuon_px",     truthdimuon_px,    "truthdimuon_px[n_truthdimuons]/F");
+    saveTree->Branch("truthdimuon_py",     truthdimuon_py,    "truthdimuon_py[n_truthdimuons]/F");
+    saveTree->Branch("truthdimuon_pz",     truthdimuon_pz,    "truthdimuon_pz[n_truthdimuons]/F");
+    saveTree->Branch("truthdimuon_pmom_x", truthdimuon_pmom_x, "truthdimuon_pmom_x[n_truthdimuons]/F");
+    saveTree->Branch("truthdimuon_pmom_y", truthdimuon_pmom_y, "truthdimuon_pmom_y[n_truthdimuons]/F");
+    saveTree->Branch("truthdimuon_pmom_z", truthdimuon_pmom_z, "truthdimuon_pmom_z[n_truthdimuons]/F");
+    saveTree->Branch("truthdimuon_nmom_x", truthdimuon_nmom_x, "truthdimuon_nmom_x[n_truthdimuons]/F");
+    saveTree->Branch("truthdimuon_nmom_y", truthdimuon_nmom_y, "truthdimuon_nmom_y[n_truthdimuons]/F");
+    saveTree->Branch("truthdimuon_nmom_z", truthdimuon_nmom_z, "truthdimuon_nmom_z[n_truthdimuons]/F");
+    
+    saveTree->Branch("n_dimuons",     &n_dimuons,    "n_dimuons/I");
+    saveTree->Branch("dimuon_mass",   dimuon_mass,   "dimuon_mass[n_dimuons]/F");
+    saveTree->Branch("dimuon_chisq",  dimuon_chisq,  "dimuon_chisq[n_dimuons]/F");
+    saveTree->Branch("dimuon_x_vtx",  dimuon_x_vtx,  "dimuon_x_vtx[n_dimuons]/F");
+    saveTree->Branch("dimuon_y_vtx",  dimuon_y_vtx,  "dimuon_y_vtx[n_dimuons]/F");
+    saveTree->Branch("dimuon_z_vtx",  dimuon_z_vtx,  "dimuon_z_vtx[n_dimuons]/F");
+    saveTree->Branch("dimuon_px",     dimuon_px,     "dimuon_px[n_dimuons]/F");
+    saveTree->Branch("dimuon_py",     dimuon_py,     "dimuon_py[n_dimuons]/F");
+    saveTree->Branch("dimuon_pz",     dimuon_pz,     "dimuon_pz[n_dimuons]/F");
+    saveTree->Branch("dimuon_pmom_x", dimuon_pmom_x, "dimuon_pmom_x[n_dimuons]/F");
+    saveTree->Branch("dimuon_pmom_y", dimuon_pmom_y, "dimuon_pmom_y[n_dimuons]/F");
+    saveTree->Branch("dimuon_pmom_z", dimuon_pmom_z, "dimuon_pmom_z[n_dimuons]/F");
+    saveTree->Branch("dimuon_nmom_x", dimuon_nmom_x, "dimuon_nmom_x[n_dimuons]/F");
+    saveTree->Branch("dimuon_nmom_y", dimuon_nmom_y, "dimuon_nmom_y[n_dimuons]/F");
+    saveTree->Branch("dimuon_nmom_z", dimuon_nmom_z, "dimuon_nmom_z[n_dimuons]/F");
+    saveTree->Branch("dimuon_ppos_x", dimuon_ppos_x, "dimuon_ppos_x[n_dimuons]/F");
+    saveTree->Branch("dimuon_ppos_y", dimuon_ppos_y, "dimuon_ppos_y[n_dimuons]/F");
+    saveTree->Branch("dimuon_ppos_z", dimuon_ppos_z, "dimuon_ppos_z[n_dimuons]/F");
+    saveTree->Branch("dimuon_npos_x", dimuon_npos_x, "dimuon_npos_x[n_dimuons]/F");
+    saveTree->Branch("dimuon_npos_y", dimuon_npos_y, "dimuon_npos_y[n_dimuons]/F");
+    saveTree->Branch("dimuon_npos_z", dimuon_npos_z, "dimuon_npos_z[n_dimuons]/F");
+  }
+
+  if(_savePrimaries){
+    saveTree->Branch("n_showers",     &n_showers,       "n_showers/I");
+    saveTree->Branch("sx_ecal",       &sx_ecal,         "sx_ecal[n_showers]/F");
+    saveTree->Branch("sy_ecal",       &sy_ecal,         "sy_ecal[n_showers]/F");
+    saveTree->Branch("sz_ecal",       &sz_ecal,         "sz_ecal[n_showers]/F");
+    saveTree->Branch("sedep_ecal",    &sedep_ecal,      "sedep_ecal[n_showers]/F");
+    
+    saveTree->Branch("n_primaries",   &n_primaries,        "n_primaries/I");
+    saveTree->Branch("gtrkid",        gtrkid,              "gtrkid[n_primaries]/I");
+    saveTree->Branch("gpid",          gpid,                "gpid[n_primaries]/I");
+    saveTree->Branch("gvx",           gvx,                 "gvx[n_primaries]/F");
+    saveTree->Branch("gvy",           gvy,                 "gvy[n_primaries]/F");
+    saveTree->Branch("gvz",           gvz,                 "gvz[n_primaries]/F");
+    saveTree->Branch("gpx",           gpx,                 "gpx[n_primaries]/F");
+    saveTree->Branch("gpy",           gpy,                 "gpy[n_primaries]/F");
+    saveTree->Branch("gpz",           gpz,                 "gpz[n_primaries]/F");
+    saveTree->Branch("gpt",           gpt,                 "gpt[n_primaries]/F");
+    saveTree->Branch("geta",          geta,                "geta[n_primaries]/F");
+    saveTree->Branch("gphi",          gphi,                "gphi[n_primaries]/F");
+    saveTree->Branch("ge",            ge,                  "ge[n_primaries]/F");
+    
+    saveTree->Branch("nhits_ecal",    nhits_ecal,          "nhits_ecal[n_primaries]/I");
+    saveTree->Branch("gx_ecal",       gx_ecal,             "gx_ecal[n_primaries][100]/F"); // not sure how to make this with the right size                                                                
+    saveTree->Branch("gy_ecal",       gy_ecal,             "gy_ecal[n_primaries][100]/F");
+    saveTree->Branch("gz_ecal",       gz_ecal,             "gz_ecal[n_primaries][100]/F");
+    saveTree->Branch("gpx_ecal",      gpx_ecal,            "gpx_ecal[n_primaries][100]/F");
+    saveTree->Branch("gpy_ecal",      gpy_ecal,            "gpy_ecal[n_primaries][100]/F");
+    saveTree->Branch("gpz_ecal",      gpz_ecal,            "gpz_ecal[n_primaries][100]/F");
+    saveTree->Branch("gedep_ecal",    gedep_ecal,          "gedep_ecal[n_primaries][100]/F");
+    
+    saveTree->Branch("gx_st1",        gx_st1,              "gx_st1[n_primaries]/F");
+    saveTree->Branch("gy_st1",        gy_st1,              "gy_st1[n_primaries]/F");
+    saveTree->Branch("gz_st1",        gz_st1,              "gz_st1[n_primaries]/F");
+    saveTree->Branch("gpx_st1",       gpx_st1,             "gpx_st1[n_primaries]/F");
+    saveTree->Branch("gpy_st1",       gpy_st1,             "gpy_st1[n_primaries]/F");
+    saveTree->Branch("gpz_st1",       gpz_st1,             "gpz_st1[n_primaries]/F");
+    
+    saveTree->Branch("gx_st2",        gx_st2,              "gx_st2[n_primaries]/F");
+    saveTree->Branch("gy_st2",        gy_st2,              "gy_st2[n_primaries]/F");
+    saveTree->Branch("gz_st2",        gz_st2,              "gz_st2[n_primaries]/F");
+    saveTree->Branch("gpx_st2",       gpx_st2,             "gpx_st2[n_primaries]/F");
+    saveTree->Branch("gpy_st2",       gpy_st2,             "gpy_st2[n_primaries]/F");
+    saveTree->Branch("gpz_st2",       gpz_st2,             "gpz_st2[n_primaries]/F");
+    
+    saveTree->Branch("gx_st3",        gx_st3,              "gx_st3[n_primaries]/F");
+    saveTree->Branch("gy_st3",        gy_st3,              "gy_st3[n_primaries]/F");
+    saveTree->Branch("gz_st3",        gz_st3,              "gz_st3[n_primaries]/F");
+    saveTree->Branch("gpx_st3",       gpx_st3,             "gpx_st3[n_primaries]/F");
+    saveTree->Branch("gpy_st3",       gpy_st3,             "gpy_st3[n_primaries]/F");
+    saveTree->Branch("gpz_st3",       gpz_st3,             "gpz_st3[n_primaries]/F");
+    
+    saveTree->Branch("gx_h1",         gx_h1,               "gx_h1[n_primaries]/F");
+    saveTree->Branch("gy_h1",         gy_h1,               "gy_h1[n_primaries]/F");
+    saveTree->Branch("gz_h1",         gz_h1,               "gz_h1[n_primaries]/F");
+    saveTree->Branch("gpx_h1",        gpx_h1,              "gpx_h1[n_primaries]/F");
+    saveTree->Branch("gpy_h1",        gpy_h1,              "gpy_h1[n_primaries]/F");
+    saveTree->Branch("gpz_h1",        gpz_h1,              "gpz_h1[n_primaries]/F");
+    
+    saveTree->Branch("gx_h2",         gx_h2,               "gx_h2[n_primaries]/F");
+    saveTree->Branch("gy_h2",         gy_h2,               "gy_h2[n_primaries]/F");
+    saveTree->Branch("gz_h2",         gz_h2,               "gz_h2[n_primaries]/F");
+    saveTree->Branch("gpx_h2",        gpx_h2,              "gpx_h2[n_primaries]/F");
+    saveTree->Branch("gpy_h2",        gpy_h2,              "gpy_h2[n_primaries]/F");
+    saveTree->Branch("gpz_h2",        gpz_h2,              "gpz_h2[n_primaries]/F");
+    
+    saveTree->Branch("gx_h3",         gx_h3,               "gx_h3[n_primaries]/F");
+    saveTree->Branch("gy_h3",         gy_h3,               "gy_h3[n_primaries]/F");
+    saveTree->Branch("gz_h3",         gz_h3,               "gz_h3[n_primaries]/F");
+    saveTree->Branch("gpx_h3",        gpx_h3,              "gpx_h3[n_primaries]/F");
+    saveTree->Branch("gpy_h3",        gpy_h3,              "gpy_h3[n_primaries]/F");
+    saveTree->Branch("gpz_h3",        gpz_h3,              "gpz_h3[n_primaries]/F");
+    
+    saveTree->Branch("gx_h4",         gx_h4,               "gx_h4[n_primaries]/F");
+    saveTree->Branch("gy_h4",         gy_h4,               "gy_h4[n_primaries]/F");
+    saveTree->Branch("gz_h4",         gz_h4,               "gz_h4[n_primaries]/F");
+    saveTree->Branch("gpx_h4",        gpx_h4,              "gpx_h4[n_primaries]/F");
+    saveTree->Branch("gpy_h4",        gpy_h4,              "gpy_h4[n_primaries]/F");
+    saveTree->Branch("gpz_h4",        gpz_h4,              "gpz_h4[n_primaries]/F");
+    
+    saveTree->Branch("gx_p1",         gx_p1,               "gx_p1[n_primaries]/F");
+    saveTree->Branch("gy_p1",         gy_p1,               "gy_p1[n_primaries]/F");
+    saveTree->Branch("gz_p1",         gz_p1,               "gz_p1[n_primaries]/F");
+    saveTree->Branch("gpx_p1",        gpx_p1,              "gpx_p1[n_primaries]/F");
+    saveTree->Branch("gpy_p1",        gpy_p1,              "gpy_p1[n_primaries]/F");
+    saveTree->Branch("gpz_p1",        gpz_p1,              "gpz_p1[n_primaries]/F");
+  }
   
-  saveTree->Branch("n_truthdimuons",     &n_truthdimuons,   "n_truthdimuons/I");
-  saveTree->Branch("truthdimuon_mass",   truthdimuon_mass,  "truthdimuon_mass[n_truthdimuons]/F");
-  saveTree->Branch("truthdimuon_x_vtx",  truthdimuon_x_vtx, "truthdimuon_x_vtx[n_truthdimuons]/F");
-  saveTree->Branch("truthdimuon_y_vtx",  truthdimuon_y_vtx, "truthdimuon_y_vtx[n_truthdimuons]/F");
-  saveTree->Branch("truthdimuon_z_vtx",  truthdimuon_z_vtx, "truthdimuon_z_vtx[n_truthdimuons]/F");
-  saveTree->Branch("truthdimuon_px",     truthdimuon_px,    "truthdimuon_px[n_truthdimuons]/F");
-  saveTree->Branch("truthdimuon_py",     truthdimuon_py,    "truthdimuon_py[n_truthdimuons]/F");
-  saveTree->Branch("truthdimuon_pz",     truthdimuon_pz,    "truthdimuon_pz[n_truthdimuons]/F");
-  saveTree->Branch("truthdimuon_pmom_x", truthdimuon_pmom_x, "truthdimuon_pmom_x[n_truthdimuons]/F");
-  saveTree->Branch("truthdimuon_pmom_y", truthdimuon_pmom_y, "truthdimuon_pmom_y[n_truthdimuons]/F");
-  saveTree->Branch("truthdimuon_pmom_z", truthdimuon_pmom_z, "truthdimuon_pmom_z[n_truthdimuons]/F");
-  saveTree->Branch("truthdimuon_nmom_x", truthdimuon_nmom_x, "truthdimuon_nmom_x[n_truthdimuons]/F");
-  saveTree->Branch("truthdimuon_nmom_y", truthdimuon_nmom_y, "truthdimuon_nmom_y[n_truthdimuons]/F");
-  saveTree->Branch("truthdimuon_nmom_z", truthdimuon_nmom_z, "truthdimuon_nmom_z[n_truthdimuons]/F");
-
-  saveTree->Branch("n_dimuons",     &n_dimuons,    "n_dimuons/I");
-  saveTree->Branch("dimuon_mass",   dimuon_mass,   "dimuon_mass[n_dimuons]/F");
-  saveTree->Branch("dimuon_chisq",  dimuon_chisq,  "dimuon_chisq[n_dimuons]/F");
-  saveTree->Branch("dimuon_x_vtx",  dimuon_x_vtx,  "dimuon_x_vtx[n_dimuons]/F");
-  saveTree->Branch("dimuon_y_vtx",  dimuon_y_vtx,  "dimuon_y_vtx[n_dimuons]/F");
-  saveTree->Branch("dimuon_z_vtx",  dimuon_z_vtx,  "dimuon_z_vtx[n_dimuons]/F");
-  saveTree->Branch("dimuon_px",     dimuon_px,     "dimuon_px[n_dimuons]/F");
-  saveTree->Branch("dimuon_py",     dimuon_py,     "dimuon_py[n_dimuons]/F");
-  saveTree->Branch("dimuon_pz",     dimuon_pz,     "dimuon_pz[n_dimuons]/F");
-  saveTree->Branch("dimuon_pmom_x", dimuon_pmom_x, "dimuon_pmom_x[n_dimuons]/F");
-  saveTree->Branch("dimuon_pmom_y", dimuon_pmom_y, "dimuon_pmom_y[n_dimuons]/F");
-  saveTree->Branch("dimuon_pmom_z", dimuon_pmom_z, "dimuon_pmom_z[n_dimuons]/F");
-  saveTree->Branch("dimuon_nmom_x", dimuon_nmom_x, "dimuon_nmom_x[n_dimuons]/F");
-  saveTree->Branch("dimuon_nmom_y", dimuon_nmom_y, "dimuon_nmom_y[n_dimuons]/F");
-  saveTree->Branch("dimuon_nmom_z", dimuon_nmom_z, "dimuon_nmom_z[n_dimuons]/F");
-  saveTree->Branch("dimuon_ppos_x", dimuon_ppos_x, "dimuon_ppos_x[n_dimuons]/F");
-  saveTree->Branch("dimuon_ppos_y", dimuon_ppos_y, "dimuon_ppos_y[n_dimuons]/F");
-  saveTree->Branch("dimuon_ppos_z", dimuon_ppos_z, "dimuon_ppos_z[n_dimuons]/F");
-  saveTree->Branch("dimuon_npos_x", dimuon_npos_x, "dimuon_npos_x[n_dimuons]/F");
-  saveTree->Branch("dimuon_npos_y", dimuon_npos_y, "dimuon_npos_y[n_dimuons]/F");
-  saveTree->Branch("dimuon_npos_z", dimuon_npos_z, "dimuon_npos_z[n_dimuons]/F");
-
-  saveTree->Branch("n_showers",     &n_showers,       "n_showers/I");
-  saveTree->Branch("sx_ecal",       &sx_ecal,         "sx_ecal[n_showers]/F");
-  saveTree->Branch("sy_ecal",       &sy_ecal,         "sy_ecal[n_showers]/F");
-  saveTree->Branch("sz_ecal",       &sz_ecal,         "sz_ecal[n_showers]/F");
-  saveTree->Branch("sedep_ecal",    &sedep_ecal,      "sedep_ecal[n_showers]/F");
-
-  saveTree->Branch("n_primaries",   &n_primaries,        "n_primaries/I");
-  saveTree->Branch("gtrkid",        gtrkid,              "gtrkid[n_primaries]/I");
-  saveTree->Branch("gpid",          gpid,                "gpid[n_primaries]/I");
-  saveTree->Branch("gvx",           gvx,                 "gvx[n_primaries]/F");
-  saveTree->Branch("gvy",           gvy,                 "gvy[n_primaries]/F");
-  saveTree->Branch("gvz",           gvz,                 "gvz[n_primaries]/F");
-  saveTree->Branch("gpx",           gpx,                 "gpx[n_primaries]/F");
-  saveTree->Branch("gpy",           gpy,                 "gpy[n_primaries]/F");
-  saveTree->Branch("gpz",           gpz,                 "gpz[n_primaries]/F");
-  saveTree->Branch("gpt",           gpt,                 "gpt[n_primaries]/F");
-  saveTree->Branch("geta",          geta,                "geta[n_primaries]/F");
-  saveTree->Branch("gphi",          gphi,                "gphi[n_primaries]/F");
-  saveTree->Branch("ge",            ge,                  "ge[n_primaries]/F");
-
-  saveTree->Branch("nhits_ecal",    nhits_ecal,          "nhits_ecal[n_primaries]/I");
-  saveTree->Branch("gx_ecal",       gx_ecal,             "gx_ecal[n_primaries][100]/F"); // not sure how to make this with the right size                                                                
-  saveTree->Branch("gy_ecal",       gy_ecal,             "gy_ecal[n_primaries][100]/F");
-  saveTree->Branch("gz_ecal",       gz_ecal,             "gz_ecal[n_primaries][100]/F");
-  saveTree->Branch("gpx_ecal",      gpx_ecal,            "gpx_ecal[n_primaries][100]/F");
-  saveTree->Branch("gpy_ecal",      gpy_ecal,            "gpy_ecal[n_primaries][100]/F");
-  saveTree->Branch("gpz_ecal",      gpz_ecal,            "gpz_ecal[n_primaries][100]/F");
-  saveTree->Branch("gedep_ecal",    gedep_ecal,          "gedep_ecal[n_primaries][100]/F");
-
-  saveTree->Branch("gx_st1",        gx_st1,              "gx_st1[n_primaries]/F");
-  saveTree->Branch("gy_st1",        gy_st1,              "gy_st1[n_primaries]/F");
-  saveTree->Branch("gz_st1",        gz_st1,              "gz_st1[n_primaries]/F");
-  saveTree->Branch("gpx_st1",       gpx_st1,             "gpx_st1[n_primaries]/F");
-  saveTree->Branch("gpy_st1",       gpy_st1,             "gpy_st1[n_primaries]/F");
-  saveTree->Branch("gpz_st1",       gpz_st1,             "gpz_st1[n_primaries]/F");
-
-  saveTree->Branch("gx_st2",        gx_st2,              "gx_st2[n_primaries]/F");
-  saveTree->Branch("gy_st2",        gy_st2,              "gy_st2[n_primaries]/F");
-  saveTree->Branch("gz_st2",        gz_st2,              "gz_st2[n_primaries]/F");
-  saveTree->Branch("gpx_st2",       gpx_st2,             "gpx_st2[n_primaries]/F");
-  saveTree->Branch("gpy_st2",       gpy_st2,             "gpy_st2[n_primaries]/F");
-  saveTree->Branch("gpz_st2",       gpz_st2,             "gpz_st2[n_primaries]/F");
-
-  saveTree->Branch("gx_st3",        gx_st3,              "gx_st3[n_primaries]/F");
-  saveTree->Branch("gy_st3",        gy_st3,              "gy_st3[n_primaries]/F");
-  saveTree->Branch("gz_st3",        gz_st3,              "gz_st3[n_primaries]/F");
-  saveTree->Branch("gpx_st3",       gpx_st3,             "gpx_st3[n_primaries]/F");
-  saveTree->Branch("gpy_st3",       gpy_st3,             "gpy_st3[n_primaries]/F");
-  saveTree->Branch("gpz_st3",       gpz_st3,             "gpz_st3[n_primaries]/F");
-
-  saveTree->Branch("gx_h1",         gx_h1,               "gx_h1[n_primaries]/F");
-  saveTree->Branch("gy_h1",         gy_h1,               "gy_h1[n_primaries]/F");
-  saveTree->Branch("gz_h1",         gz_h1,               "gz_h1[n_primaries]/F");
-  saveTree->Branch("gpx_h1",        gpx_h1,              "gpx_h1[n_primaries]/F");
-  saveTree->Branch("gpy_h1",        gpy_h1,              "gpy_h1[n_primaries]/F");
-  saveTree->Branch("gpz_h1",        gpz_h1,              "gpz_h1[n_primaries]/F");
-
-  saveTree->Branch("gx_h2",         gx_h2,               "gx_h2[n_primaries]/F");
-  saveTree->Branch("gy_h2",         gy_h2,               "gy_h2[n_primaries]/F");
-  saveTree->Branch("gz_h2",         gz_h2,               "gz_h2[n_primaries]/F");
-  saveTree->Branch("gpx_h2",        gpx_h2,              "gpx_h2[n_primaries]/F");
-  saveTree->Branch("gpy_h2",        gpy_h2,              "gpy_h2[n_primaries]/F");
-  saveTree->Branch("gpz_h2",        gpz_h2,              "gpz_h2[n_primaries]/F");
-
-  saveTree->Branch("gx_h3",         gx_h3,               "gx_h3[n_primaries]/F");
-  saveTree->Branch("gy_h3",         gy_h3,               "gy_h3[n_primaries]/F");
-  saveTree->Branch("gz_h3",         gz_h3,               "gz_h3[n_primaries]/F");
-  saveTree->Branch("gpx_h3",        gpx_h3,              "gpx_h3[n_primaries]/F");
-  saveTree->Branch("gpy_h3",        gpy_h3,              "gpy_h3[n_primaries]/F");
-  saveTree->Branch("gpz_h3",        gpz_h3,              "gpz_h3[n_primaries]/F");
-
-  saveTree->Branch("gx_h4",         gx_h4,               "gx_h4[n_primaries]/F");
-  saveTree->Branch("gy_h4",         gy_h4,               "gy_h4[n_primaries]/F");
-  saveTree->Branch("gz_h4",         gz_h4,               "gz_h4[n_primaries]/F");
-  saveTree->Branch("gpx_h4",        gpx_h4,              "gpx_h4[n_primaries]/F");
-  saveTree->Branch("gpy_h4",        gpy_h4,              "gpy_h4[n_primaries]/F");
-  saveTree->Branch("gpz_h4",        gpz_h4,              "gpz_h4[n_primaries]/F");
-
-  saveTree->Branch("gx_p1",         gx_p1,               "gx_p1[n_primaries]/F");
-  saveTree->Branch("gy_p1",         gy_p1,               "gy_p1[n_primaries]/F");
-  saveTree->Branch("gz_p1",         gz_p1,               "gz_p1[n_primaries]/F");
-  saveTree->Branch("gpx_p1",        gpx_p1,              "gpx_p1[n_primaries]/F");
-  saveTree->Branch("gpy_p1",        gpy_p1,              "gpy_p1[n_primaries]/F");
-  saveTree->Branch("gpz_p1",        gpz_p1,              "gpz_p1[n_primaries]/F");
-
   if(_saveSecondaries){
     saveTree->Branch("n_secondaries",     &n_secondaries,          "n_secondaries/I");
     //saveTree->Branch("gtrkid_sec",        gtrkid_sec,              "gtrkid_sec[n_secondaries]/I");
