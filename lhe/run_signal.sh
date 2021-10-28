@@ -1,7 +1,6 @@
 #!/bin/bash                                                                                                                                                                        
-FILES=data/Aprime_Electrons/*Brem*
+#FILES=data/Aprime_Electrons/*Brem*
 #FILES=data/Aprime_Electrons/*Eta*
-FILES=data/Aprime_Muons/*Brem*
 FILES=/seaquest/users/cmantill/DarkQuest/lhe/data/Aprime_Muons/*
 
 for f in $FILES

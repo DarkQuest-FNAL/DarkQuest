@@ -25,6 +25,7 @@ public:
   int End(PHCompositeNode* topNode);
 
   void set_output_filename(const TString& n) { saveName = n; }
+  void set_reco(bool b){ saveReco = b;}
 
 private:
   int GetNodes(PHCompositeNode* topNode);
@@ -96,6 +97,8 @@ private:
   float dimuon_npos_x[100];
   float dimuon_npos_y[100];
   float dimuon_npos_z[100];
+
+  bool saveReco=false;
 };
 
 #endif

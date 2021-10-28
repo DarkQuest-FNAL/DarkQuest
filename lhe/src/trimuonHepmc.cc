@@ -46,7 +46,6 @@ int main(int argc,char** argv)
   std::vector<stdhep_event> input_events;
 
   // read lhe
-  //ifstream myfile("/seaquest/users/cmantill/DarkQuest/lhe/data/trimuon/test.lhe");
   ifstream myfile("/seaquest/users/cmantill/DarkQuest/lhe/data/trimuon/signalProcess0.5MS0gS1.lhe");
   if (myfile.is_open()) {
     std::string line;
@@ -100,10 +99,6 @@ int main(int argc,char** argv)
   // production vertex: beamspot at y=2 cm; guess z=50 cm for mean interaction position (dump face at 25 cm, interaction length 16.77 cm)
   double vx_production[3] = {0.0, 2.0, 50.0}; 
   
-  // for random displacements
-  //TF1 *f_exp = new TF1("f_exp","exp(-x/[0])",0,500);
-  //TRandom3* rand = new TRandom3(2020);
-  
   // write hepmc
   string outFile = "trimuon_0.5MS0gS1.hepmc";
   IO_GenEvent output_file(outFile);
@@ -132,16 +127,9 @@ int main(int argc,char** argv)
     pposparticle->set_status(1);
     GenParticle* pnegparticle =new GenParticle(FourVector(event->negparticle->phep[0],event->negparticle->phep[1],event->negparticle->phep[2],event->negparticle->phep[3]), event->negparticle->idhep, event->negparticle->isthep);
     pnegparticle->set_status(1);
-    
-    // create vertex (prompt)
-    //double vx[4];
-    //double vtx_displacement = gsl_ran_exponential(r,decay_length);
-    //double vx_production_displ[3] = {vx_production[0],vx_production[1], 25+gsl_ran_exponential(r,16.77)};
-    //for (int j=0;j<3;j++) vx[j] = vtx_displacement*event->aprime->phep[j]/p + vx_production_displ[j];
-    //vx[3] = sqrt(vx[0]*vx[0] + vx[1]*vx[1] + vx[2]*vx[2] + event->aprime->phep[4]*event->aprime->phep[4]);
 
+    // create vertex
     TLorentzVector vtx;
-    //SetPxPyPzM(vtx, event->scalar->phep[0]+vx_production[0], event->scalar->phep[1]+vx_production[1], event->scalar->phep[2]+vx_production[2], mass);
     SetPxPyPzM(vtx, mu_vtx.Px(), mu_vtx.Py(), mu_vtx.Pz(), mass);
 
     GenVertex* vscalar = new GenVertex(FourVector(vtx.Px(), vtx.Py(), vtx.Pz(), vtx.E()) );
