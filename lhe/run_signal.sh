@@ -1,7 +1,8 @@
 #!/bin/bash                                                                                                                                                                        
 FILES=data/Aprime_Electrons/*Brem*
 #FILES=data/Aprime_Electrons/*Eta*
-#FILES=data/Aprime_Muons/*Brem*
+FILES=data/Aprime_Muons/*Brem*
+FILES=/seaquest/users/cmantill/DarkQuest/lhe/data/Aprime_Muons/*
 
 for f in $FILES
 do
@@ -10,8 +11,6 @@ do
     mass=${strarr[4]}
     for logeps in `seq -4.0 -0.2 -7.6`
     do
-	#echo ./bin/displacedHepmc ${f} ${mech}_${mass}_${logeps}.root ${mech} electron 0 ${logeps} ${mass} 500 600
-	./bin/displacedHepmc ${f} ${mech}_${mass}_${logeps}.root ${mech} electron 0 ${logeps} ${mass} 500 600
-        #./bin/displacedHepmc ${f} ${mech}_${mass}_${logeps}.root ${mech} muon 0 ${logeps} ${mass} 500 600
+	    ./bin/displacedHepmc ${f} ${mech}_${mass}_${logeps}.root ${mech} muon 0 ${logeps} ${mass} 200 600
     done
 done
