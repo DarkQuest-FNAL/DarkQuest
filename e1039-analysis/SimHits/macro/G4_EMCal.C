@@ -13,7 +13,7 @@ void SetupEMCal(
   const double place_z = 0.,
   const int n_super_h = 6,
   const int n_super_v = 3,
-  const int verbose   = 99.) 
+  const int verbose   = 0.) 
 {
   PHG4EMCalSubsystem* emcal = new PHG4EMCalSubsystem(name.c_str(), 0);
   emcal->SuperDetector(name.c_str());

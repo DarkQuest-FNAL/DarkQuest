@@ -8,7 +8,7 @@ source setup_mye1039.sh
 mkdir work
 mkdir install
 cd work
-cmake ../src/ -DCMAKE_INSTALL_PREFIX=../install
+cmake ../AnaModule/ -DCMAKE_INSTALL_PREFIX=../install
 make
 make install
 cd ../

@@ -29,6 +29,8 @@ int AnaModule::process_event(PHCompositeNode* topNode)
 
   nHits = rawEvent->getNHitsAll();
 
+  std::cout << "nhits " << nHits << std::endl;
+
   // The NIM1 and NIM3 bits are random triggers. 
   int nim1TriggerMask = 32; 
   int nim3TriggerMask = 128;  
@@ -59,63 +61,65 @@ int AnaModule::process_event(PHCompositeNode* topNode)
   }
 
   // track related variables
-  n_tracks = recEvent->getNTracks();
-  for (int i = 0; i < n_tracks; ++i ) {
-    SRecTrack* recTrack = &recEvent->getTrack(i);
-    track_charge[i] = recTrack->getCharge();
-    track_nhits[i] = recTrack->getNHits();
-    track_x_target[i] = (recTrack->getTargetPos()).X();
-    track_y_target[i] = (recTrack->getTargetPos()).Y();
-    track_z_target[i] = (recTrack->getTargetPos()).Z();
-    track_px_target[i] = (recTrack->getTargetMom()).Px();
-    track_py_target[i] = (recTrack->getTargetMom()).Py();
-    track_pz_target[i] = (recTrack->getTargetMom()).Pz();
-    track_x_st1[i] = (recTrack->getPositionVecSt1()).X();
-    track_y_st1[i] = (recTrack->getPositionVecSt1()).Y();
-    track_z_st1[i] = (recTrack->getPositionVecSt1()).Z();
-    track_px_st1[i] = (recTrack->getMomentumVecSt1()).Px();
-    track_py_st1[i] = (recTrack->getMomentumVecSt1()).Py();
-    track_pz_st1[i] = (recTrack->getMomentumVecSt1()).Pz();
-    track_x_vtx[i] = (recTrack->getVertexPos()).X();
-    track_y_vtx[i] = (recTrack->getVertexPos()).Y();
-    track_z_vtx[i] = (recTrack->getVertexPos()).Z();
-    track_px_vtx[i] = (recTrack->getVertexMom()).X();
-    track_py_vtx[i] = (recTrack->getVertexMom()).Y();
-    track_pz_vtx[i] = (recTrack->getVertexMom()).Z();
-    track_chisq[i] = recTrack->getChisq();
-    track_prob[i] = recTrack->getProb();
-    track_quality[i] = recTrack->getQuality();
-    track_nhits_st1[i] = recTrack->getNHitsInStation(1);
-    track_nhits_st2[i] = recTrack->getNHitsInStation(2);
-    track_nhits_st3[i] = recTrack->getNHitsInStation(3);
-    if (i >= 100)
+  if(recEvent){
+    n_tracks = recEvent->getNTracks();
+    for (int i = 0; i < n_tracks; ++i ) {
+      SRecTrack* recTrack = &recEvent->getTrack(i);
+      track_charge[i] = recTrack->getCharge();
+      track_nhits[i] = recTrack->getNHits();
+      track_x_target[i] = (recTrack->getTargetPos()).X();
+      track_y_target[i] = (recTrack->getTargetPos()).Y();
+      track_z_target[i] = (recTrack->getTargetPos()).Z();
+      track_px_target[i] = (recTrack->getTargetMom()).Px();
+      track_py_target[i] = (recTrack->getTargetMom()).Py();
+      track_pz_target[i] = (recTrack->getTargetMom()).Pz();
+      track_x_st1[i] = (recTrack->getPositionVecSt1()).X();
+      track_y_st1[i] = (recTrack->getPositionVecSt1()).Y();
+      track_z_st1[i] = (recTrack->getPositionVecSt1()).Z();
+      track_px_st1[i] = (recTrack->getMomentumVecSt1()).Px();
+      track_py_st1[i] = (recTrack->getMomentumVecSt1()).Py();
+      track_pz_st1[i] = (recTrack->getMomentumVecSt1()).Pz();
+      track_x_vtx[i] = (recTrack->getVertexPos()).X();
+      track_y_vtx[i] = (recTrack->getVertexPos()).Y();
+      track_z_vtx[i] = (recTrack->getVertexPos()).Z();
+      track_px_vtx[i] = (recTrack->getVertexMom()).X();
+      track_py_vtx[i] = (recTrack->getVertexMom()).Y();
+      track_pz_vtx[i] = (recTrack->getVertexMom()).Z();
+      track_chisq[i] = recTrack->getChisq();
+      track_prob[i] = recTrack->getProb();
+      track_quality[i] = recTrack->getQuality();
+      track_nhits_st1[i] = recTrack->getNHitsInStation(1);
+      track_nhits_st2[i] = recTrack->getNHitsInStation(2);
+      track_nhits_st3[i] = recTrack->getNHitsInStation(3);
+      if (i >= 100)
         break;
-  }
-
-  // dimuon information
-  n_dimuons = recEvent->getNDimuons();
-  for (int i = 0; i < n_dimuons; ++i) {
-    SRecDimuon* recDimuon = &recEvent->getDimuon(i);
-    dimuon_mass[i] = recDimuon->mass;
-    dimuon_chisq[i] = recDimuon->get_chisq();
-    dimuon_x_vtx[i] = (recDimuon->vtx).X();
-    dimuon_y_vtx[i] = (recDimuon->vtx).Y();
-    dimuon_z_vtx[i] = (recDimuon->vtx).Z();
-    dimuon_px[i] = (recDimuon->get_mom()).X();
-    dimuon_py[i] = (recDimuon->get_mom()).Y();
-    dimuon_pz[i] = (recDimuon->get_mom()).Z();
-    dimuon_pmom_x[i] = (recDimuon->p_pos).Px(); //4-momentum of the muon tracks after vertex fit
-    dimuon_pmom_y[i] = (recDimuon->p_pos).Py();
-    dimuon_pmom_z[i] = (recDimuon->p_pos).Pz();
-    dimuon_nmom_x[i] = (recDimuon->p_neg).Px();
-    dimuon_nmom_y[i] = (recDimuon->p_neg).Py();
-    dimuon_nmom_z[i] = (recDimuon->p_neg).Pz();
-    dimuon_ppos_x[i] = (recDimuon->vtx_pos).X(); // vertex position
-    dimuon_ppos_y[i] = (recDimuon->vtx_pos).Y();
-    dimuon_ppos_z[i] = (recDimuon->vtx_pos).Z();
-    dimuon_npos_x[i] = (recDimuon->vtx_neg).X(); 
-    dimuon_npos_y[i] = (recDimuon->vtx_neg).Y();
-    dimuon_npos_z[i] = (recDimuon->vtx_neg).Z();
+    }
+    
+    // dimuon information
+    n_dimuons = recEvent->getNDimuons();
+    for (int i = 0; i < n_dimuons; ++i) {
+      SRecDimuon* recDimuon = &recEvent->getDimuon(i);
+      dimuon_mass[i] = recDimuon->mass;
+      dimuon_chisq[i] = recDimuon->get_chisq();
+      dimuon_x_vtx[i] = (recDimuon->vtx).X();
+      dimuon_y_vtx[i] = (recDimuon->vtx).Y();
+      dimuon_z_vtx[i] = (recDimuon->vtx).Z();
+      dimuon_px[i] = (recDimuon->get_mom()).X();
+      dimuon_py[i] = (recDimuon->get_mom()).Y();
+      dimuon_pz[i] = (recDimuon->get_mom()).Z();
+      dimuon_pmom_x[i] = (recDimuon->p_pos).Px(); //4-momentum of the muon tracks after vertex fit
+      dimuon_pmom_y[i] = (recDimuon->p_pos).Py();
+      dimuon_pmom_z[i] = (recDimuon->p_pos).Pz();
+      dimuon_nmom_x[i] = (recDimuon->p_neg).Px();
+      dimuon_nmom_y[i] = (recDimuon->p_neg).Py();
+      dimuon_nmom_z[i] = (recDimuon->p_neg).Pz();
+      dimuon_ppos_x[i] = (recDimuon->vtx_pos).X(); // vertex position
+      dimuon_ppos_y[i] = (recDimuon->vtx_pos).Y();
+      dimuon_ppos_z[i] = (recDimuon->vtx_pos).Z();
+      dimuon_npos_x[i] = (recDimuon->vtx_neg).X(); 
+      dimuon_npos_y[i] = (recDimuon->vtx_neg).Y();
+      dimuon_npos_z[i] = (recDimuon->vtx_neg).Z();
+    }
   }
 
   if (rawEvent->getTriggerBits()>0 && (rawEvent->getTriggerBits() & (nim1TriggerMask|nim3TriggerMask) != 0)){
@@ -143,10 +147,10 @@ int AnaModule::GetNodes(PHCompositeNode* topNode)
     return Fun4AllReturnCodes::ABORTEVENT;
   }
   recEvent = findNode::getClass<SRecEvent>(topNode, "SRecEvent");
-  if(!recEvent) {
-    std::cout << "failed to find SRecEvent, return " << std::endl;
-    recEvent = nullptr;
-    return Fun4AllReturnCodes::ABORTEVENT;
+  if(!recEvent || !saveReco) {
+    std::cout << "failed to find SRecEvent " << std::endl;
+    //recEvent = nullptr;
+    // return Fun4AllReturnCodes::ABORTEVENT;
   }
   return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -231,54 +235,57 @@ void AnaModule::MakeTree()
   saveTree->Branch("driftDistance", driftDistance, "driftDistance[nHits]/D");
   saveTree->Branch("pos", pos, "pos[nHits]/D");
 
-  saveTree->Branch("n_tracks",              &n_tracks,            "n_tracks/I");
-  saveTree->Branch("track_charge",         track_charge,        "track_charge[n_tracks]/I");
-  saveTree->Branch("track_nhits",          track_nhits,         "track_nhits[n_tracks]/I");
-  saveTree->Branch("track_x_target",       track_x_target,      "track_x_target[n_tracks]/F");
-  saveTree->Branch("track_y_target",       track_y_target,      "track_y_target[n_tracks]/F");
-  saveTree->Branch("track_z_target",       track_z_target,      "track_z_target[n_tracks]/F");
-  saveTree->Branch("track_px_target",      track_px_target,     "track_px_target[n_tracks]/F");
-  saveTree->Branch("track_py_target",      track_py_target,     "track_py_target[n_tracks]/F");
-  saveTree->Branch("track_pz_target",      track_pz_target,     "track_pz_target[n_tracks]/F");
-  saveTree->Branch("track_x_st1",          track_x_st1,         "track_x_st1[n_tracks]/F");
-  saveTree->Branch("track_y_st1",          track_y_st1,         "track_y_st1[n_tracks]/F");
-  saveTree->Branch("track_z_st1",          track_z_st1,         "track_z_st1[n_tracks]/F");
-  saveTree->Branch("track_px_st1",         track_px_st1,        "track_px_st1[n_tracks]/F");
-  saveTree->Branch("track_py_st1",         track_py_st1,        "track_py_st1[n_tracks]/F");
-  saveTree->Branch("track_pz_st1",         track_pz_st1,        "track_pz_st1[n_tracks]/F");
-  saveTree->Branch("track_x_vtx",          track_x_vtx,         "track_x_vtx[n_tracks]/F");
-  saveTree->Branch("track_y_vtx",          track_y_vtx,         "track_y_vtx[n_tracks]/F");
-  saveTree->Branch("track_z_vtx",          track_z_vtx,         "track_z_vtx[n_tracks]/F");
-  saveTree->Branch("track_px_vtx",         track_px_vtx,        "track_px_vtx[n_tracks]/F");
-  saveTree->Branch("track_py_vtx",         track_py_vtx,        "track_py_vtx[n_tracks]/F");
-  saveTree->Branch("track_pz_vtx",         track_pz_vtx,        "track_pz_vtx[n_tracks]/F");
-  saveTree->Branch("track_m",              track_m,             "track_m[n_tracks]/F");
-  saveTree->Branch("track_chisq",          track_chisq,         "track_chisq[n_tracks]/F");
-  saveTree->Branch("track_prob",           track_prob,          "track_prob[n_tracks]/F");
-  saveTree->Branch("track_quality",        track_quality,       "track_quality[n_tracks]/F");
-  saveTree->Branch("track_nhits_st1",      track_nhits_st1,     "track_nhits_st1[n_tracks]/I");
-  saveTree->Branch("track_nhits_st2",      track_nhits_st2,     "track_nhits_st2[n_tracks]/I");
-  saveTree->Branch("track_nhits_st3",      track_nhits_st3,     "track_nhits_st3[n_tracks]/I");
+  if(saveReco){
+    saveTree->Branch("n_tracks",              &n_tracks,            "n_tracks/I");
+    saveTree->Branch("track_charge",         track_charge,        "track_charge[n_tracks]/I");
+    saveTree->Branch("track_nhits",          track_nhits,         "track_nhits[n_tracks]/I");
+    saveTree->Branch("track_x_target",       track_x_target,      "track_x_target[n_tracks]/F");
+    saveTree->Branch("track_y_target",       track_y_target,      "track_y_target[n_tracks]/F");
+    saveTree->Branch("track_z_target",       track_z_target,      "track_z_target[n_tracks]/F");
+    saveTree->Branch("track_px_target",      track_px_target,     "track_px_target[n_tracks]/F");
+    saveTree->Branch("track_py_target",      track_py_target,     "track_py_target[n_tracks]/F");
+    saveTree->Branch("track_pz_target",      track_pz_target,     "track_pz_target[n_tracks]/F");
+    saveTree->Branch("track_x_st1",          track_x_st1,         "track_x_st1[n_tracks]/F");
+    saveTree->Branch("track_y_st1",          track_y_st1,         "track_y_st1[n_tracks]/F");
+    saveTree->Branch("track_z_st1",          track_z_st1,         "track_z_st1[n_tracks]/F");
+    saveTree->Branch("track_px_st1",         track_px_st1,        "track_px_st1[n_tracks]/F");
+    saveTree->Branch("track_py_st1",         track_py_st1,        "track_py_st1[n_tracks]/F");
+    saveTree->Branch("track_pz_st1",         track_pz_st1,        "track_pz_st1[n_tracks]/F");
+    saveTree->Branch("track_x_vtx",          track_x_vtx,         "track_x_vtx[n_tracks]/F");
+    saveTree->Branch("track_y_vtx",          track_y_vtx,         "track_y_vtx[n_tracks]/F");
+    saveTree->Branch("track_z_vtx",          track_z_vtx,         "track_z_vtx[n_tracks]/F");
+    saveTree->Branch("track_px_vtx",         track_px_vtx,        "track_px_vtx[n_tracks]/F");
+    saveTree->Branch("track_py_vtx",         track_py_vtx,        "track_py_vtx[n_tracks]/F");
+    saveTree->Branch("track_pz_vtx",         track_pz_vtx,        "track_pz_vtx[n_tracks]/F");
+    saveTree->Branch("track_m",              track_m,             "track_m[n_tracks]/F");
+    saveTree->Branch("track_chisq",          track_chisq,         "track_chisq[n_tracks]/F");
+    saveTree->Branch("track_prob",           track_prob,          "track_prob[n_tracks]/F");
+    saveTree->Branch("track_quality",        track_quality,       "track_quality[n_tracks]/F");
+    saveTree->Branch("track_nhits_st1",      track_nhits_st1,     "track_nhits_st1[n_tracks]/I");
+    saveTree->Branch("track_nhits_st2",      track_nhits_st2,     "track_nhits_st2[n_tracks]/I");
+    saveTree->Branch("track_nhits_st3",      track_nhits_st3,     "track_nhits_st3[n_tracks]/I");
+    
+    saveTree->Branch("n_dimuons",     &n_dimuons,    "n_dimuons/I");
+    saveTree->Branch("dimuon_mass",   dimuon_mass,   "dimuon_mass[n_dimuons]/F");
+    saveTree->Branch("dimuon_chisq",  dimuon_chisq,  "dimuon_chisq[n_dimuons]/F");
+    saveTree->Branch("dimuon_x_vtx",  dimuon_x_vtx,  "dimuon_x_vtx[n_dimuons]/F");
+    saveTree->Branch("dimuon_y_vtx",  dimuon_y_vtx,  "dimuon_y_vtx[n_dimuons]/F");
+    saveTree->Branch("dimuon_z_vtx",  dimuon_z_vtx,  "dimuon_z_vtx[n_dimuons]/F");
+    saveTree->Branch("dimuon_px",     dimuon_px,     "dimuon_px[n_dimuons]/F");
+    saveTree->Branch("dimuon_py",     dimuon_py,     "dimuon_py[n_dimuons]/F");
+    saveTree->Branch("dimuon_pz",     dimuon_pz,     "dimuon_pz[n_dimuons]/F");
+    saveTree->Branch("dimuon_pmom_x", dimuon_pmom_x, "dimuon_pmom_x[n_dimuons]/F");
+    saveTree->Branch("dimuon_pmom_y", dimuon_pmom_y, "dimuon_pmom_y[n_dimuons]/F");
+    saveTree->Branch("dimuon_pmom_z", dimuon_pmom_z, "dimuon_pmom_z[n_dimuons]/F");
+    saveTree->Branch("dimuon_nmom_x", dimuon_nmom_x, "dimuon_nmom_x[n_dimuons]/F");
+    saveTree->Branch("dimuon_nmom_y", dimuon_nmom_y, "dimuon_nmom_y[n_dimuons]/F");
+    saveTree->Branch("dimuon_nmom_z", dimuon_nmom_z, "dimuon_nmom_z[n_dimuons]/F");
+    saveTree->Branch("dimuon_ppos_x", dimuon_ppos_x, "dimuon_ppos_x[n_dimuons]/F");
+    saveTree->Branch("dimuon_ppos_y", dimuon_ppos_y, "dimuon_ppos_y[n_dimuons]/F");
+    saveTree->Branch("dimuon_ppos_z", dimuon_ppos_z, "dimuon_ppos_z[n_dimuons]/F");
+    saveTree->Branch("dimuon_npos_x", dimuon_npos_x, "dimuon_npos_x[n_dimuons]/F");
+    saveTree->Branch("dimuon_npos_y", dimuon_npos_y, "dimuon_npos_y[n_dimuons]/F");
+    saveTree->Branch("dimuon_npos_z", dimuon_npos_z, "dimuon_npos_z[n_dimuons]/F");
+  }
 
-  saveTree->Branch("n_dimuons",     &n_dimuons,    "n_dimuons/I");
-  saveTree->Branch("dimuon_mass",   dimuon_mass,   "dimuon_mass[n_dimuons]/F");
-  saveTree->Branch("dimuon_chisq",  dimuon_chisq,  "dimuon_chisq[n_dimuons]/F");
-  saveTree->Branch("dimuon_x_vtx",  dimuon_x_vtx,  "dimuon_x_vtx[n_dimuons]/F");
-  saveTree->Branch("dimuon_y_vtx",  dimuon_y_vtx,  "dimuon_y_vtx[n_dimuons]/F");
-  saveTree->Branch("dimuon_z_vtx",  dimuon_z_vtx,  "dimuon_z_vtx[n_dimuons]/F");
-  saveTree->Branch("dimuon_px",     dimuon_px,     "dimuon_px[n_dimuons]/F");
-  saveTree->Branch("dimuon_py",     dimuon_py,     "dimuon_py[n_dimuons]/F");
-  saveTree->Branch("dimuon_pz",     dimuon_pz,     "dimuon_pz[n_dimuons]/F");
-  saveTree->Branch("dimuon_pmom_x", dimuon_pmom_x, "dimuon_pmom_x[n_dimuons]/F");
-  saveTree->Branch("dimuon_pmom_y", dimuon_pmom_y, "dimuon_pmom_y[n_dimuons]/F");
-  saveTree->Branch("dimuon_pmom_z", dimuon_pmom_z, "dimuon_pmom_z[n_dimuons]/F");
-  saveTree->Branch("dimuon_nmom_x", dimuon_nmom_x, "dimuon_nmom_x[n_dimuons]/F");
-  saveTree->Branch("dimuon_nmom_y", dimuon_nmom_y, "dimuon_nmom_y[n_dimuons]/F");
-  saveTree->Branch("dimuon_nmom_z", dimuon_nmom_z, "dimuon_nmom_z[n_dimuons]/F");
-  saveTree->Branch("dimuon_ppos_x", dimuon_ppos_x, "dimuon_ppos_x[n_dimuons]/F");
-  saveTree->Branch("dimuon_ppos_y", dimuon_ppos_y, "dimuon_ppos_y[n_dimuons]/F");
-  saveTree->Branch("dimuon_ppos_z", dimuon_ppos_z, "dimuon_ppos_z[n_dimuons]/F");
-  saveTree->Branch("dimuon_npos_x", dimuon_npos_x, "dimuon_npos_x[n_dimuons]/F");
-  saveTree->Branch("dimuon_npos_y", dimuon_npos_y, "dimuon_npos_y[n_dimuons]/F");
-  saveTree->Branch("dimuon_npos_z", dimuon_npos_z, "dimuon_npos_z[n_dimuons]/F");
 }
