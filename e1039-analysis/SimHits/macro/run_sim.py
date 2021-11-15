@@ -76,4 +76,4 @@ if __name__ == "__main__":
     cwd = os.getcwd()
     
     print(cmd)
-    #os.system(cmd)
+    os.system(cmd)
