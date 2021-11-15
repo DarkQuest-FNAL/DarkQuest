@@ -122,3 +122,20 @@ Some options are available in `macro/run_sim.py`. Here are examples of the most 
   ```
   python ./run_sim.py -n 10 --sim trimuon --zvertex 490.0 --displaced --inputfile trimuon_0.5MS0gS1 --inputpath /seaquest/users/cmantill/DarkQuest/lhe/output/trimuon/ --outpath output/
   ```
+
+### Adding pileup:
+
+Currently, the procedure to mix pileup events is the following:
+
+1. We use a sample of proton events (already generated for us). The sample can be generated with a proton gun or with pythia proton-nuclei interactions. The sample will contain G4 particles (muons only for now), their position and momentum).
+The current sample that we use is stored in:
+```
+/pnfs/e1039/persistent/users/apun/bkg_study/e1039pythiaGen_26Oct21/
+```
+
+2. We take a file from this directory ( randomly chosen) and mix in a given number of particles in our simulated events. The number of particles is currently given by a beam intensity profile function.
+
+Practically, you can obtain the command to mix pileup by adding the `--pileup` option, e.g.:
+```
+python ./run_sim.py -n 10 --sim gun --gun electron --zvertex 520 --displaced --outfile electron_gun_z520.root --outpath output/ --pileup 
+```
