@@ -50,10 +50,12 @@ int RecoE1039Sim(const int nevents = 200,
 		 const double zvertex = -300, // target_coil_pos_z
 		 const bool do_displaced_tracking = true,
 		 const bool do_analysis = true,
+		 const bool run_pileup = false,
 		 std::string input_file = "Brem_2.750000_z500_600_eps_-6.4",
 		 std::string input_path = "/seaquest/users/cmantill/DarkQuest/lhe/output/displaced_Aprime_Muons_z500-600/",
 		 std::string out_file = "output.root",
 		 std::string out_path = "./",
+		 std::string pileup_file = "/pnfs/e1039/persistent/users/apun/bkg_study/e1039pythiaGen_26Oct21/10_bkge1039_pythia_wshielding_100M.root",
 		 const int verbosity = 0
                 )
 {
@@ -284,6 +286,21 @@ int RecoE1039Sim(const int nevents = 200,
   } else {
     std::cout << " No input! " << std::endl;
     return 0;
+  }
+
+  // pileup
+  if(run_pileup){
+    SQExternalGen* extgen = new SQExternalGen();
+    // function
+    TF1* intensity_profile = new TF1("intensity_profile", "[0]*pow(x,[1])*exp(-[2]*x+exp(-[3]*x))+[4]", 0, 5000);
+    intensity_profile->SetParameter(0,6.35);
+    intensity_profile->SetParameter(1,1.38);
+    intensity_profile->SetParameter(2,4.9e-3);
+    intensity_profile->SetParameter(3,4.7e-3);
+    intensity_profile->SetParameter(4,178.8);
+    extgen->set_beam_intensity_profile(intensity_profile);
+    extgen->setExtInputFile(pileup_file);
+    se->registerSubsystem(extgen);
   }
 
   // fun4All G4 module
