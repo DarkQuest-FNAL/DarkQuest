@@ -201,6 +201,7 @@ int SimAna::ResetEvalVars() {
     truthtrack_px_vtx[i] = std::numeric_limits<int>::max(); // momentum of vertex associated with truth track (x)
     truthtrack_py_vtx[i] = std::numeric_limits<int>::max(); // momentum of vertex associated with truth track (y)
     truthtrack_pz_vtx[i] = std::numeric_limits<int>::max(); // momentum of vertex associated with truth track (z)
+    truthtrack_rectrack_id[i] = std::numeric_limits<int>::max(); // recTrack associated with truth track;
 
     track_charge[i]      = std::numeric_limits<int>::max(); // track charge
     track_nhits[i]       = std::numeric_limits<int>::max(); // number of hits associated with track
@@ -488,6 +489,8 @@ int SimAna::process_event(PHCompositeNode* topNode) {
       truthtrack_px_vtx[n_truthtracks] = (track->get_mom_vtx()).Px();
       truthtrack_py_vtx[n_truthtracks] = (track->get_mom_vtx()).Py();
       truthtrack_pz_vtx[n_truthtracks] = (track->get_mom_vtx()).Pz();
+      // get the matched reco track ID
+      truthtrack_rectrack_id[n_truthtracks] = track->get_rec_track_id();
       
       int recid = track->get_rec_track_id();
       //std::cout<<"the recid is "<<recid<<std::endl;
@@ -991,6 +994,7 @@ void SimAna::MakeTree()
     saveTree->Branch("truthtrack_px_vtx",         truthtrack_px_vtx,        "truthtrack_px_vtx[n_truthtracks]/F");
     saveTree->Branch("truthtrack_py_vtx",         truthtrack_py_vtx,        "truthtrack_py_vtx[n_truthtracks]/F");
     saveTree->Branch("truthtrack_pz_vtx",         truthtrack_pz_vtx,        "truthtrack_pz_vtx[n_truthtracks]/F");
+    saveTree->Branch("truthtrack_rectrack_id",    truthtrack_rectrack_id,   "truthtrack_rectrack_id[n_truthtracks]/I");
   
     saveTree->Branch("n_tracks",              &n_tracks,            "n_tracks/I");
     saveTree->Branch("track_charge",         track_charge,        "track_charge[n_tracks]/I");
