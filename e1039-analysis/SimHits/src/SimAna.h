@@ -110,6 +110,15 @@ private:
     TTree* saveTree;
 
     int n_hits;
+    int n_hits_h1x;
+    int n_hits_h2x;
+    int n_hits_h3x;
+    int n_hits_h4x;
+    int n_hits_d1;
+    int n_hits_d2;
+    int n_hits_d3;
+    int n_hits_dp1;
+    int n_hits_dp2;
     int hit_detid[1000];
     int hit_elmid[1000];
     int hit_trkid[1000];

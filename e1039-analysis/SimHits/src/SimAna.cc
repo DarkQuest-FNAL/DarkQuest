@@ -4,6 +4,7 @@
 
 #include <fun4all/Fun4AllReturnCodes.h>
 #include <fun4all/PHTFileServer.h>
+#include <geom_svc/GeomSvc.h>
 #include <interface_main/SQDimuonVector_v1.h>
 #include <interface_main/SQHit.h>
 #include <interface_main/SQHitVector_v1.h>
@@ -460,10 +461,13 @@ int SimAna::process_event(PHCompositeNode* topNode)
 
     // save hits by default
     n_hits = 0;
+    std::map<int, int> list_cnt; // [det ID] -> hit count
     for (int ihit = 0; ihit < _hitVector->size(); ++ihit) {
         SQHit* hit = _hitVector->at(ihit);
-        int hitID = hit->get_hit_id();
-        hit_detid[n_hits] = hit->get_detector_id();
+        int hit_id = hit->get_hit_id();
+        int det_id = hit->get_detector_id();
+        list_cnt[det_id]++;
+        hit_detid[n_hits] = det_id;
         hit_elmid[n_hits] = hit->get_element_id();
         hit_trkid[n_hits] = hit->get_track_id();
         hit_driftdis[n_hits] = hit->get_drift_distance();
@@ -479,6 +483,16 @@ int SimAna::process_event(PHCompositeNode* topNode)
         if (n_hits >= 1000)
             break;
     }
+    GeomSvc* geom = GeomSvc::instance();
+    n_hits_h1x = list_cnt[geom->getDetectorID("H1T")] + list_cnt[geom->getDetectorID("H1B")];
+    n_hits_h2x = list_cnt[geom->getDetectorID("H2T")] + list_cnt[geom->getDetectorID("H2B")];
+    n_hits_h3x = list_cnt[geom->getDetectorID("H3T")] + list_cnt[geom->getDetectorID("H3B")];
+    n_hits_h4x = list_cnt[geom->getDetectorID("H4T")] + list_cnt[geom->getDetectorID("H4B")];
+    n_hits_d1  = list_cnt[geom->getDetectorID("D0X")];
+    n_hits_d2  = list_cnt[geom->getDetectorID("D2X")];
+    n_hits_d3  = list_cnt[geom->getDetectorID("D3pX")] + list_cnt[geom->getDetectorID("D3mX")];
+    n_hits_dp1 = list_cnt[geom->getDetectorID("DP1TL")] + list_cnt[geom->getDetectorID("DP1TR")] + list_cnt[geom->getDetectorID("DP1BL")] + list_cnt[geom->getDetectorID("DP1BR")];
+    n_hits_dp2 = list_cnt[geom->getDetectorID("DP2TL")] + list_cnt[geom->getDetectorID("DP2TR")] + list_cnt[geom->getDetectorID("DP2BL")] + list_cnt[geom->getDetectorID("DP2BR")];
 
     // tracks
     if (_saveTracks) {
@@ -982,6 +996,15 @@ void SimAna::MakeTree()
     saveTree->Branch("eventID", &eventID, "eventID/I");
 
     saveTree->Branch("n_hits", &n_hits, "n_hits/I");
+    saveTree->Branch("n_hits_h1x", &n_hits_h1x, "n_hits_h1x/I");
+    saveTree->Branch("n_hits_h2x", &n_hits_h2x, "n_hits_h2x/I");
+    saveTree->Branch("n_hits_h3x", &n_hits_h3x, "n_hits_h3x/I");
+    saveTree->Branch("n_hits_h4x", &n_hits_h4x, "n_hits_h4x/I");
+    saveTree->Branch("n_hits_d1", &n_hits_d1, "n_hits_d1/I");
+    saveTree->Branch("n_hits_d2", &n_hits_d1, "n_hits_d1/I");
+    saveTree->Branch("n_hits_d3", &n_hits_d3, "n_hits_d3/I");
+    saveTree->Branch("n_hits_dp1", &n_hits_dp1, "n_hits_dp1/I");
+    saveTree->Branch("n_hits_dp2", &n_hits_dp2, "n_hits_dp2/I");
     saveTree->Branch("hit_detID", hit_detid, "hit_detID[n_hits]/I");
     saveTree->Branch("hit_elmID", hit_elmid, "hit_elmID[n_hits]/I");
     saveTree->Branch("hit_trkID", hit_trkid, "hit_trkID[n_hits]/I");
