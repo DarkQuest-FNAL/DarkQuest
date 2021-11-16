@@ -143,6 +143,7 @@ private:
   float truthtrack_px_vtx[100];
   float truthtrack_py_vtx[100];
   float truthtrack_pz_vtx[100];
+  int truthtrack_rectrack_id[100];
 
   int n_tracks;
   int track_charge[100];
