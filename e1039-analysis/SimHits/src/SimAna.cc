@@ -522,53 +522,53 @@ int SimAna::process_event(PHCompositeNode* topNode)
             truthtrack_pz_vtx[n_truthtracks] = (track->get_mom_vtx()).Pz();
             // get the matched reco track ID
             truthtrack_rectrack_id[n_truthtracks] = track->get_rec_track_id();
-
-            int recid = track->get_rec_track_id();
-            //std::cout<<"the recid is "<<recid<<std::endl;
-            if (recid >= 0 && recid < n_recTracks) {
-                SRecTrack* recTrack = _legacyContainer ? &(_recEvent->getTrack(recid)) : dynamic_cast<SRecTrack*>(_recTrackVector->at(recid));
-                //std::cout << "******************** (recTrack->getTargetMom()).Px() " << (recTrack->getTargetMom()).Px() << std::endl;
-                track_charge[n_tracks] = recTrack->getCharge();
-                track_nhits[n_tracks] = recTrack->getNHits();
-                track_x_target[n_tracks] = (recTrack->getTargetPos()).X();
-                track_y_target[n_tracks] = (recTrack->getTargetPos()).Y();
-                track_z_target[n_tracks] = (recTrack->getTargetPos()).Z();
-                track_px_target[n_tracks] = (recTrack->getTargetMom()).Px();
-                track_py_target[n_tracks] = (recTrack->getTargetMom()).Py();
-                track_pz_target[n_tracks] = (recTrack->getTargetMom()).Pz();
-                track_x_st1[n_tracks] = (recTrack->getPositionVecSt1()).X();
-                track_y_st1[n_tracks] = (recTrack->getPositionVecSt1()).Y();
-                track_z_st1[n_tracks] = (recTrack->getPositionVecSt1()).Z();
-                track_px_st1[n_tracks] = (recTrack->getMomentumVecSt1()).Px();
-                track_py_st1[n_tracks] = (recTrack->getMomentumVecSt1()).Py();
-                track_pz_st1[n_tracks] = (recTrack->getMomentumVecSt1()).Pz();
-                track_x_st3[n_tracks] = (recTrack->getPositionVecSt3()).X();
-                track_y_st3[n_tracks] = (recTrack->getPositionVecSt3()).Y();
-                track_z_st3[n_tracks] = (recTrack->getPositionVecSt3()).Z();
-                track_px_st3[n_tracks] = (recTrack->getMomentumVecSt3()).Px();
-                track_py_st3[n_tracks] = (recTrack->getMomentumVecSt3()).Py();
-                track_pz_st3[n_tracks] = (recTrack->getMomentumVecSt3()).Pz();
-                track_x_vtx[n_tracks] = (recTrack->getVertexPos()).X();
-                track_y_vtx[n_tracks] = (recTrack->getVertexPos()).Y();
-                track_z_vtx[n_tracks] = (recTrack->getVertexPos()).Z();
-                track_px_vtx[n_tracks] = (recTrack->getVertexMom()).X();
-                track_py_vtx[n_tracks] = (recTrack->getVertexMom()).Y();
-                track_pz_vtx[n_tracks] = (recTrack->getVertexMom()).Z();
-                track_x_CAL[n_tracks] = track_x_st3[n_tracks] + (track_px_st3[n_tracks] / track_pz_st3[n_tracks]) * (1930. - track_z_st3[n_tracks]);
-                track_y_CAL[n_tracks] = track_y_st3[n_tracks] + (track_py_st3[n_tracks] / track_pz_st3[n_tracks]) * (1930. - track_z_st3[n_tracks]);
-                track_chisq[n_tracks] = recTrack->getChisq();
-                track_prob[n_tracks] = recTrack->getProb();
-                track_quality[n_tracks] = recTrack->getQuality();
-                track_isValid[n_tracks] = recTrack->isValid();
-                track_nhits_st1[n_tracks] = recTrack->getNHitsInStation(1);
-                track_nhits_st2[n_tracks] = recTrack->getNHitsInStation(2);
-                track_nhits_st3[n_tracks] = recTrack->getNHitsInStation(3);
-                ++n_tracks;
-                if (n_tracks >= 100)
-                    break;
-            }
             ++n_truthtracks;
             if (n_truthtracks >= 100)
+                break;
+        }
+
+        //std::cout<<"the recid is "<<recid<<std::endl;
+        for (int itrk = 0; itrk < n_recTracks; ++itrk) {
+            // saving all tracks to the ntuples to study 'fakes'
+            SRecTrack* recTrack = _legacyContainer ? &(_recEvent->getTrack(itrk)) : dynamic_cast<SRecTrack*>(_recTrackVector->at(itrk));
+            //std::cout << "******************** (recTrack->getTargetMom()).Px() " << (recTrack->getTargetMom()).Px() << std::endl;
+            track_charge[n_tracks] = recTrack->getCharge();
+            track_nhits[n_tracks] = recTrack->getNHits();
+            track_x_target[n_tracks] = (recTrack->getTargetPos()).X();
+            track_y_target[n_tracks] = (recTrack->getTargetPos()).Y();
+            track_z_target[n_tracks] = (recTrack->getTargetPos()).Z();
+            track_px_target[n_tracks] = (recTrack->getTargetMom()).Px();
+            track_py_target[n_tracks] = (recTrack->getTargetMom()).Py();
+            track_pz_target[n_tracks] = (recTrack->getTargetMom()).Pz();
+            track_x_st1[n_tracks] = (recTrack->getPositionVecSt1()).X();
+            track_y_st1[n_tracks] = (recTrack->getPositionVecSt1()).Y();
+            track_z_st1[n_tracks] = (recTrack->getPositionVecSt1()).Z();
+            track_px_st1[n_tracks] = (recTrack->getMomentumVecSt1()).Px();
+            track_py_st1[n_tracks] = (recTrack->getMomentumVecSt1()).Py();
+            track_pz_st1[n_tracks] = (recTrack->getMomentumVecSt1()).Pz();
+            track_x_st3[n_tracks] = (recTrack->getPositionVecSt3()).X();
+            track_y_st3[n_tracks] = (recTrack->getPositionVecSt3()).Y();
+            track_z_st3[n_tracks] = (recTrack->getPositionVecSt3()).Z();
+            track_px_st3[n_tracks] = (recTrack->getMomentumVecSt3()).Px();
+            track_py_st3[n_tracks] = (recTrack->getMomentumVecSt3()).Py();
+            track_pz_st3[n_tracks] = (recTrack->getMomentumVecSt3()).Pz();
+            track_x_vtx[n_tracks] = (recTrack->getVertexPos()).X();
+            track_y_vtx[n_tracks] = (recTrack->getVertexPos()).Y();
+            track_z_vtx[n_tracks] = (recTrack->getVertexPos()).Z();
+            track_px_vtx[n_tracks] = (recTrack->getVertexMom()).X();
+            track_py_vtx[n_tracks] = (recTrack->getVertexMom()).Y();
+            track_pz_vtx[n_tracks] = (recTrack->getVertexMom()).Z();
+            track_x_CAL[n_tracks] = track_x_st3[n_tracks] + (track_px_st3[n_tracks] / track_pz_st3[n_tracks]) * (1930. - track_z_st3[n_tracks]);
+            track_y_CAL[n_tracks] = track_y_st3[n_tracks] + (track_py_st3[n_tracks] / track_pz_st3[n_tracks]) * (1930. - track_z_st3[n_tracks]);
+            track_chisq[n_tracks] = recTrack->getChisq();
+            track_prob[n_tracks] = recTrack->getProb();
+            track_quality[n_tracks] = recTrack->getQuality();
+            track_isValid[n_tracks] = recTrack->isValid();
+            track_nhits_st1[n_tracks] = recTrack->getNHitsInStation(1);
+            track_nhits_st2[n_tracks] = recTrack->getNHitsInStation(2);
+            track_nhits_st3[n_tracks] = recTrack->getNHitsInStation(3);
+            ++n_tracks;
+            if (n_tracks >= 100)
                 break;
         }
 
@@ -751,80 +751,93 @@ int SimAna::process_event(PHCompositeNode* topNode)
                 }
             }
 
-            PHG4Hit* st1hit = FindG4HitAtStation(trkID, g4hc_d1x);
-            if (st1hit) {
-                gx_st1[n_primaries] = st1hit->get_x(0);
-                gy_st1[n_primaries] = st1hit->get_y(0);
-                gz_st1[n_primaries] = st1hit->get_z(0);
-                gpx_st1[n_primaries] = st1hit->get_px(0);
-                gpy_st1[n_primaries] = st1hit->get_py(0);
-                gpz_st1[n_primaries] = st1hit->get_pz(0);
+            if (g4hc_d1x) {
+                PHG4Hit* st1hit = FindG4HitAtStation(trkID, g4hc_d1x);
+                if (st1hit) {
+                    gx_st1[n_primaries] = st1hit->get_x(0);
+                    gy_st1[n_primaries] = st1hit->get_y(0);
+                    gz_st1[n_primaries] = st1hit->get_z(0);
+                    gpx_st1[n_primaries] = st1hit->get_px(0);
+                    gpy_st1[n_primaries] = st1hit->get_py(0);
+                    gpz_st1[n_primaries] = st1hit->get_pz(0);
+                }
             }
-            PHG4Hit* st2hit = FindG4HitAtStation(trkID, g4hc_d2xp);
-            if (st2hit) {
-                gx_st2[n_primaries] = st2hit->get_x(0);
-                gy_st2[n_primaries] = st2hit->get_y(0);
-                gz_st2[n_primaries] = st2hit->get_z(0);
-                gpx_st2[n_primaries] = st2hit->get_px(0);
-                gpy_st2[n_primaries] = st2hit->get_py(0);
-                gpz_st2[n_primaries] = st2hit->get_pz(0);
+            if (g4hc_d2xp) {
+                PHG4Hit* st2hit = FindG4HitAtStation(trkID, g4hc_d2xp);
+                if (st2hit) {
+                    gx_st2[n_primaries] = st2hit->get_x(0);
+                    gy_st2[n_primaries] = st2hit->get_y(0);
+                    gz_st2[n_primaries] = st2hit->get_z(0);
+                    gpx_st2[n_primaries] = st2hit->get_px(0);
+                    gpy_st2[n_primaries] = st2hit->get_py(0);
+                    gpz_st2[n_primaries] = st2hit->get_pz(0);
+                }
             }
-            PHG4Hit* st3hit = FindG4HitAtStation(trkID, g4hc_d3px);
-            if (!st3hit)
-                PHG4Hit* st3hit = FindG4HitAtStation(trkID, g4hc_d3mx);
-            if (st3hit) {
-                gx_st3[n_primaries] = st3hit->get_x(0);
-                gy_st3[n_primaries] = st3hit->get_y(0);
-                gz_st3[n_primaries] = st3hit->get_z(0);
-                gpx_st3[n_primaries] = st3hit->get_px(0);
-                gpy_st3[n_primaries] = st3hit->get_py(0);
-                gpz_st3[n_primaries] = st3hit->get_pz(0);
-            }
-
-            PHG4Hit* h1hit = FindG4HitAtStation(trkID, g4hc_h1t);
-            if (!h1hit)
-                PHG4Hit* h1hit = FindG4HitAtStation(trkID, g4hc_h1b);
-            if (h1hit) {
-                gx_h1[n_primaries] = h1hit->get_x(0);
-                gy_h1[n_primaries] = h1hit->get_y(0);
-                gz_h1[n_primaries] = h1hit->get_z(0);
-                gpx_h1[n_primaries] = h1hit->get_px(0);
-                gpy_h1[n_primaries] = h1hit->get_py(0);
-                gpz_h1[n_primaries] = h1hit->get_pz(0);
-            }
-            PHG4Hit* h2hit = FindG4HitAtStation(trkID, g4hc_h2t);
-            if (!h2hit)
-                PHG4Hit* h2hit = FindG4HitAtStation(trkID, g4hc_h2b);
-            if (h2hit) {
-                gx_h2[n_primaries] = h2hit->get_x(0);
-                gy_h2[n_primaries] = h2hit->get_y(0);
-                gz_h2[n_primaries] = h2hit->get_z(0);
-                gpx_h2[n_primaries] = h2hit->get_px(0);
-                gpy_h2[n_primaries] = h2hit->get_py(0);
-                gpz_h2[n_primaries] = h2hit->get_pz(0);
-            }
-            PHG4Hit* h3hit = FindG4HitAtStation(trkID, g4hc_h3t);
-            if (!h3hit)
-                PHG4Hit* h3hit = FindG4HitAtStation(trkID, g4hc_h3b);
-            if (h3hit) {
-                gx_h3[n_primaries] = h3hit->get_x(0);
-                gy_h3[n_primaries] = h3hit->get_y(0);
-                gz_h3[n_primaries] = h3hit->get_z(0);
-                gpx_h3[n_primaries] = h3hit->get_px(0);
-                gpy_h3[n_primaries] = h3hit->get_py(0);
-                gpz_h3[n_primaries] = h3hit->get_pz(0);
+            if (g4hc_d3px) {
+                PHG4Hit* st3hit = FindG4HitAtStation(trkID, g4hc_d3px);
+                if (!st3hit)
+                    PHG4Hit* st3hit = FindG4HitAtStation(trkID, g4hc_d3mx);
+                if (st3hit) {
+                    gx_st3[n_primaries] = st3hit->get_x(0);
+                    gy_st3[n_primaries] = st3hit->get_y(0);
+                    gz_st3[n_primaries] = st3hit->get_z(0);
+                    gpx_st3[n_primaries] = st3hit->get_px(0);
+                    gpy_st3[n_primaries] = st3hit->get_py(0);
+                    gpz_st3[n_primaries] = st3hit->get_pz(0);
+                }
             }
 
-            PHG4Hit* h4hit = FindG4HitAtStation(trkID, g4hc_h4t);
-            if (!h4hit)
-                PHG4Hit* h4hit = FindG4HitAtStation(trkID, g4hc_h4b);
-            if (h4hit) {
-                gx_h4[n_primaries] = h4hit->get_x(0);
-                gy_h4[n_primaries] = h4hit->get_y(0);
-                gz_h4[n_primaries] = h4hit->get_z(0);
-                gpx_h4[n_primaries] = h4hit->get_px(0);
-                gpy_h4[n_primaries] = h4hit->get_py(0);
-                gpz_h4[n_primaries] = h4hit->get_pz(0);
+            if (g4hc_h1t || g4hc_h1b) {
+                PHG4Hit* h1hit = FindG4HitAtStation(trkID, g4hc_h1t);
+                if (!h1hit)
+                    h1hit = FindG4HitAtStation(trkID, g4hc_h1b);
+                if (h1hit) {
+                    gx_h1[n_primaries] = h1hit->get_x(0);
+                    gy_h1[n_primaries] = h1hit->get_y(0);
+                    gz_h1[n_primaries] = h1hit->get_z(0);
+                    gpx_h1[n_primaries] = h1hit->get_px(0);
+                    gpy_h1[n_primaries] = h1hit->get_py(0);
+                    gpz_h1[n_primaries] = h1hit->get_pz(0);
+                }
+            }
+            if (g4hc_h2t || g4hc_h2b) {
+                PHG4Hit* h2hit = FindG4HitAtStation(trkID, g4hc_h2t);
+                if (!h2hit)
+                    PHG4Hit* h2hit = FindG4HitAtStation(trkID, g4hc_h2b);
+                if (h2hit) {
+                    gx_h2[n_primaries] = h2hit->get_x(0);
+                    gy_h2[n_primaries] = h2hit->get_y(0);
+                    gz_h2[n_primaries] = h2hit->get_z(0);
+                    gpx_h2[n_primaries] = h2hit->get_px(0);
+                    gpy_h2[n_primaries] = h2hit->get_py(0);
+                    gpz_h2[n_primaries] = h2hit->get_pz(0);
+                }
+            }
+            if (g4hc_h3t || g4hc_h3b) {
+                PHG4Hit* h3hit = FindG4HitAtStation(trkID, g4hc_h3t);
+                if (!h3hit)
+                    PHG4Hit* h3hit = FindG4HitAtStation(trkID, g4hc_h3b);
+                if (h3hit) {
+                    gx_h3[n_primaries] = h3hit->get_x(0);
+                    gy_h3[n_primaries] = h3hit->get_y(0);
+                    gz_h3[n_primaries] = h3hit->get_z(0);
+                    gpx_h3[n_primaries] = h3hit->get_px(0);
+                    gpy_h3[n_primaries] = h3hit->get_py(0);
+                    gpz_h3[n_primaries] = h3hit->get_pz(0);
+                }
+            }
+            if (g4hc_h4t || g4hc_h4b) {
+                PHG4Hit* h4hit = FindG4HitAtStation(trkID, g4hc_h4t);
+                if (!h4hit)
+                    PHG4Hit* h4hit = FindG4HitAtStation(trkID, g4hc_h4b);
+                if (h4hit) {
+                    gx_h4[n_primaries] = h4hit->get_x(0);
+                    gy_h4[n_primaries] = h4hit->get_y(0);
+                    gz_h4[n_primaries] = h4hit->get_z(0);
+                    gpx_h4[n_primaries] = h4hit->get_px(0);
+                    gpy_h4[n_primaries] = h4hit->get_py(0);
+                    gpz_h4[n_primaries] = h4hit->get_pz(0);
+                }
             }
             ++n_primaries;
         }
@@ -948,7 +961,7 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
 
     _truth = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
     if (!_truth) {
-        std::cout << "WARNING:: did not find G4TruthInfo. Abort" << std::endl;
+        std::cout << "WARNING:: did not find G4TruthInfo." << std::endl;
         //return Fun4AllReturnCodes::ABORTEVENT;
     }
 
@@ -1002,7 +1015,6 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
 
 void SimAna::MakeTree()
 {
-    std::cout << "FILE name here is? " << saveNameOut << std::endl;
     saveFile = new TFile(saveNameOut, "RECREATE");
     saveTree = new TTree("Events", "Tree Created by SimAna");
     saveTree->Branch("eventID", &eventID, "eventID/I");

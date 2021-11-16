@@ -1,12 +1,16 @@
 R__LOAD_LIBRARY(libfun4all)
 R__LOAD_LIBRARY(libktracker)
+R__LOAD_LIBRARY(libg4eval)
+R__LOAD_LIBRARY(libg4dst)
+R__LOAD_LIBRARY(libdptrigger)
+R__LOAD_LIBRARY(libevt_filter)
 R__LOAD_LIBRARY(libsim_ana)
 using namespace std;
 
 int RunEmbedding(
     const char* fn_sig = "/seaquest/users/yfeng/DarkQuest/DarkQuest/e1039-analysis/SimHits/macro/output_DST.root",
     const char* fn_emb = "/pnfs/e1039/persistent/users/kenichi/data_emb_e906/0001/embedding_data.root", 
-    const int n_evt_in=10)
+    const int n_evt_in=100)
 {
   ///
   /// Global parameters
@@ -26,7 +30,7 @@ int RunEmbedding(
   Fun4AllServer *se = Fun4AllServer::instance();
 
   /// Hit embedding
-  gSystem->Load("libsim_ana.so");
+  //gSystem->Load("libsim_ana.so");
   DoEmbedding* do_emb = new DoEmbedding();
   do_emb->Verbosity(10);
   do_emb->AddEmbDataFile(fn_emb);
@@ -42,10 +46,30 @@ int RunEmbedding(
   reco->set_evt_reducer_opt("none");
   se->registerSubsystem(reco);
 
+  
+  // truth node maker after tracking
+  TruthNodeMaker* truthMaker = new TruthNodeMaker();
+  truthMaker->set_legacy_rec_container(1);
+  truthMaker->Verbosity(0);
+  se->registerSubsystem(truthMaker);
+  
+
+  DPTriggerAnalyzer* dptrigger = new DPTriggerAnalyzer();
+  dptrigger->set_road_set_file_name("$E1039_RESOURCE/trigger/trigger_67.txt");
+  dptrigger->Verbosity(0);
+  se->registerSubsystem(dptrigger);
+
   VertexFit* vertexing = new VertexFit();
   //vertexing->Verbosity(1);
   //vertexing->enable_fit_target_center();
   se->registerSubsystem(vertexing);
+
+  SimAna *sim_ana = new SimAna();
+  std::string ofile = "test.root";
+  sim_ana->set_out_name(ofile);
+  sim_ana->set_legacy_rec_container(true);
+  sim_ana->save_secondaries(false);
+  se->registerSubsystem(sim_ana);
 
   ///
   /// Input, output and execution
