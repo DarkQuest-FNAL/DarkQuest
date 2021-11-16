@@ -488,9 +488,9 @@ int SimAna::process_event(PHCompositeNode* topNode)
     n_hits_h2x = list_cnt[geom->getDetectorID("H2T")] + list_cnt[geom->getDetectorID("H2B")];
     n_hits_h3x = list_cnt[geom->getDetectorID("H3T")] + list_cnt[geom->getDetectorID("H3B")];
     n_hits_h4x = list_cnt[geom->getDetectorID("H4T")] + list_cnt[geom->getDetectorID("H4B")];
-    n_hits_d1  = list_cnt[geom->getDetectorID("D0X")];
-    n_hits_d2  = list_cnt[geom->getDetectorID("D2X")];
-    n_hits_d3  = list_cnt[geom->getDetectorID("D3pX")] + list_cnt[geom->getDetectorID("D3mX")];
+    n_hits_d1 = list_cnt[geom->getDetectorID("D0X")];
+    n_hits_d2 = list_cnt[geom->getDetectorID("D2X")];
+    n_hits_d3 = list_cnt[geom->getDetectorID("D3pX")] + list_cnt[geom->getDetectorID("D3mX")];
     n_hits_dp1 = list_cnt[geom->getDetectorID("DP1TL")] + list_cnt[geom->getDetectorID("DP1TR")] + list_cnt[geom->getDetectorID("DP1BL")] + list_cnt[geom->getDetectorID("DP1BR")];
     n_hits_dp2 = list_cnt[geom->getDetectorID("DP2TL")] + list_cnt[geom->getDetectorID("DP2TR")] + list_cnt[geom->getDetectorID("DP2BL")] + list_cnt[geom->getDetectorID("DP2BR")];
 
@@ -677,20 +677,22 @@ int SimAna::process_event(PHCompositeNode* topNode)
         }
 
         n_showers = 0;
-        for (auto iter = _truth->GetPrimaryParticleRange().first;
-             iter != _truth->GetPrimaryParticleRange().second; ++iter) {
-            PHG4Particle* primary = iter->second;
-            int ECAL_volume = PHG4HitDefs::get_volume_id("G4HIT_EMCal");
-            PHG4Shower* shower = get_primary_shower(primary);
-            if (shower != 0) {
-                sx_ecal[n_showers] = shower->get_x();
-                sy_ecal[n_showers] = shower->get_y();
-                sz_ecal[n_showers] = shower->get_z();
-                sedep_ecal[n_showers] = shower->get_edep(ECAL_volume);
-                n_showers++;
+        if (_truth) {
+            for (auto iter = _truth->GetPrimaryParticleRange().first;
+                 iter != _truth->GetPrimaryParticleRange().second; ++iter) {
+                PHG4Particle* primary = iter->second;
+                int ECAL_volume = PHG4HitDefs::get_volume_id("G4HIT_EMCal");
+                PHG4Shower* shower = get_primary_shower(primary);
+                if (shower != 0) {
+                    sx_ecal[n_showers] = shower->get_x();
+                    sy_ecal[n_showers] = shower->get_y();
+                    sz_ecal[n_showers] = shower->get_z();
+                    sedep_ecal[n_showers] = shower->get_edep(ECAL_volume);
+                    n_showers++;
+                }
+                if (n_showers >= 1000)
+                    break;
             }
-            if (n_showers >= 1000)
-                break;
         }
     }
 
@@ -703,7 +705,7 @@ int SimAna::process_event(PHCompositeNode* topNode)
     //std::cout << " secondary particle " << secondary->get_pid() << " e" << secondary->get_e() << std::endl;
     //}
 
-    if (_savePrimaries) {
+    if (_savePrimaries and _truth) {
         n_primaries = 0;
         for (auto iterp = _truth->GetPrimaryParticleRange().first;
              iterp != _truth->GetPrimaryParticleRange().second; ++iterp) {
@@ -895,50 +897,60 @@ int SimAna::End(PHCompositeNode* topNode)
 int SimAna::GetNodes(PHCompositeNode* topNode)
 {
     _sqEvent = findNode::getClass<SQEvent_v1>(topNode, "SQEvent");
-    if (!_sqEvent)
+    if (!_sqEvent) {
+        std::cout << "ERROR:: did not find SQEvent. Abort" << std::endl;
         return Fun4AllReturnCodes::ABORTEVENT;
+    }
 
     _sqMCEvent = findNode::getClass<SQMCEvent>(topNode, "SQMCEvent");
-    if (!_sqMCEvent)
+    if (!_sqMCEvent) {
+        std::cout << "ERROR:: did not find SQMCEvent. Abort" << std::endl;
         return Fun4AllReturnCodes::ABORTEVENT;
+    }
 
     _hitVector = findNode::getClass<SQHitVector>(topNode, "SQHitVector");
-    if (!_hitVector)
+    if (!_hitVector) {
+        std::cout << "ERROR:: did not find SQHitVector. Abort" << std::endl;
         return Fun4AllReturnCodes::ABORTEVENT;
+    }
 
     _trackVector = findNode::getClass<SQTrackVector>(topNode, "SQTruthTrackVector");
     if (!_trackVector) {
-        std::cout << "ERROR:: did not find SQTruthTrackVector" << std::endl;
+        std::cout << "WARNING:: did not find SQTruthTrackVector" << std::endl;
     }
 
     _dimuonVector = findNode::getClass<SQDimuonVector>(topNode, "SQTruthDimuonVector");
     if (!_dimuonVector) {
-        std::cout << "ERROR:: did not find SQTruthDimuonVector" << std::endl;
+        std::cout << "WARNING:: did not find SQTruthDimuonVector" << std::endl;
     }
 
     if (_legacyContainer) {
         _recEvent = findNode::getClass<SRecEvent>(topNode, "SRecEvent");
         if (!_recEvent) {
             _recEvent = nullptr;
-            std::cout << "ERROR:: no RecEvent " << std::endl;
+            std::cout << "WARNING:: no RecEvent " << std::endl;
             //return Fun4AllReturnCodes::ABORTEVENT;
         }
     } else {
         _recTrackVector = findNode::getClass<SQTrackVector>(topNode, "SQRecTrackVector");
         _recDimuonVector = findNode::getClass<SQDimuonVector>(topNode, "SQRecDimuonVector");
         if (!_recTrackVector) {
+            std::cout << "ERROR:: did not find SQRecTrackVector. Abort" << std::endl;
             return Fun4AllReturnCodes::ABORTEVENT;
         }
 
         _recSt3TrackletVector = findNode::getClass<SQTrackVector>(topNode, "SQRecSt3TrackletVector");
         if (!_recSt3TrackletVector) {
+            std::cout << "ERROR:: did not find SQRecSt3TrackletVector. Abort" << std::endl;
             return Fun4AllReturnCodes::ABORTEVENT;
         }
     }
 
     _truth = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
-    if (!_truth)
-        return Fun4AllReturnCodes::ABORTEVENT;
+    if (!_truth) {
+        std::cout << "WARNING:: did not find G4TruthInfo. Abort" << std::endl;
+        //return Fun4AllReturnCodes::ABORTEVENT;
+    }
 
     g4hc_d1x = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D1X");
     g4hc_d2xp = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D2Xp");
@@ -947,8 +959,8 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
     if (!g4hc_d1x)
         g4hc_d1x = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D0X"); // D0X is considered as station 1
     if (!g4hc_d1x || !g4hc_d3px || !g4hc_d3mx) {
-        std::cout << "SimAna::GetNode No drift chamber node " << std::endl;
-        return Fun4AllReturnCodes::ABORTEVENT;
+        std::cout << "WARNING:: SimAna::GetNode No drift chamber node " << std::endl;
+        //return Fun4AllReturnCodes::ABORTEVENT;
     }
 
     g4hc_h1t = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H1T");
@@ -964,8 +976,8 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
     g4hc_h4t = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H4T");
     g4hc_h4b = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H4B");
     if (!g4hc_h1t || !g4hc_h1b || !g4hc_h2t || !g4hc_h2b || !g4hc_h3t || !g4hc_h3b || !g4hc_h4t || !g4hc_h4b) {
-        std::cout << "SimAna::GetNode No nodoscope node, abort " << std::endl;
-        return Fun4AllReturnCodes::ABORTEVENT;
+        std::cout << "WARNING:: SimAna::GetNode No nodoscope node." << std::endl;
+        //return Fun4AllReturnCodes::ABORTEVENT;
     }
 
     g4hc_p1y1 = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P1Y1");
@@ -977,13 +989,13 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
     g4hc_p2y1 = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P2Y1");
     g4hc_p2y2 = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P2Y2");
     if (!g4hc_p1y1 || !g4hc_p1y2 || !g4hc_p1x1 || !g4hc_p1x2 || !g4hc_p2x1 || !g4hc_p2x2 || !g4hc_p2y1 || !g4hc_p2y2) {
-        std::cout << "SimAna::GetNode No prototube node, abort " << std::endl;
-        return Fun4AllReturnCodes::ABORTEVENT;
+        std::cout << "WARNING:: SimAna::GetNode No prototube node. " << std::endl;
+        //return Fun4AllReturnCodes::ABORTEVENT;
     }
 
     g4hc_ecal = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_EMCal");
     if (!g4hc_ecal) {
-        std::cout << "SimAna::GetNode No EMcal node" << std::endl;
+        std::cout << "WARNING:: SimAna::GetNode No EMcal node" << std::endl;
     }
     return Fun4AllReturnCodes::EVENT_OK;
 }
