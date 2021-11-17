@@ -354,6 +354,17 @@ int RecoE1039Sim(const int nevents = 200,
   }
   se->registerSubsystem(digitizer);
 
+  bool do_acceptance = false;
+  if (do_acceptance) {
+    // if turned on, only the events passing the geometric acceptance will be saved 
+    // https://github.com/E1039-Collaboration/e1039-core/blob/master/simulation/g4dst/SQGeomAcc.h
+    SQGeomAcc* geom_acc = new SQGeomAcc();
+    geom_acc->SetMuonMode(SQGeomAcc::SINGLE);
+    geom_acc->SetPlaneMode(SQGeomAcc::CHAM);
+    //geom_acc->SetNumOfH1EdgeElementsExcluded(4);
+    se->registerSubsystem(geom_acc);
+  }
+
   // tracking module
   SQReco* reco = new SQReco();
   reco->Verbosity(verbosity);
@@ -409,7 +420,7 @@ int RecoE1039Sim(const int nevents = 200,
   }
 
   // analysis module
-  gSystem->Load("libsim_ana.so");
+  //gSystem->Load("libsim_ana.so");
   SimAna *sim_ana = new SimAna();  
   sim_ana->Verbosity(verbosity);
   std::string ofile = out_path + out_file;
@@ -466,8 +477,9 @@ int RecoE1039Sim(const int nevents = 200,
   // out->AddNode("SQRecTrackVector");
   // out->AddNode("SQRecDimuonVector");
   // out->AddNode("SQRecSt3TrackletVector");
-  // out->AddNode("PHG4HitContainer");
-  // out->AddNode("PHG4TruthInfoContainer");
+  out->AddNode("G4TruthInfo");
+  out->AddNode("PHG4HitContainer");
+  out->AddNode("PHG4TruthInfoContainer");
   if(save_dst){
     se->registerOutputManager(out);
   }
