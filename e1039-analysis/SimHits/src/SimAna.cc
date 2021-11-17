@@ -1025,7 +1025,7 @@ void SimAna::MakeTree()
     saveTree->Branch("n_hits_h3x", &n_hits_h3x, "n_hits_h3x/I");
     saveTree->Branch("n_hits_h4x", &n_hits_h4x, "n_hits_h4x/I");
     saveTree->Branch("n_hits_d1", &n_hits_d1, "n_hits_d1/I");
-    saveTree->Branch("n_hits_d2", &n_hits_d1, "n_hits_d1/I");
+    saveTree->Branch("n_hits_d2", &n_hits_d2, "n_hits_d2/I");
     saveTree->Branch("n_hits_d3", &n_hits_d3, "n_hits_d3/I");
     saveTree->Branch("n_hits_dp1", &n_hits_dp1, "n_hits_dp1/I");
     saveTree->Branch("n_hits_dp2", &n_hits_dp2, "n_hits_dp2/I");
