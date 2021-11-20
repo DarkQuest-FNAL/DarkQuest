@@ -190,6 +190,8 @@ int SimAna::ResetEvalVars()
         hit_truthpz[i] = std::numeric_limits<float>::max(); // truth momentum of hit (z)
     }
 
+    rec_status = 0;
+
     /** Tracks:
       - Truth tracks (truthtrack_*)
       - Reconstructed tracks (track_*)
@@ -488,11 +490,31 @@ int SimAna::process_event(PHCompositeNode* topNode)
     n_hits_h2x = list_cnt[geom->getDetectorID("H2T")] + list_cnt[geom->getDetectorID("H2B")];
     n_hits_h3x = list_cnt[geom->getDetectorID("H3T")] + list_cnt[geom->getDetectorID("H3B")];
     n_hits_h4x = list_cnt[geom->getDetectorID("H4T")] + list_cnt[geom->getDetectorID("H4B")];
-    n_hits_d1 = list_cnt[geom->getDetectorID("D0X")];
-    n_hits_d2 = list_cnt[geom->getDetectorID("D2X")];
-    n_hits_d3 = list_cnt[geom->getDetectorID("D3pX")] + list_cnt[geom->getDetectorID("D3mX")];
+    n_hits_d0x = list_cnt[geom->getDetectorID("D0X")];
+    n_hits_d2x = list_cnt[geom->getDetectorID("D2X")];
+    n_hits_d3px = list_cnt[geom->getDetectorID("D3pX")];
+    n_hits_d3mx = list_cnt[geom->getDetectorID("D3mX")];
     n_hits_dp1 = list_cnt[geom->getDetectorID("DP1TL")] + list_cnt[geom->getDetectorID("DP1TR")] + list_cnt[geom->getDetectorID("DP1BL")] + list_cnt[geom->getDetectorID("DP1BR")];
     n_hits_dp2 = list_cnt[geom->getDetectorID("DP2TL")] + list_cnt[geom->getDetectorID("DP2TR")] + list_cnt[geom->getDetectorID("DP2BL")] + list_cnt[geom->getDetectorID("DP2BR")];
+    // hard-code this, similar to
+    // https://github.com/E1039-Collaboration/e1039-core/blob/master/packages/reco/interface/SRawEvent.cxx
+    n_hits_d0 = 0;
+    n_hits_d1 = 0;
+    n_hits_d2 = 0;
+    n_hits_d3p = 0;
+    n_hits_d3m = 0;
+    for (int i = 1; i <= 6; ++i) {
+        n_hits_d0 += list_cnt[i];
+        n_hits_d1 += list_cnt[i + 6];
+        n_hits_d2 += list_cnt[i + 12];
+        n_hits_d3p += list_cnt[i + 18];
+        n_hits_d3m += list_cnt[i + 24];
+    }
+
+    // save rec status
+    // the meaning of these status flag:
+    // https://github.com/E1039-Collaboration/e1039-core/blob/master/packages/global_consts/GlobalConsts.h#L17-L27
+    rec_status = _legacyContainer ? _recEvent->getRecStatus() : 0;
 
     // tracks
     if (_saveTracks) {
@@ -1024,9 +1046,15 @@ void SimAna::MakeTree()
     saveTree->Branch("n_hits_h2x", &n_hits_h2x, "n_hits_h2x/I");
     saveTree->Branch("n_hits_h3x", &n_hits_h3x, "n_hits_h3x/I");
     saveTree->Branch("n_hits_h4x", &n_hits_h4x, "n_hits_h4x/I");
+    saveTree->Branch("n_hits_d0x", &n_hits_d0x, "n_hits_d0x/I");
+    saveTree->Branch("n_hits_d2x", &n_hits_d2x, "n_hits_d2x/I");
+    saveTree->Branch("n_hits_d3px", &n_hits_d3px, "n_hits_d3px/I");
+    saveTree->Branch("n_hits_d3mx", &n_hits_d3mx, "n_hits_d3mx/I");
+    saveTree->Branch("n_hits_d0", &n_hits_d0, "n_hits_d0/I");
     saveTree->Branch("n_hits_d1", &n_hits_d1, "n_hits_d1/I");
     saveTree->Branch("n_hits_d2", &n_hits_d2, "n_hits_d2/I");
-    saveTree->Branch("n_hits_d3", &n_hits_d3, "n_hits_d3/I");
+    saveTree->Branch("n_hits_d3p", &n_hits_d3p, "n_hits_d3p/I");
+    saveTree->Branch("n_hits_d3m", &n_hits_d3m, "n_hits_d3m/I");
     saveTree->Branch("n_hits_dp1", &n_hits_dp1, "n_hits_dp1/I");
     saveTree->Branch("n_hits_dp2", &n_hits_dp2, "n_hits_dp2/I");
     saveTree->Branch("hit_detID", hit_detid, "hit_detID[n_hits]/I");
@@ -1065,6 +1093,7 @@ void SimAna::MakeTree()
         saveTree->Branch("truthtrack_pz_vtx", truthtrack_pz_vtx, "truthtrack_pz_vtx[n_truthtracks]/F");
         saveTree->Branch("truthtrack_rectrack_id", truthtrack_rectrack_id, "truthtrack_rectrack_id[n_truthtracks]/I");
 
+        saveTree->Branch("rec_status", &rec_status, "rec_status/I");
         saveTree->Branch("n_tracks", &n_tracks, "n_tracks/I");
         saveTree->Branch("track_charge", track_charge, "track_charge[n_tracks]/I");
         saveTree->Branch("track_nhits", track_nhits, "track_nhits[n_tracks]/I");

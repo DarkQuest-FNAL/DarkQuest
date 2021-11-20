@@ -26,6 +26,12 @@ int RunEmbedding(
                    "$E1039_RESOURCE/geometry/magnetic_fields/tab.Kmag");
 
   rc->set_BoolFlag("TRACK_DISPLACED",true);
+  rc->set_BoolFlag("OLD_TRACKING",false);
+  rc->set_IntFlag("MaxHitsDC0", 300);
+  rc->set_IntFlag("MaxHitsDC1", 300);
+  rc->set_IntFlag("MaxHitsDC2", 300);
+  rc->set_IntFlag("MaxHitsDC3p", 300);
+  rc->set_IntFlag("MaxHitsDC3m", 300);
 
   Fun4AllServer *se = Fun4AllServer::instance();
 

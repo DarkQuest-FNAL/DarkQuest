@@ -1,5 +1,7 @@
 # A Package to Generate and Analyze Hit-Embedded MC Events
 
+(**Lates Update**: all the essential code should already be moved to `SimHits`. This directory is obsolete)
+
 The hit embedding is a procedure for embedding a set of hits into a simulated physics event (like J/psi).
 It is to mimic a real event, which contains not only a physics process but also background hits.
 It can be used in studying the effects of background hits, such fake track and efficiency loss.
