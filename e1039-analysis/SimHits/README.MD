@@ -123,7 +123,17 @@ Some options are available in `macro/run_sim.py`. Here are examples of the most 
   python ./run_sim.py -n 10 --sim trimuon --zvertex 490.0 --displaced --inputfile trimuon_0.5MS0gS1 --inputpath /seaquest/users/cmantill/DarkQuest/lhe/output/trimuon/ --outpath output/
   ```
 
+### Add Hit Embedding
+
+Currently the procedure to embed with e906 data hits and run the reco is the following:
+
+1. run the usual workflow to produce the usual ntuple and the dst file
+
+2. run the `RunEmbedding.C` script, change the `fn_sig` file to the dst file produced in the previous step. This is produce a dst file and a new ntuple reconstructed with the data embeded hits. The full list of e906 data files that can be embedded is placed under `/pnfs/e1039/persistent/users/kenichi/data_emb_e906/`.
+
 ### Adding pileup:
+
+(To be updated.)
 
 Currently, the procedure to mix pileup events is the following:
 

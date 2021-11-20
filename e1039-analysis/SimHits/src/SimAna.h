@@ -114,9 +114,15 @@ private:
     int n_hits_h2x;
     int n_hits_h3x;
     int n_hits_h4x;
+    int n_hits_d0x;
+    int n_hits_d2x;
+    int n_hits_d3px;
+    int n_hits_d3mx;
+    int n_hits_d0;
     int n_hits_d1;
     int n_hits_d2;
-    int n_hits_d3;
+    int n_hits_d3p;
+    int n_hits_d3m;
     int n_hits_dp1;
     int n_hits_dp2;
     int hit_detid[1000];
@@ -154,6 +160,7 @@ private:
     float truthtrack_pz_vtx[100];
     int truthtrack_rectrack_id[100];
 
+    int rec_status;
     int n_tracks;
     int track_charge[100];
     int track_nhits[100];
