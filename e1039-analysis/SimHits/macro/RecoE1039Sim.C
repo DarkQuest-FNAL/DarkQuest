@@ -290,7 +290,7 @@ int RecoE1039Sim(const int nevents = 200,
 
   // pileup
   if(run_pileup){
-    SQExternalGen* extgen = new SQExternalGen();
+    SQPileupGen* extgen = new SQPileupGen();
     // function
     TF1* intensity_profile = new TF1("intensity_profile", "[0]*pow(x,[1])*exp(-[2]*x+exp(-[3]*x))+[4]", 0, 5000);
     intensity_profile->SetParameter(0,6.35);
