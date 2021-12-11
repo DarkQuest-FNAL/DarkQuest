@@ -38,6 +38,7 @@ using namespace std;
  * isim = 5 to run on J/psi to dimuon sample generated with Pythia
  * isim = 6 to run on cosmic sample
  * isim = 7 to run on trimuon sample
+ * isim = 8 to run on background-simulation only
  *
  * do_displaced_tracking: to run tracking - if particle is e+/e-/gamma then electron_tracking is set to true by default too
  * do_analysis: to produce the analysis ntuple
@@ -50,7 +51,7 @@ int RecoE1039Sim(const int nevents = 200,
 		 const double zvertex = -300, // target_coil_pos_z
 		 const bool do_displaced_tracking = true,
 		 const bool do_analysis = true,
-		 const bool run_pileup = false,
+		 bool run_pileup = false,
 		 std::string input_file = "Brem_2.750000_z500_600_eps_-6.4",
 		 std::string input_path = "/seaquest/users/cmantill/DarkQuest/lhe/output/displaced_Aprime_Muons_z500-600/",
 		 std::string out_file = "output.root",
@@ -63,6 +64,7 @@ int RecoE1039Sim(const int nevents = 200,
   bool do_aprime_muon{false},do_aprime_electron{false};
   bool do_gun{false};
   bool do_dy{false},do_jpsi{false},do_cosmic{false},do_trimuon{false};
+  bool do_bkgOnly{false};
 
   // tracking options
   bool electron_tracking{false};
@@ -128,6 +130,11 @@ int RecoE1039Sim(const int nevents = 200,
   case 7:
     do_trimuon = true;
     std::cout << " DO TRIMUON " << std::endl;
+    break;
+  case 8:
+    do_bkgOnly = true;
+    run_pileup = true;
+    std::cout << " DO Background Only. Set the run_pileup to true " << std::endl;
     break;
   }
 
@@ -283,6 +290,9 @@ int RecoE1039Sim(const int nevents = 200,
   } else if (do_cosmic) {
     SQCosmicGen *cosmicGen = new SQCosmicGen();
     se->registerSubsystem(cosmicGen);
+  } else if (do_bkgOnly) {
+    // no operation needed here
+    ;
   } else {
     std::cout << " No input! " << std::endl;
     return 0;
