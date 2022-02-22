@@ -2,6 +2,9 @@
 #include <TTree.h>
 #include <iomanip>
 
+#include <chrono>
+#include <ctime>
+
 #include <fun4all/Fun4AllReturnCodes.h>
 #include <fun4all/PHTFileServer.h>
 #include <geom_svc/GeomSvc.h>
@@ -53,6 +56,12 @@ int SimAna::InitRun(PHCompositeNode* topNode)
     eventID = 0;
     ResetEvalVars();
     MakeTree();
+
+
+    startTime = std::chrono::system_clock::now();
+    //TDatime start;
+    //startTime = start.Convert();
+    //std::cout<<"startTime = "<<startTime<<std::endl;
 
     return Fun4AllReturnCodes::EVENT_OK;
 }
@@ -465,25 +474,31 @@ int SimAna::process_event(PHCompositeNode* topNode)
     n_hits = 0;
     std::map<int, int> list_cnt; // [det ID] -> hit count
     for (int ihit = 0; ihit < _hitVector->size(); ++ihit) {
-        SQHit* hit = _hitVector->at(ihit);
-        int hit_id = hit->get_hit_id();
-        int det_id = hit->get_detector_id();
-        list_cnt[det_id]++;
+      SQHit* hit = _hitVector->at(ihit);
+      //if(!hit->is_in_time()) continue;
+      int det_id = hit->get_detector_id();
+      if(n_hits <= 1000){
+        //SQHit* hit = _hitVector->at(ihit);
+	int hit_id = hit->get_hit_id();
+        //int det_id = hit->get_detector_id();
+	//list_cnt[det_id]++;
         hit_detid[n_hits] = det_id;
         hit_elmid[n_hits] = hit->get_element_id();
         hit_trkid[n_hits] = hit->get_track_id();
         hit_driftdis[n_hits] = hit->get_drift_distance();
-        hit_pos[n_hits] = hit->get_pos();
+	hit_pos[n_hits] = hit->get_pos();
         hit_edep[n_hits] = hit->get_edep();
         hit_truthx[n_hits] = hit->get_truth_x();
         hit_truthy[n_hits] = hit->get_truth_y();
         hit_truthz[n_hits] = hit->get_truth_z();
         hit_truthpx[n_hits] = hit->get_truth_px();
-        hit_truthpy[n_hits] = hit->get_truth_py();
+	hit_truthpy[n_hits] = hit->get_truth_py();
         hit_truthpz[n_hits] = hit->get_truth_pz();
-        ++n_hits;
-        if (n_hits >= 1000)
-            break;
+      }
+      list_cnt[det_id]++;
+	++n_hits;
+        //if (n_hits >= 1000)
+        //    break;
     }
     GeomSvc* geom = GeomSvc::instance();
     n_hits_h1x = list_cnt[geom->getDetectorID("H1T")] + list_cnt[geom->getDetectorID("H1B")];
@@ -916,6 +931,18 @@ int SimAna::process_event(PHCompositeNode* topNode)
     weight = _sqMCEvent->get_weight();
 
     ++eventID;
+
+    //TDatime now;
+    //int currTime = now.Convert();
+    //totalTime = currTime - startTime;
+    //startTime = currTime;
+    
+    auto endTime = std::chrono::system_clock::now();
+
+    std::chrono::duration<double> elapsed_seconds = endTime-startTime;
+    startTime = endTime;
+    totalTime = elapsed_seconds.count();
+    
     saveTree->Fill();
 
     return Fun4AllReturnCodes::EVENT_OK;
@@ -1040,6 +1067,8 @@ void SimAna::MakeTree()
     saveFile = new TFile(saveNameOut, "RECREATE");
     saveTree = new TTree("Events", "Tree Created by SimAna");
     saveTree->Branch("eventID", &eventID, "eventID/I");
+
+    saveTree->Branch("totalTime", &totalTime, "totalTime/F");
 
     saveTree->Branch("n_hits", &n_hits, "n_hits/I");
     saveTree->Branch("n_hits_h1x", &n_hits_h1x, "n_hits_h1x/I");

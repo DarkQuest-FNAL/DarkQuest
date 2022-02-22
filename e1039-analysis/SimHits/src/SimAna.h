@@ -6,6 +6,9 @@
 #include <fun4all/SubsysReco.h>
 #include <map>
 
+#include <chrono>
+#include <ctime>
+
 class TFile;
 class TTree;
 class SQHitVector;
@@ -109,6 +112,8 @@ private:
     int eventID;
     TTree* saveTree;
 
+  float totalTime;
+  
     int n_hits;
     int n_hits_h1x;
     int n_hits_h2x;
@@ -382,6 +387,8 @@ private:
     bool fpga_trigger[5];
 
     float weight;
+
+  std::chrono::time_point<std::chrono::system_clock> startTime;
 };
 
 #endif
