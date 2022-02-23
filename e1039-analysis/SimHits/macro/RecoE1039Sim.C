@@ -383,7 +383,10 @@ int RecoE1039Sim(const int nevents = 200,
   reco->set_enable_KF(true);                      // Kalman filter not needed for the track finding, disabling KF saves a lot of initialization time
   reco->setInputTy(SQReco::E1039);                // options are SQReco::E906 and SQReco::E1039
   reco->setFitterTy(SQReco::KFREF);               // not relevant for the track finding, options are SQReco::KFREF and SQReco::LEGACY
+
   reco->set_evt_reducer_opt("none");              // if not provided, event reducer will be using JobOptsSvc to intialize; to turn off, set it to "none", for normal tracking, set to something like "aoc"
+  //reco->set_evt_reducer_opt("r");              // Run DC emulation (e1039-core/packages/reco/ktracker/EventReducer.cxx)
+  
   reco->set_enable_eval(true);                    // set to true to generate evaluation file which includes final track candidates 
   reco->set_eval_file_name("eval.root");          // evaluation filename
   reco->set_enable_eval_dst(true);                // set to true to include final track candidates in the DST tree
