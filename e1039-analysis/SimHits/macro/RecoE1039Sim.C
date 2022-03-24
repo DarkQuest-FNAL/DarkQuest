@@ -38,6 +38,7 @@ using namespace std;
  * isim = 5 to run on J/psi to dimuon sample generated with Pythia
  * isim = 6 to run on cosmic sample
  * isim = 7 to run on trimuon sample
+ * isim = 8 to run on background-simulation only
  *
  * do_displaced_tracking: to run tracking - if particle is e+/e-/gamma then electron_tracking is set to true by default too
  * do_analysis: to produce the analysis ntuple
@@ -50,7 +51,7 @@ int RecoE1039Sim(const int nevents = 200,
 		 const double zvertex = -300, // target_coil_pos_z
 		 const bool do_displaced_tracking = true,
 		 const bool do_analysis = true,
-		 const bool run_pileup = false,
+		 bool run_pileup = false,
 		 std::string input_file = "Brem_2.750000_z500_600_eps_-6.4",
 		 std::string input_path = "/seaquest/users/cmantill/DarkQuest/lhe/output/displaced_Aprime_Muons_z500-600/",
 		 std::string out_file = "output.root",
@@ -63,6 +64,7 @@ int RecoE1039Sim(const int nevents = 200,
   bool do_aprime_muon{false},do_aprime_electron{false};
   bool do_gun{false};
   bool do_dy{false},do_jpsi{false},do_cosmic{false},do_trimuon{false};
+  bool do_bkgOnly{false};
 
   // tracking options
   bool electron_tracking{false};
@@ -128,6 +130,11 @@ int RecoE1039Sim(const int nevents = 200,
   case 7:
     do_trimuon = true;
     std::cout << " DO TRIMUON " << std::endl;
+    break;
+  case 8:
+    do_bkgOnly = true;
+    run_pileup = true;
+    std::cout << " DO Background Only. Set the run_pileup to true " << std::endl;
     break;
   }
 
@@ -283,6 +290,9 @@ int RecoE1039Sim(const int nevents = 200,
   } else if (do_cosmic) {
     SQCosmicGen *cosmicGen = new SQCosmicGen();
     se->registerSubsystem(cosmicGen);
+  } else if (do_bkgOnly) {
+    // no operation needed here
+    ;
   } else {
     std::cout << " No input! " << std::endl;
     return 0;
@@ -290,7 +300,7 @@ int RecoE1039Sim(const int nevents = 200,
 
   // pileup
   if(run_pileup){
-    SQExternalGen* extgen = new SQExternalGen();
+    SQPileupGen* extgen = new SQPileupGen();
     // function
     TF1* intensity_profile = new TF1("intensity_profile", "[0]*pow(x,[1])*exp(-[2]*x+exp(-[3]*x))+[4]", 0, 5000);
     intensity_profile->SetParameter(0,6.35);
@@ -354,6 +364,17 @@ int RecoE1039Sim(const int nevents = 200,
   }
   se->registerSubsystem(digitizer);
 
+  bool do_acceptance = false;
+  if (do_acceptance) {
+    // if turned on, only the events passing the geometric acceptance will be saved 
+    // https://github.com/E1039-Collaboration/e1039-core/blob/master/simulation/g4dst/SQGeomAcc.h
+    SQGeomAcc* geom_acc = new SQGeomAcc();
+    geom_acc->SetMuonMode(SQGeomAcc::SINGLE);
+    geom_acc->SetPlaneMode(SQGeomAcc::CHAM);
+    //geom_acc->SetNumOfH1EdgeElementsExcluded(4);
+    se->registerSubsystem(geom_acc);
+  }
+
   // tracking module
   SQReco* reco = new SQReco();
   reco->Verbosity(verbosity);
@@ -409,7 +430,7 @@ int RecoE1039Sim(const int nevents = 200,
   }
 
   // analysis module
-  gSystem->Load("libsim_ana.so");
+  //gSystem->Load("libsim_ana.so");
   SimAna *sim_ana = new SimAna();  
   sim_ana->Verbosity(verbosity);
   std::string ofile = out_path + out_file;
@@ -466,8 +487,9 @@ int RecoE1039Sim(const int nevents = 200,
   // out->AddNode("SQRecTrackVector");
   // out->AddNode("SQRecDimuonVector");
   // out->AddNode("SQRecSt3TrackletVector");
-  // out->AddNode("PHG4HitContainer");
-  // out->AddNode("PHG4TruthInfoContainer");
+  out->AddNode("G4TruthInfo");
+  out->AddNode("PHG4HitContainer");
+  out->AddNode("PHG4TruthInfoContainer");
   if(save_dst){
     se->registerOutputManager(out);
   }
