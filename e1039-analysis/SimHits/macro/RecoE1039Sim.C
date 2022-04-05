@@ -34,6 +34,7 @@ using namespace std;
  * - igun = 6: pi+
  * - igun = 7: pi-
  * - igun = 8: klong
+ * - igun = 9: pi0
  * isim = 4 to run on DY to dimuon sample generated with Pythia
  * isim = 5 to run on J/psi to dimuon sample generated with Pythia
  * isim = 6 to run on cosmic sample
@@ -110,7 +111,10 @@ int RecoE1039Sim(const int nevents = 200,
       particle_name = "pi-";
       break;
     case 8: // klong gun
-      particle_name = "klong";
+      particle_name = "kaon0L";
+      break;
+    case 9: // pi0 gun
+      particle_name = "pi0";
       break;
     }
     std::cout << " " << particle_name << " GUN " << std::endl;
@@ -252,11 +256,11 @@ int RecoE1039Sim(const int nevents = 200,
 					   PHG4SimpleEventGenerator::Uniform,
 					   PHG4SimpleEventGenerator::Uniform);
     genp->set_vertex_distribution_mean(0.0, 0.0, zvertex); // to set after FMAG: zvertex: 520
-    genp->set_vertex_distribution_width(0.0, 0.0, 0.0); // for protons set to 10.0 in z?
+    genp->set_vertex_distribution_width(10.0, 10.0, 0.0); // for protons set to 10.0 in z?
     genp->set_vertex_size_function(PHG4SimpleEventGenerator::Uniform);
     genp->set_vertex_size_parameters(0.0, 0.0);
 
-    genp->set_pxpypz_range(-1., 1., -1., 1., 0., 100.);
+    genp->set_pxpypz_range(-1.5, 1.5, -1.5, 1.5, 0., 100.);
 
     genp->Verbosity(verbosity);
     se->registerSubsystem(genp);
@@ -369,8 +373,8 @@ int RecoE1039Sim(const int nevents = 200,
     // if turned on, only the events passing the geometric acceptance will be saved 
     // https://github.com/E1039-Collaboration/e1039-core/blob/master/simulation/g4dst/SQGeomAcc.h
     SQGeomAcc* geom_acc = new SQGeomAcc();
-    geom_acc->SetMuonMode(SQGeomAcc::SINGLE);
-    geom_acc->SetPlaneMode(SQGeomAcc::CHAM);
+    geom_acc->SetMuonMode(SQGeomAcc::PAIR);
+    geom_acc->SetPlaneMode(SQGeomAcc::HODO_CHAM);
     //geom_acc->SetNumOfH1EdgeElementsExcluded(4);
     se->registerSubsystem(geom_acc);
   }
@@ -383,7 +387,10 @@ int RecoE1039Sim(const int nevents = 200,
   reco->set_enable_KF(true);                      // Kalman filter not needed for the track finding, disabling KF saves a lot of initialization time
   reco->setInputTy(SQReco::E1039);                // options are SQReco::E906 and SQReco::E1039
   reco->setFitterTy(SQReco::KFREF);               // not relevant for the track finding, options are SQReco::KFREF and SQReco::LEGACY
+  
   reco->set_evt_reducer_opt("none");              // if not provided, event reducer will be using JobOptsSvc to intialize; to turn off, set it to "none", for normal tracking, set to something like "aoc"
+  //reco->set_evt_reducer_opt("r");              // if not provided, event reducer will be using JobOptsSvc to intialize; to turn off, set it to "none", for normal tracking, set to something like "aoc"
+
   reco->set_enable_eval(true);                    // set to true to generate evaluation file which includes final track candidates 
   reco->set_eval_file_name("eval.root");          // evaluation filename
   reco->set_enable_eval_dst(true);                // set to true to include final track candidates in the DST tree
@@ -426,6 +433,7 @@ int RecoE1039Sim(const int nevents = 200,
   // vertexing for dimuon information
   if(legacy_rec_container){
     VertexFit* vertexing = new VertexFit();
+    vertexing->Verbosity(verbosity);
     se->registerSubsystem(vertexing);
   }
 

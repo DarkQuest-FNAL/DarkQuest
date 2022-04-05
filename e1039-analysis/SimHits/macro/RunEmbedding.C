@@ -8,9 +8,11 @@ R__LOAD_LIBRARY(libsim_ana)
 using namespace std;
 
 int RunEmbedding(
-    const char* fn_sig = "/seaquest/users/yfeng/DarkQuest/DarkQuest/e1039-analysis/SimHits/macro/output_DST.root",
-    const char* fn_emb = "/pnfs/e1039/persistent/users/kenichi/data_emb_e906/0001/embedding_data.root", 
-    const int n_evt_in=100)
+    //const char* fn_sig = "/seaquest/users/yfeng/DarkQuest/DarkQuest/e1039-analysis/SimHits/macro/output_DST.root",
+    const char* fn_sig = "/work/submit/wmccorma/DY_DSTs/output_DY_1_DST.root",
+    //const char* fn_emb = "/pnfs/e1039/persistent/users/kenichi/data_emb_e906/0001/embedding_data.root",
+    const char* fn_emb = "/mnt/T2_US_MIT/hadoop/mitgroups/DarkQuest/0001/embedding_data.root",
+    const int n_evt_in=1000)
 {
   ///
   /// Global parameters
@@ -27,11 +29,11 @@ int RunEmbedding(
 
   rc->set_BoolFlag("TRACK_DISPLACED",true);
   rc->set_BoolFlag("OLD_TRACKING",false);
-  rc->set_IntFlag("MaxHitsDC0", 300);
-  rc->set_IntFlag("MaxHitsDC1", 300);
-  rc->set_IntFlag("MaxHitsDC2", 300);
-  rc->set_IntFlag("MaxHitsDC3p", 300);
-  rc->set_IntFlag("MaxHitsDC3m", 300);
+  rc->set_IntFlag("MaxHitsDC0", 3500);
+  rc->set_IntFlag("MaxHitsDC1",3500);
+  rc->set_IntFlag("MaxHitsDC2", 3500);
+  rc->set_IntFlag("MaxHitsDC3p", 3500);
+  rc->set_IntFlag("MaxHitsDC3m", 3500);
 
   Fun4AllServer *se = Fun4AllServer::instance();
 
@@ -47,9 +49,17 @@ int RunEmbedding(
   /// Reconstruction
   ///
   SQReco* reco = new SQReco();
-  //reco->Verbosity(10);
+  reco->Verbosity(10);
   reco->use_geom_io_node(true);
-  reco->set_evt_reducer_opt("none");
+
+  //SQChamberRealization* cal_cr = new SQChamberRealization();
+  //cal_cr->SetChamEff(0.94, 0.94, 0.94, 0.94, 0.94); // (D0, D1, D2, D3p, D3m)
+  //se->registerSubsystem(cal_cr);
+  
+  //reco->set_evt_reducer_opt("none");
+  //reco->set_evt_reducer_opt("o");
+  reco->set_evt_reducer_opt("r");
+
   se->registerSubsystem(reco);
 
   
@@ -66,12 +76,12 @@ int RunEmbedding(
   se->registerSubsystem(dptrigger);
 
   VertexFit* vertexing = new VertexFit();
-  //vertexing->Verbosity(1);
+  vertexing->Verbosity(10);
   //vertexing->enable_fit_target_center();
   se->registerSubsystem(vertexing);
 
   SimAna *sim_ana = new SimAna();
-  std::string ofile = "test.root";
+  std::string ofile = "testWITHEMBED.root";
   sim_ana->set_out_name(ofile);
   sim_ana->set_legacy_rec_container(true);
   sim_ana->save_secondaries(false);

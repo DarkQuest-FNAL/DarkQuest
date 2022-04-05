@@ -326,9 +326,11 @@ int SimAna::ResetEvalVars()
         truthdimuon_nmom_x[i] = std::numeric_limits<float>::max(); // momentum of negative muon in truth dimuon pair (x)
         truthdimuon_nmom_y[i] = std::numeric_limits<float>::max(); // momentum of negative muon in truth dimuon pair (y)
         truthdimuon_nmom_z[i] = std::numeric_limits<float>::max(); // momentum of negative muon in truth dimuon pair (z)
+	truthdimuon_recoed[i] = std::numeric_limits<int>::max();
 
         dimuon_mass[i] = std::numeric_limits<float>::max(); // mass of dimuon system
         dimuon_chisq[i] = std::numeric_limits<float>::max(); // chi-square of dimuon system
+	dimuon_chisq_vx[i] = std::numeric_limits<float>::max(); // chi-square of dimuon system
         dimuon_x_vtx[i] = std::numeric_limits<float>::max(); // position of vertex of dimuon system (x)
         dimuon_y_vtx[i] = std::numeric_limits<float>::max(); // position of vertex of dimuon system (y)
         dimuon_z_vtx[i] = std::numeric_limits<float>::max(); // position of vertex of dimuon system (z)
@@ -347,6 +349,7 @@ int SimAna::ResetEvalVars()
         dimuon_npos_x[i] = std::numeric_limits<float>::max(); // position of negative muon in dimuon pair (x)
         dimuon_npos_y[i] = std::numeric_limits<float>::max(); // position of negative muon in dimuon pair (y)
         dimuon_npos_z[i] = std::numeric_limits<float>::max(); // position of negative muon in dimuon pair (z)
+	dimuon_matched[i] = std::numeric_limits<int>::max();
     }
 
     /** Truth information:
@@ -526,15 +529,25 @@ int SimAna::process_event(PHCompositeNode* topNode)
         n_hits_d3m += list_cnt[i + 24];
     }
 
+    passHitCuts = 0;
+    if(n_hits_d0 < 300 && n_hits_d2 < 300 && n_hits_d3p < 300 && n_hits_d3m < 300){
+      passHitCuts = 1;
+    }
+
     // save rec status
     // the meaning of these status flag:
     // https://github.com/E1039-Collaboration/e1039-core/blob/master/packages/global_consts/GlobalConsts.h#L17-L27
     rec_status = _legacyContainer ? _recEvent->getRecStatus() : 0;
 
+    allRecoed = 0;
+    allCouldBeRecoed = 0;
+    
     // tracks
     if (_saveTracks) {
         int n_recTracks = _legacyContainer ? _recEvent->getNTracks() : _recTrackVector->size();
         n_truthtracks = 0;
+	int acceptableTruth = 0;
+	int recoedTruth = 0;
         for (int itrk = 0; itrk < _trackVector->size(); ++itrk) {
             SQTrack* track = _trackVector->at(itrk);
 
@@ -560,10 +573,35 @@ int SimAna::process_event(PHCompositeNode* topNode)
             // get the matched reco track ID
             truthtrack_rectrack_id[n_truthtracks] = track->get_rec_track_id();
             ++n_truthtracks;
-            if (n_truthtracks >= 100)
+
+	    int recoed = 0;
+	    if(  std::abs((track->get_pos_st3()).X())>0.0001 && std::abs((track->get_pos_st3()).Y())>0.0001 && std::abs((track->get_pos_st3()).X())<155 && std::abs((track->get_pos_st3()).Y())<155){
+	      acceptableTruth++;
+	      for (int Rtrk = 0; Rtrk < n_recTracks; ++Rtrk) {
+		SRecTrack* recTrack = _legacyContainer ? &(_recEvent->getTrack(Rtrk)) : dynamic_cast<SRecTrack*>(_recTrackVector->at(Rtrk));
+		if( std::abs((recTrack->getPositionVecSt1()).X() - (track->get_pos_st1()).X()) < 3. && std::abs((recTrack->getPositionVecSt1()).Y() - (track->get_pos_st1()).Y()) < 4. && std::abs((recTrack->getPositionVecSt3()).X() - (track->get_pos_st3()).X()) < 3. && std::abs((recTrack->getPositionVecSt3()).Y() - (track->get_pos_st3()).Y()) < 4.){
+		  recoed = 1;
+		}
+	      }
+	    }
+	    if(recoed){
+	      recoedTruth++;
+	    }
+	    
+            if (n_truthtracks >= 1000)
                 break;
         }
 
+	if(acceptableTruth==_trackVector->size()){
+	  allCouldBeRecoed=1;
+	}
+	if(recoedTruth==_trackVector->size()){
+	  allRecoed=1;
+	}
+
+	numNonMatched=0;
+	nFakeTracksTop2 = 0;
+	nRealTracks=0;
         //std::cout<<"the recid is "<<recid<<std::endl;
         for (int itrk = 0; itrk < n_recTracks; ++itrk) {
             // saving all tracks to the ntuples to study 'fakes'
@@ -604,7 +642,26 @@ int SimAna::process_event(PHCompositeNode* topNode)
             track_nhits_st1[n_tracks] = recTrack->getNHitsInStation(1);
             track_nhits_st2[n_tracks] = recTrack->getNHitsInStation(2);
             track_nhits_st3[n_tracks] = recTrack->getNHitsInStation(3);
-            ++n_tracks;
+
+	    int matched = 0;
+	    for (int Ttrk = 0; Ttrk < _trackVector->size(); ++Ttrk) {
+	      SQTrack* track = _trackVector->at(Ttrk);
+	      if( std::abs((recTrack->getPositionVecSt1()).X() - (track->get_pos_st1()).X()) < 3. && std::abs((recTrack->getPositionVecSt1()).Y() - (track->get_pos_st1()).Y()) < 4. && std::abs((recTrack->getPositionVecSt3()).X() - (track->get_pos_st3()).X()) < 3. && std::abs((recTrack->getPositionVecSt3()).Y() - (track->get_pos_st3()).Y()) < 4.){
+		matched = 1;
+	      }     
+	    }
+	    if(!(matched)){
+	      numNonMatched++;
+	      if(n_tracks<2){
+		nFakeTracksTop2++;
+	      }
+	    } else{
+	      nRealTracks++;
+	    }
+	    track_matched[n_tracks] = matched;
+	    
+	    ++n_tracks;
+	    
             if (n_tracks >= 100)
                 break;
         }
@@ -661,6 +718,7 @@ int SimAna::process_event(PHCompositeNode* topNode)
         // vertices
         n_truthdimuons = 0;
         int nDimuons = _dimuonVector->size();
+	int nRecDimuons = _legacyContainer ? _recEvent->getNDimuons() : (_recDimuonVector ? _recDimuonVector->size() : -1);
         for (int i = 0; i < nDimuons; ++i) {
             SQDimuon* dimuon = _dimuonVector->at(i);
             // truth dimuon
@@ -678,17 +736,49 @@ int SimAna::process_event(PHCompositeNode* topNode)
             truthdimuon_nmom_x[n_truthdimuons] = (dimuon->get_mom_neg()).Px();
             truthdimuon_nmom_y[n_truthdimuons] = (dimuon->get_mom_neg()).Py();
             truthdimuon_nmom_z[n_truthdimuons] = (dimuon->get_mom_neg()).Pz();
+
+	    int recoed = 0;
+	    for (int rdm = 0; rdm < nRecDimuons; ++rdm) {
+	      SRecDimuon* recDimuon = _legacyContainer ? &(_recEvent->getDimuon(rdm)) : dynamic_cast<SRecDimuon*>(_recDimuonVector->at(rdm));
+	      //if( std::abs( ((dimuon->get_mom()).X() - (recDimuon->get_mom()).X())/(dimuon->get_mom()).X() + (recDimuon->get_mom()).X() ) < 0.35 && std::abs( ((dimuon->get_mom()).Y() - (recDimuon->get_mom()).Y())/(dimuon->get_mom()).Y() + (recDimuon->get_mom()).Y() ) < 0.35 && std::abs( ((dimuon->get_mom()).Z() - (recDimuon->get_mom()).Z())/(dimuon->get_mom()).Z() + (recDimuon->get_mom()).Z() ) < 0.1 && std::abs( ((recDimuon->p_pos).Px() - (dimuon->get_mom_pos()).Px())/((recDimuon->p_pos).Px() + (dimuon->get_mom_pos()).Px()) ) < 0.35 &&  std::abs( ((recDimuon->p_pos).Py() - (dimuon->get_mom_pos()).Py())/((recDimuon->p_pos).Py() + (dimuon->get_mom_pos()).Py()) ) < 0.35 && std::abs( ((recDimuon->p_pos).Pz() - (dimuon->get_mom_pos()).Pz())/((recDimuon->p_pos).Pz() + (dimuon->get_mom_pos()).Pz()) ) < 0.1 && std::abs( ((recDimuon->p_neg).Px() - (dimuon->get_mom_neg()).Px())/((recDimuon->p_neg).Px() + (dimuon->get_mom_ned()).Px()) ) < 0.35 &&  std::abs( ((recDimuon->p_neg).Py() - (dimuon->get_mom_neg()).Py())/((recDimuon->p_neg).Py() + (dimuon->get_mom_neg()).Py()) ) < 0.35 && std::abs( ((recDimuon->p_neg).Pz() - (dimuon->get_mom_neg()).Pz())/((recDimuon->p_neg).Pz() + (dimuon->get_mom_neg()).Pz()) ) < 0.1 ){
+	      int numFailures = 0;
+	      if( std::abs( ((dimuon->get_mom()).X() - (recDimuon->get_mom()).X()) ) > 0.65 ) numFailures++;
+	      if( std::abs( ((dimuon->get_mom()).Y() - (recDimuon->get_mom()).Y()) ) > 0.65 ) numFailures++;
+	      if( std::abs( ((dimuon->get_mom()).Z() - (recDimuon->get_mom()).Z()) ) > 10 ) numFailures++;
+	      if( std::abs( ((recDimuon->p_pos).Px() - (dimuon->get_mom_pos()).Px())) > 0.65 ) numFailures++;
+	      if( std::abs( ((recDimuon->p_pos).Py() - (dimuon->get_mom_pos()).Py())) > 0.65 ) numFailures++;
+	      if( std::abs( ((recDimuon->p_pos).Pz() - (dimuon->get_mom_pos()).Pz())) > 10 ) numFailures++;
+	      if( std::abs( ((recDimuon->p_neg).Px() - (dimuon->get_mom_neg()).Px())) > 0.65 ) numFailures++;
+	      if( std::abs( ((recDimuon->p_neg).Py() - (dimuon->get_mom_neg()).Py())) > 0.65 ) numFailures++;
+	      if( std::abs( ((recDimuon->p_neg).Pz() - (dimuon->get_mom_neg()).Pz())) > 10 ) numFailures++;
+	      std::cout<<"std::abs( ((dimuon->get_mom()).X() - (recDimuon->get_mom()).X()) ) = "<<std::abs( ((dimuon->get_mom()).X() - (recDimuon->get_mom()).X()) )<<" std::abs( ((dimuon->get_mom()).Y() - (recDimuon->get_mom()).Y()) ) = "<<std::abs( ((dimuon->get_mom()).Y() - (recDimuon->get_mom()).Y()) )<<" std::abs( ((dimuon->get_mom()).Z() - (recDimuon->get_mom()).Z()) ) = "<<std::abs( ((dimuon->get_mom()).Z() - (recDimuon->get_mom()).Z()) )<<" std::abs( ((recDimuon->p_pos).Px() - (dimuon->get_mom_pos()).Px())) = "<<std::abs( ((recDimuon->p_pos).Px() - (dimuon->get_mom_pos()).Px()))<<" std::abs( ((recDimuon->p_pos).Py() - (dimuon->get_mom_pos()).Py()) ) = "<<std::abs( ((recDimuon->p_pos).Py() - (dimuon->get_mom_pos()).Py()) )<<" std::abs( ((recDimuon->p_pos).Pz() - (dimuon->get_mom_pos()).Pz())) = "<<std::abs( ((recDimuon->p_pos).Pz() - (dimuon->get_mom_pos()).Pz()))<<" std::abs( ((recDimuon->p_neg).Px() - (dimuon->get_mom_neg()).Px()) ) = "<<std::abs( ((recDimuon->p_neg).Px() - (dimuon->get_mom_neg()).Px()) )<<" std::abs( ((recDimuon->p_neg).Py() - (dimuon->get_mom_neg()).Py())) = "<<std::abs( ((recDimuon->p_neg).Py() - (dimuon->get_mom_neg()).Py()))<<" std::abs( ((recDimuon->p_neg).Pz() - (dimuon->get_mom_neg()).Pz()) ) = "<<std::abs( ((recDimuon->p_neg).Pz() - (dimuon->get_mom_neg()).Pz()) )<<" numFailures =  "<<numFailures<<std::endl;
+	      
+	      //if( std::abs( ((dimuon->get_mom()).X() - (recDimuon->get_mom()).X()) ) < 0.5 && std::abs( ((dimuon->get_mom()).Y() - (recDimuon->get_mom()).Y()) ) < 0.5 && std::abs( ((dimuon->get_mom()).Z() - (recDimuon->get_mom()).Z()) ) < 10 && std::abs( ((recDimuon->p_pos).Px() - (dimuon->get_mom_pos()).Px())) < 0.5 &&  std::abs( ((recDimuon->p_pos).Py() - (dimuon->get_mom_pos()).Py()) ) < 0.5 && std::abs( ((recDimuon->p_pos).Pz() - (dimuon->get_mom_pos()).Pz())) < 10 && std::abs( ((recDimuon->p_neg).Px() - (dimuon->get_mom_neg()).Px()) ) < 0.5 &&  std::abs( ((recDimuon->p_neg).Py() - (dimuon->get_mom_neg()).Py())) < 0.5 && std::abs( ((recDimuon->p_neg).Pz() - (dimuon->get_mom_neg()).Pz()) ) < 10 ){
+	      if(numFailures < 3){
+		recoed = 1;
+	      }	      
+	    }
+	    truthdimuon_recoed[n_truthdimuons] = recoed;
+	    
             ++n_truthdimuons;
             if (n_truthdimuons >= 100)
-                break;
+	      break;
         }
 
+	mainDMRecoed = 0;
+	if(n_truthdimuons>0){
+	  mainDMRecoed = truthdimuon_recoed[n_truthdimuons-1];
+	}
+
+	nTrueDM = 0;
+	nFakeDM = 0;
+	
         n_dimuons = 0;
-        int nRecDimuons = _legacyContainer ? _recEvent->getNDimuons() : (_recDimuonVector ? _recDimuonVector->size() : -1);
         for (int i = 0; i < nRecDimuons; ++i) {
             SRecDimuon* recDimuon = _legacyContainer ? &(_recEvent->getDimuon(i)) : dynamic_cast<SRecDimuon*>(_recDimuonVector->at(i));
             dimuon_mass[n_dimuons] = recDimuon->mass;
             dimuon_chisq[n_dimuons] = recDimuon->get_chisq();
+	    dimuon_chisq_vx[n_dimuons] = recDimuon->get_chisq_vx();
             dimuon_x_vtx[n_dimuons] = (recDimuon->vtx).X();
             dimuon_y_vtx[n_dimuons] = (recDimuon->vtx).Y();
             dimuon_z_vtx[n_dimuons] = (recDimuon->vtx).Z();
@@ -708,6 +798,30 @@ int SimAna::process_event(PHCompositeNode* topNode)
             dimuon_npos_y[n_dimuons] = (recDimuon->vtx_neg).Y();
             dimuon_npos_z[n_dimuons] = (recDimuon->vtx_neg).Z();
 
+	    int matched = 0;
+	    for (int tdm = 0; tdm < nDimuons; ++tdm) {
+	      SQDimuon* dimuon = _dimuonVector->at(tdm);
+	      //if( std::abs( ((dimuon->get_mom()).X() - dimuon_px[n_dimuons])/(dimuon->get_mom()).X() + dimuon_px[n_dimuons] ) < 0.35 && std::abs( ((dimuon->get_mom()).Y() - dimuon_py[n_dimuons])/(dimuon->get_mom()).Y() + dimuon_py[n_dimuons] ) < 0.35 && std::abs( ((dimuon->get_mom()).Z() - dimuon_pz[n_dimuons])/(dimuon->get_mom()).Z() + dimuon_pz[n_dimuons] ) < 0.1 && std::abs( (dimuon_pmom_x[n_dimuons] - (dimuon->get_mom_pos()).Px())/(dimuon_pmom_x[n_dimuons] + (dimuon->get_mom_pos()).Px()) ) < 0.35 &&  std::abs( (dimuon_pmom_y[n_dimuons] - (dimuon->get_mom_pos()).Py())/(dimuon_pmom_y[n_dimuons] + (dimuon->get_mom_pos()).Py()) ) < 0.35 && std::abs( (dimuon_pmom_z[n_dimuons] - (dimuon->get_mom_pos()).Pz())/(dimuon_pmom_z[n_dimuons] + (dimuon->get_mom_pos()).Pz()) ) < 0.1 && std::abs( (dimuon_nmom_x[n_dimuons] - (dimuon->get_mom_neg()).Px())/(dimuon_nmom_x[n_dimuons] + (dimuon->get_mom_ned()).Px()) ) < 0.35 &&  std::abs( (dimuon_nmom_y[n_dimuons] - (dimuon->get_mom_neg()).Py())/(dimuon_nmom_y[n_dimuons] + (dimuon->get_mom_neg()).Py()) ) < 0.35 && std::abs( (dimuon_nmom_z[n_dimuons] - (dimuon->get_mom_neg()).Pz())/(dimuon_nmom_z[n_dimuons] + (dimuon->get_mom_neg()).Pz()) ) < 0.1 ){
+	      int numFailures = 0;
+	      if( std::abs( ((dimuon->get_mom()).X() - (recDimuon->get_mom()).X()) ) > 0.65 ) numFailures++;
+	      if( std::abs( ((dimuon->get_mom()).Y() - (recDimuon->get_mom()).Y()) ) > 0.65 ) numFailures++;
+	      if( std::abs( ((dimuon->get_mom()).Z() - (recDimuon->get_mom()).Z()) ) > 10 ) numFailures++;
+	      if( std::abs( ((recDimuon->p_pos).Px() - (dimuon->get_mom_pos()).Px())) > 0.65 ) numFailures++;
+	      if( std::abs( ((recDimuon->p_pos).Py() - (dimuon->get_mom_pos()).Py())) > 0.65 ) numFailures++;
+	      if( std::abs( ((recDimuon->p_pos).Pz() - (dimuon->get_mom_pos()).Pz())) > 10 ) numFailures++;
+	      if( std::abs( ((recDimuon->p_neg).Px() - (dimuon->get_mom_neg()).Px())) > 0.65 ) numFailures++;
+	      if( std::abs( ((recDimuon->p_neg).Py() - (dimuon->get_mom_neg()).Py())) > 0.65 ) numFailures++;
+	      if( std::abs( ((recDimuon->p_neg).Pz() - (dimuon->get_mom_neg()).Pz())) > 10 ) numFailures++;
+	      //if( std::abs( ((dimuon->get_mom()).X() - (recDimuon->get_mom()).X()) ) < 0.5 && std::abs( ((dimuon->get_mom()).Y() - (recDimuon->get_mom()).Y()) ) < 0.5 && std::abs( ((dimuon->get_mom()).Z() - (recDimuon->get_mom()).Z()) ) < 10 && std::abs( ((recDimuon->p_pos).Px() - (dimuon->get_mom_pos()).Px())) < 0.5 &&  std::abs( ((recDimuon->p_pos).Py() - (dimuon->get_mom_pos()).Py()) ) < 0.5 && std::abs( ((recDimuon->p_pos).Pz() - (dimuon->get_mom_pos()).Pz())) < 10 && std::abs( ((recDimuon->p_neg).Px() - (dimuon->get_mom_neg()).Px()) ) < 0.5 &&  std::abs( ((recDimuon->p_neg).Py() - (dimuon->get_mom_neg()).Py())) < 0.5 && std::abs( ((recDimuon->p_neg).Pz() - (dimuon->get_mom_neg()).Pz()) ) < 10 ){
+	      if(numFailures<3){
+		matched = 1;
+	      }
+	    }
+	    dimuon_matched[n_dimuons] = matched;
+	    
+	    nTrueDM+=matched;
+	    nFakeDM+=(1-matched);
+	    
             ++n_dimuons;
             if (n_dimuons >= 100)
                 break;
@@ -1069,7 +1183,17 @@ void SimAna::MakeTree()
     saveTree->Branch("eventID", &eventID, "eventID/I");
 
     saveTree->Branch("totalTime", &totalTime, "totalTime/F");
+    saveTree->Branch("allRecoed", &allRecoed, "allRecoed/I");
+    saveTree->Branch("allCouldBeRecoed", &allCouldBeRecoed, "allCouldBeRecoed/I");
+    saveTree->Branch("numNonMatched", &numNonMatched, "numNonMatched/I");
+    saveTree->Branch("nTrueDM", &nTrueDM, "nTrueDM/I");
+    saveTree->Branch("nFakeDM", &nFakeDM, "nFakeDM/I");
+    saveTree->Branch("nFakeTracksTop2", &nFakeTracksTop2, "nFakeTracksTop2/I");
+    saveTree->Branch("nRealTracks", &nRealTracks, "nRealTracks/I");
+    saveTree->Branch("mainDMRecoed", &mainDMRecoed, "mainDMRecoed/I");
+    saveTree->Branch("passHitCuts", &passHitCuts, "passHitCuts/I");
 
+    
     saveTree->Branch("n_hits", &n_hits, "n_hits/I");
     saveTree->Branch("n_hits_h1x", &n_hits_h1x, "n_hits_h1x/I");
     saveTree->Branch("n_hits_h2x", &n_hits_h2x, "n_hits_h2x/I");
@@ -1156,6 +1280,7 @@ void SimAna::MakeTree()
         saveTree->Branch("track_prob", track_prob, "track_prob[n_tracks]/F");
         saveTree->Branch("track_quality", track_quality, "track_quality[n_tracks]/F");
         saveTree->Branch("track_isValid", track_isValid, "track_isValid[n_tracks]/I");
+	saveTree->Branch("track_matched", track_matched, "track_matched[n_tracks]/I");
         saveTree->Branch("track_nhits_st1", track_nhits_st1, "track_nhits_st1[n_tracks]/I");
         saveTree->Branch("track_nhits_st2", track_nhits_st2, "track_nhits_st2[n_tracks]/I");
         saveTree->Branch("track_nhits_st3", track_nhits_st3, "track_nhits_st3[n_tracks]/I");
@@ -1214,10 +1339,12 @@ void SimAna::MakeTree()
         saveTree->Branch("truthdimuon_nmom_x", truthdimuon_nmom_x, "truthdimuon_nmom_x[n_truthdimuons]/F");
         saveTree->Branch("truthdimuon_nmom_y", truthdimuon_nmom_y, "truthdimuon_nmom_y[n_truthdimuons]/F");
         saveTree->Branch("truthdimuon_nmom_z", truthdimuon_nmom_z, "truthdimuon_nmom_z[n_truthdimuons]/F");
+	saveTree->Branch("truthdimuon_recoed", truthdimuon_recoed, "truthdimuon_recoed[n_truthdimuons]/I");
 
         saveTree->Branch("n_dimuons", &n_dimuons, "n_dimuons/I");
         saveTree->Branch("dimuon_mass", dimuon_mass, "dimuon_mass[n_dimuons]/F");
         saveTree->Branch("dimuon_chisq", dimuon_chisq, "dimuon_chisq[n_dimuons]/F");
+	saveTree->Branch("dimuon_chisq_vx", dimuon_chisq_vx, "dimuon_chisq_vx[n_dimuons]/F");
         saveTree->Branch("dimuon_x_vtx", dimuon_x_vtx, "dimuon_x_vtx[n_dimuons]/F");
         saveTree->Branch("dimuon_y_vtx", dimuon_y_vtx, "dimuon_y_vtx[n_dimuons]/F");
         saveTree->Branch("dimuon_z_vtx", dimuon_z_vtx, "dimuon_z_vtx[n_dimuons]/F");
@@ -1236,6 +1363,7 @@ void SimAna::MakeTree()
         saveTree->Branch("dimuon_npos_x", dimuon_npos_x, "dimuon_npos_x[n_dimuons]/F");
         saveTree->Branch("dimuon_npos_y", dimuon_npos_y, "dimuon_npos_y[n_dimuons]/F");
         saveTree->Branch("dimuon_npos_z", dimuon_npos_z, "dimuon_npos_z[n_dimuons]/F");
+	saveTree->Branch("dimuon_matched", dimuon_matched, "dimuon_matched[n_dimuons]/I");
     }
 
     if (_savePrimaries) {
