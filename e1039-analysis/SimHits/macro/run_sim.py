@@ -8,6 +8,7 @@ sim_to_isim = {'aprime-muon': 1,
                'J-psi': 5,
                'cosmic': 6,
                'trimuon': 7,
+               'bkg': 8,
                }
 gun_to_igun = {'muon': 1,
                'electron': 2,
@@ -31,6 +32,7 @@ if __name__ == "__main__":
     parser.add_argument('--inputpath', default="", help="input directory")
     parser.add_argument('--outfile', dest="outfile", default="output.root", help="Name of output file")
     parser.add_argument('--outpath', dest="outpath", default="./", help="Output directory")
+    parser.add_argument('--index', dest="index", default=None, help="pu index name", type=int)
     parser.add_argument('--pudir', dest="pudir", default="/pnfs/e1039/persistent/users/apun/bkg_study/e1039pythiaGen_26Oct21/", help="Name of directory with pileup files")
     parser.add_argument('-v', '--verbose', default = False, action='store_true', dest="verbose", help="Verbose output, print all data to screen")
 
@@ -59,8 +61,11 @@ if __name__ == "__main__":
 
     # pileup: pick file from directory
     if args.pileup:
-        import random
-        pufile = args.pudir + "/" + random.choice( os.listdir(args.pudir) )
+        if args.index:
+             pufile = args.pudir + "/%i"%args.index + "_bkge1039_pythia_wshielding_100M.root"
+        else:
+            import random
+            pufile = args.pudir + "/" + random.choice( os.listdir(args.pudir) )
     else:
         pufile = "/pnfs/e1039/persistent/users/apun/bkg_study/e1039pythiaGen_26Oct21/10_bkge1039_pythia_wshielding_100M.root"
     cmd_options += ',\\"%s\\"'%pufile # pileup file
