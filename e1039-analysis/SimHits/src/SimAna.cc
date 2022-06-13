@@ -232,6 +232,7 @@ int SimAna::ResetEvalVars()
         truthtrack_rectrack_id[i] = std::numeric_limits<int>::max(); // recTrack associated with truth track;
 
         track_charge[i] = std::numeric_limits<int>::max(); // track charge
+        track_particleID[i] = std::numeric_limits<int>::max(); // track particleID
         track_nhits[i] = std::numeric_limits<int>::max(); // number of hits associated with track
         track_x_target[i] = std::numeric_limits<float>::max(); // position of track at target (x)
         track_y_target[i] = std::numeric_limits<float>::max(); // position of track at target (y)
@@ -608,6 +609,7 @@ int SimAna::process_event(PHCompositeNode* topNode)
             SRecTrack* recTrack = _legacyContainer ? &(_recEvent->getTrack(itrk)) : dynamic_cast<SRecTrack*>(_recTrackVector->at(itrk));
             //std::cout << "******************** (recTrack->getTargetMom()).Px() " << (recTrack->getTargetMom()).Px() << std::endl;
             track_charge[n_tracks] = recTrack->getCharge();
+            track_particleID[n_tracks] = recTrack->get_particleID();
             track_nhits[n_tracks] = recTrack->getNHits();
             track_x_target[n_tracks] = (recTrack->getTargetPos()).X();
             track_y_target[n_tracks] = (recTrack->getTargetPos()).Y();
@@ -1249,6 +1251,7 @@ void SimAna::MakeTree()
         saveTree->Branch("rec_status", &rec_status, "rec_status/I");
         saveTree->Branch("n_tracks", &n_tracks, "n_tracks/I");
         saveTree->Branch("track_charge", track_charge, "track_charge[n_tracks]/I");
+        saveTree->Branch("track_particleID", track_particleID, "track_particleID[n_tracks]/I");
         saveTree->Branch("track_nhits", track_nhits, "track_nhits[n_tracks]/I");
         saveTree->Branch("track_x_target", track_x_target, "track_x_target[n_tracks]/F");
         saveTree->Branch("track_y_target", track_y_target, "track_y_target[n_tracks]/F");

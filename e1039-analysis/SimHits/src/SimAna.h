@@ -177,6 +177,7 @@ private:
     int rec_status;
     int n_tracks;
     int track_charge[100];
+    int track_particleID[100];
     int track_nhits[100];
     float track_x_target[100];
     float track_y_target[100];
