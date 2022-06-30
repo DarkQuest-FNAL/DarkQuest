@@ -399,7 +399,7 @@ int RecoE1039Sim(const int nevents = 200,
     truthMaker->set_m_process_type(3); // set process type to 3 (A' -> di lepton) since we only have a 3 particle process instead of 0+1->2+3
   }
   if(do_trimuon){
-    truthMaker->set_m_process_type(3);
+    truthMaker->set_m_process_type(5);
   }
   truthMaker->Verbosity(verbosity);
   se->registerSubsystem(truthMaker);
