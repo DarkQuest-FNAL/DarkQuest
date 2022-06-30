@@ -387,7 +387,7 @@ int main(int argc, char** argv) {
     // relative probability for such a displacement
     double prob = 0.;
     if (vtx_displacement > 0) {
-      prob = TMath::Exp(-vtx_displacement / decay_length);
+      prob = 1.0 / decay_length * TMath::Exp(-vtx_displacement / decay_length);
     } else {
       // negative vtx displacement is not possible, probability is zero
       prob = 0.;
