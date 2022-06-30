@@ -431,7 +431,7 @@ int RecoE1039Sim(const int nevents = 200,
   }
   if (do_trimuon)
   {
-    truthMaker->set_m_process_type(3);
+    truthMaker->set_m_process_type(5);
   }
   truthMaker->Verbosity(verbosity);
   se->registerSubsystem(truthMaker);
