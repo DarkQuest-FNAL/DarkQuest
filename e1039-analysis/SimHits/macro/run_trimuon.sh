@@ -1,5 +1,5 @@
 mkdir output/iron/
-for f in ../../../lhe/data/iron/*_hepmc.txt
+for f in ../../../lhe/data/iron/*_hepmc.txt.hepmc
 do
     filename=$(basename -- "$f")
     python run_sim.py --sim trimuon --inputfile $filename --inputpath ../../../lhe/data/iron/ --zvertex 490 -n 5000 

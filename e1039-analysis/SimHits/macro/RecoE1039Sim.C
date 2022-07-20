@@ -267,12 +267,12 @@ int RecoE1039Sim(const int nevents = 200,
     genp->set_vertex_distribution_function(PHG4SimpleEventGenerator::Uniform,
                                            PHG4SimpleEventGenerator::Uniform,
                                            PHG4SimpleEventGenerator::Uniform);
-    genp->set_vertex_distribution_mean(0.0, 0.0, zvertex); // to set after FMAG: zvertex: 520
-    genp->set_vertex_distribution_width(10.0, 10.0, 0.0);  // for protons set to 10.0 in z?
+    genp->set_vertex_distribution_mean(10.0, 10.0, zvertex); // to set after FMAG: zvertex: 520
+    genp->set_vertex_distribution_width(10.0, 10.0, 0.0);    // for protons set to 10.0 in z?
     genp->set_vertex_size_function(PHG4SimpleEventGenerator::Uniform);
     genp->set_vertex_size_parameters(0.0, 0.0);
 
-    genp->set_pxpypz_range(-1.5, 1.5, -1.5, 1.5, 0., 100.);
+    genp->set_pxpypz_range(-.15, .15, -.15, .15, 10., 100.);
 
     genp->Verbosity(verbosity);
     se->registerSubsystem(genp);
@@ -358,6 +358,7 @@ int RecoE1039Sim(const int nevents = 200,
   // setup detectors
   SetupInsensitiveVolumes(g4Reco, do_shielding, do_fmag, do_kmag,
                           do_absorber); // insensitive volumes
+
   SetupBeamline(
       g4Reco, do_collimator,
       target_coil_pos_z -
@@ -494,7 +495,8 @@ int RecoE1039Sim(const int nevents = 200,
     Fun4AllHepMCInputManager *in = new Fun4AllHepMCInputManager("HEPMCIN");
     se->registerInputManager(in);
     stringstream ssin;
-    ssin << input_path << input_file << ".hepmc";
+    // ssin << input_path << input_file << ".hepmc";
+    ssin << input_path << input_file; // I changed the run_trimuon script to include the .hepmc postscript
     std::cout << "Trimuon Input path " << ssin.str().c_str() << std::endl;
     in->fileopen(gSystem->ExpandPathName(ssin.str().c_str()));
     in->Verbosity(verbosity);
