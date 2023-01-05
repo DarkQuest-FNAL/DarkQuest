@@ -200,7 +200,7 @@ int main(int argc, char** argv) {
   r_spline->SetName("R_ratio");
   if (mass > 0) {
     ctau = get_ctau(r_spline, mass) / (eps * eps);
-    // printf("mass=%f GeV, epsilon=%e, ctau=%f cm\n",mass, eps, ctau);
+    //printf("mass=%f GeV, epsilon=%e, ctau=%f cm\n",mass, eps, ctau);
   }
 
   FILE* in_file;
@@ -300,11 +300,13 @@ int main(int argc, char** argv) {
 
       // can calc acceptance analytically here, i.e. for efficient sampling
       if (calcAcceptance) {
+        // phep: px, py, pz, E, mass
         double gamma = temp_event.aprime->phep[3] / temp_event.aprime->phep[4];
         double beta = sqrt(1.0 - pow(gamma, -2.0));
         double decay_length = beta * gamma * ctau;
         double p = sqrt(pow(temp_event.aprime->phep[3], 2) -
                         pow(temp_event.aprime->phep[4], 2));  // for pz/p
+        // YB: not sure why the following has another factor of 1/beta (E/p)
         float prob_simple = p_decay_simple(
             42., decay_length * temp_event.aprime->phep[3] / p, min_vz, max_vz);
         // (dump face at 25 cm, interaction length 16.77 cm)
@@ -313,6 +315,7 @@ int main(int argc, char** argv) {
                     min_vz, max_vz);
         v_prob.push_back(prob);
         v_prob_simple.push_back(prob_simple);
+        //printf("debug: gamma * ctau: %f; decay_length: %f; decay_length / beta %f\n", gamma * ctau, decay_length, decay_length * temp_event.aprime->phep[3] / p);
       }
     } else
       printf("WARNING: missing A' decays\n");
@@ -327,8 +330,9 @@ int main(int argc, char** argv) {
   for (int i = 0; i < v_prob.size(); i++) sum_probs += v_prob.at(i);
   float mean_acceptance = sum_probs / v_prob.size();
 
-  // printf("calculate acceptance for mass %f and eps %f, and vz between %f and
-  // %f: %f \n",mass, eps,min_vz,max_vz,mean_acceptance);
+  printf("calculate acceptance for mass %f and eps %.9f and ctau %f vz between %f and %f : %f \n",mass, eps,ctau, min_vz,max_vz,mean_acceptance);
+
+  //return 0;
 
   // writing HepMC file
   stream.str("");
@@ -336,10 +340,11 @@ int main(int argc, char** argv) {
   std::string massStr = stream.str();
   std::string lepStr = "Muons";
   if (iselectrons) lepStr = "Electrons";
-  string outFile = "output/displaced_Aprime_" + lepStr + "/" + mech + "_" +
+  string outDir = "output/displaced_Aprime_" + lepStr + "/";
+  string outFile = mech + "_" +
                    massStr + "_z" + std::to_string((int)min_vz) + "_" +
                    std::to_string((int)max_vz) + "_eps_" + epsStr + ".txt";
-  IO_GenEvent output_file(outFile);
+  IO_GenEvent output_file(outDir+ outFile);
 
   int n_accepted = 0;
   for (vector<stdhep_event>::iterator event = input_events.begin();
@@ -380,18 +385,35 @@ int main(int argc, char** argv) {
         max(0., (min_vz - vx_production_displ[2]) * p / event->aprime->phep[2]);
     double vtx_displacement_max =
         (max_vz - vx_production_displ[2]) * p / event->aprime->phep[2];
-    // displacement needed for Aprime to decay between min_vz and max_vz;
-    double vtx_displacement =
-        gsl_rng_uniform(r) * (vtx_displacement_max - vtx_displacement_min) +
-        vtx_displacement_min;
-    // relative probability for such a displacement
+
+    //// displacement needed for Aprime to decay between min_vz and max_vz;
+    //double vtx_displacement =
+    //    gsl_rng_uniform(r) * (vtx_displacement_max - vtx_displacement_min) +
+    //    vtx_displacement_min;
+    //// relative probability for such a displacement
+    //double prob = 0.;
+    //if (vtx_displacement > 0) {
+    //  prob = 1.0 / decay_length * TMath::Exp(-vtx_displacement / decay_length);
+    //} else {
+    //  // negative vtx displacement is not possible, probability is zero
+    //  prob = 0.;
+    //}
+
+    double vtx_displacement = vtx_displacement_min; 
     double prob = 0.;
-    if (vtx_displacement > 0) {
-      prob = 1.0 / decay_length * TMath::Exp(-vtx_displacement / decay_length);
+    if (vtx_displacement_min >= vtx_displacement_max) {
+      printf("vtx_displacement_min > vtx_displacement_max, fail sampling; weight set to 0\n");
     } else {
-      // negative vtx displacement is not possible, probability is zero
-      prob = 0.;
+      // give up on this reweighting method. 
+      // do the resampling instead - map U(1) distribution to 
+      // exponential distribution exp(-L/decay_length)
+      // between vtx_displacement_min and vtx_displacement_max
+      double valr = gsl_rng_uniform(r);
+      vtx_displacement = vtx_displacement_min - decay_length * TMath::Log(1.0 - valr * (1.0 - TMath::Exp((vtx_displacement_min-vtx_displacement_max)/decay_length)));
+      //std::cout << "r " << valr <<" vtx displacement " << vtx_displacement << " " << vtx_displacement_min << " " << vtx_displacement_max << " decay length " << decay_length << std::endl;
+      prob = 1.0;
     }
+
     // vertex position
     for (int j = 0; j < 3; j++)
       vx[j] = vtx_displacement * event->aprime->phep[j] / p +
@@ -411,11 +433,11 @@ int main(int argc, char** argv) {
     GenEvent* evt =
         new GenEvent(Units::GEV, Units::CM, 0, n_accepted, vsignal, wc);
 
-    // adding cross section
+    // TODO: adding cross section
     // for now, setting to 1
     // we would have to read BremYield.txt or EtaYield.txt (depending on the
-    // mass) and then xsec = yield * (eps/1e-6)**2 * (POT/1.44*10^18) (although
-    // I am assuming we would want the same POT)
+    // mass) and then N(A') = yield * (eps/1e-6)**2 * (POT/1.44*10^18)
+    // probably N(A') * mean_acceptance
     GenCrossSection xsec;
     xsec.set_cross_section(1., 1);  // cross section and error
     evt->set_cross_section(xsec);
