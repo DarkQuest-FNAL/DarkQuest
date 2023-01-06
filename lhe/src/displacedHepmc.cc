@@ -47,7 +47,7 @@ struct stdhep_event {
 // decay width of A'->e+e- in units of GeV
 double width_dielectron(double m_aprime) {
   double alpha = 1.0 / 137.036;
-  double m_electron = 5.11e-3;
+  double m_electron = 5.11e-4;
   double massratio_sq = m_electron * m_electron / (m_aprime * m_aprime);
   if (m_aprime > 2 * m_electron)
     return (alpha * m_aprime / 3.0) * sqrt(1 - 4 * massratio_sq) *
@@ -437,7 +437,8 @@ int main(int argc, char** argv) {
     // for now, setting to 1
     // we would have to read BremYield.txt or EtaYield.txt (depending on the
     // mass) and then N(A') = yield * (eps/1e-6)**2 * (POT/1.44*10^18)
-    // probably N(A') * mean_acceptance
+    // BR is from BFtoMuons.txt or BFtoElectrons.txt
+    // probably N(A') * BR * mean_acceptance
     GenCrossSection xsec;
     xsec.set_cross_section(1., 1);  // cross section and error
     evt->set_cross_section(xsec);
