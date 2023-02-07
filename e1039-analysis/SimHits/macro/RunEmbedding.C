@@ -50,6 +50,7 @@ int RunEmbedding(
   //reco->Verbosity(10);
   reco->use_geom_io_node(true);
   reco->set_evt_reducer_opt("none");
+  //reco->set_evt_reducer_opt("r"); //for DC emulation
   se->registerSubsystem(reco);
 
   
