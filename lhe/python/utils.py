@@ -172,6 +172,8 @@ def parseAccptFile(minVz,maxVz,lep="muons",mech="Brem"):
     file = open(fileName)
     eventsList = []
     for l in file.readlines():
+        if not l.startswith("calculate acceptance"):
+            continue 
         spStr_org = l.split()
         #print(spStr_org)
         spstr = [sp for sp in spStr_org if isfloat(sp)]
