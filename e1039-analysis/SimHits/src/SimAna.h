@@ -399,6 +399,7 @@ private:
     //int nhits_ecal_sec[1000];
 
     bool fpga_trigger[5];
+    bool nim_trigger[5];
 
     float weight;
   

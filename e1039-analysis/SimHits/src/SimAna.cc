@@ -459,7 +459,8 @@ int SimAna::ResetEvalVars()
      fpga_trigger[4]: SQEvent::MATRIX5
    */
     for (int i = 0; i < 5; ++i) {
-        fpga_trigger[i] = 0; // trigger bit
+        fpga_trigger[i] = 0; // fpga trigger bit
+	nim_trigger[i] = 0; // nim trigger bits
     }
 
     /* Weight
@@ -1043,6 +1044,12 @@ int SimAna::process_event(PHCompositeNode* topNode)
     fpga_trigger[3] = _sqEvent->get_trigger(SQEvent::MATRIX4);
     fpga_trigger[4] = _sqEvent->get_trigger(SQEvent::MATRIX5);
 
+    nim_trigger[0] = _sqEvent->get_trigger(SQEvent::NIM1);
+    nim_trigger[1] = _sqEvent->get_trigger(SQEvent::NIM2);
+    nim_trigger[2] = _sqEvent->get_trigger(SQEvent::NIM3);
+    nim_trigger[3] = _sqEvent->get_trigger(SQEvent::NIM4);
+    nim_trigger[4] = _sqEvent->get_trigger(SQEvent::NIM5);
+
     // weight of MCEvent
     weight = _sqMCEvent->get_weight();
 
@@ -1471,6 +1478,7 @@ void SimAna::MakeTree()
     }
 
     saveTree->Branch("fpga_trigger", fpga_trigger, "fpga_trigger[5]/O");
+    saveTree->Branch("nim_trigger", nim_trigger, "nim_trigger[5]/O");
 
     saveTree->Branch("weight", &weight, "weight/F");
 }
