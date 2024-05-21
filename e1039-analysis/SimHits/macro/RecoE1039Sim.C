@@ -165,15 +165,17 @@ int RecoE1039Sim(const int nevents = 200,
   const bool do_absorber = true;
   const bool do_dphodo = true;
   const bool do_station1DC = false; // station-1 drift chamber should be turned off by default
-  const bool doEMCal = true;        // emcal turned on by default (for DarkQuest!)
+  const bool doEMCal = false;       // emcal turned off (for SpinQuest)
 
   // SpinQuest constants
   const double target_coil_pos_z = -300;
   const double target_l = 7.9;                   // cm
   const double target_z = (7.9 - target_l) / 2.; // cm
   const int use_g4steps = 1;
-  const double FMAGSTR = -1.054;
-  const double KMAGSTR = -0.951;
+  // const double FMAGSTR = -1.054;
+  // const double KMAGSTR = -0.951;
+  const double FMAGSTR = -1.044;
+  const double KMAGSTR = 1.025;
 
   // SpinQuest reco constants
   recoConsts *rc = recoConsts::instance();
@@ -183,7 +185,7 @@ int RecoE1039Sim(const int nevents = 200,
   {
     rc->set_CharFlag(
         "AlignmentMille",
-        "align_mille.txt"); // alignment file needed for EMCAL
+        "$DIR_TOP/alignment/align_mille.txt"); // alignment file needed for EMCAL
   }
   rc->set_CharFlag("fMagFile",
                    "$E1039_RESOURCE/geometry/magnetic_fields/tab.Fmag");

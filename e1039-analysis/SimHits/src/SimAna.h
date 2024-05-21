@@ -43,7 +43,7 @@ public:
     int FindCommonHitIDs(std::vector<int>& hitidvec1, std::vector<int>& hitidvec2);
     SRecTrack* FindBestMomRecTrack(SRecEvent* recEvent, const float true_P);
 
-    void set_out_name(std::string out_file) { saveNameOut = out_file.c_str(); }
+    void set_out_name(std::string out_file) { saveName = out_file.c_str(); }
     void set_legacy_rec_container(bool b);
     void save_secondaries(bool b);
     void save_primaries(bool b);
@@ -106,8 +106,8 @@ private:
     PHG4HitContainer* g4hc_ecal;
 
     // Output
-    TString saveName;
-    const char* saveNameOut;
+    std::string saveName;
+
     TFile* saveFile;
     int eventID;
     TTree* saveTree;

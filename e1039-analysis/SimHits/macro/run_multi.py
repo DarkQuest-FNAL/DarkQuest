@@ -10,7 +10,7 @@ nevent = 10000 #input(f"How many events of input file to process? (1000 is a goo
 
 #files = glob.glob("/cms/data/seaquest/users/cmantill/DarkQuest/lhe/output/displaced_Aprime_Muons_z500-600/Eta*.txt")
 #files = glob.glob("/cms/data/seaquest/users/cmantill/DarkQuest/lhe/output/displaced_Aprime_Muons_z500-600/Brem*.txt")
-files = glob.glob("/cms/data/seaquest/users/dsperka/DarkQuest/output/displaced_Aprime_Muons/*.txt")
+files = glob.glob("/cms/data/seaquest/users/dsperka/DarkQuest/output/displaced_Aprime_Muons/Brem*.txt")
 
 files = [f.split("/")[-1][:-4] for f in files]
 for f in files:

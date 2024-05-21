@@ -1,4 +1,5 @@
-export MY_E1039=/home/dsperka/DarkQuest-FNAL/core-inst/this-e1039.sh
+#export MY_E1039=/home/dsperka/DarkQuest-FNAL/core-inst/this-e1039.sh
+export MY_E1039=/home/dsperka/wpmccormack/core-inst/this-e1039.sh
 export DIR_TOP=$(dirname $(readlink -f $BASH_SOURCE))
 echo $MY_E1039
 echo $DIR_TOP
