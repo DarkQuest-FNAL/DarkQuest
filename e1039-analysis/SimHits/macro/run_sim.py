@@ -37,7 +37,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     # set options from args
-    gun = gun_to_igun[args.gun] if args.gun >0 else 0
+    gun = gun_to_igun[args.gun] if args.gun else 0
     
     cmd_options = "%i"%args.n # number of events
     cmd_options += ",%i"%sim_to_isim[args.sim] # isim
@@ -76,4 +76,4 @@ if __name__ == "__main__":
     cwd = os.getcwd()
     
     print(cmd)
-    #os.system(cmd)
+    os.system(cmd)
