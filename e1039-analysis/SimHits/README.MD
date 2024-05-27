@@ -15,41 +15,29 @@ SimHits depends on [e1039-core](https://github.com/E1039-Collaboration/e1039-cor
 
 ### Installing e1039-core 
 
-<details><summary>Private installation in the spinquest machine (needed for the displaced tracking)</summary>
-<p>
-  
-  ```bash
-  # make directory in your home dir
-  cd 
-  mkdir mye1039
-  
-  # clone repo
-  git clone git@github.com:DarkQuest-FNAL/e1039-core.git
-  
-  # build and install
-  cd /path/to/directory_where_you_download_e1039-core
-  ./script/setup-install.sh auto
-  source ../core-inst/this-e1039.sh
-  ./build.sh
-  ```
-</p>
-</details>
+Private installation in the spinquest machine (needed for the displaced tracking)
+```bash
+cd /path/to/where/you/want/to/install
+# clone repo
+git clone git@github.com:DarkQuest-FNAL/e1039-core.git
+# build and install
+cd e1039-core
+./script/setup-install.sh auto
+source ../core-inst/this-e1039.sh
+./build.sh
+```
 
 ### Setting up e1039-core
 If you have the private version of e1039 installed, change the `MY_E1039` in `setup_mye1039.sh` to your directory. 
-If you do not have it installed you can call Yongbin's installation in `/seaquest/users/yfeng/mye1039/e1039-core/this-e1039.sh`.
-Then source the script:
 
+By default it calls Yongbin's installation in `/seaquest/users/yfeng/cleanv3/core-inst/this-e1039.sh`.
+
+Then source the script:
 ```
+cd DarkQuest/e1039-analysis/SimHits/
 source setup_mye1039.sh
 ```
-
-Or just to call the official e1039-core version (not up to date w DarkQuest) do:
-```
-source setup.sh
-```
-
-This setup has to be done everytime you log in.
+The source command has to be done **everytime you log in**.
 
 ### Compiling SimAna
 To compile the analysis code under `SimAna` (after `setup_mye1039.sh`):
@@ -64,9 +52,10 @@ make install
 cd ../
 ```
 
-Later to recompile if you have made changes:
+Later if you have made changes, do the recompile:
 ```
 cd work
+make clean
 make
 make install
 ```
@@ -75,7 +64,7 @@ make install
 
 The main script is `RecoE1039Sim.C`.
 It has different input options depending on the type of simulation to run.
-For displaced A' signals, the macro depends on the location of signal files that lives on `DIR_CMANTILL`, which has been setup in the source script.
+For displaced A' signals, the macro depends on the location of signal files that lives on `HepMC_DIR`, which has been setup in the source script.
 
 ### To test
 ```
@@ -83,15 +72,15 @@ cd macro
 root -b -q RecoE1039Sim.C
 ```
 
+
+<details><summary>The following information are outdated and are not guaranteed to work. Need to update.</summary>
+
+
 ### Available input files (HepMC)
 
 For our signal (Aprime):
-- A' to Muons (z vertex between 2-6m): `/seaquest/users/cmantill/DarkQuest/lhe/output/displaced_Aprime_Muons_z200-600/`
-- A' to Electrons (z vertex between 2-6m): `/seaquest/users/cmantill/DarkQuest/lhe/output/displaced_Aprime_Electrons_z200-600/`
-- A' to Muons (z vertex between 5-6m): `/seaquest/users/cmantill/DarkQuest/lhe/output/displaced_Aprime_Muons_z500-600/`
-- A' to	Electrons (z vertex between 5-6m): `/seaquest/users/cmantill/DarkQuest/lhe/output/displaced_Aprime_Electrons_z500-600/`
+- A' to Muons (z vertex between 5-6m): `/pnfs/e1039/persistent/users/yfeng/displaced_Aprime_Muons/`
 - Trimuon signal: `/seaquest/users/cmantill/DarkQuest/lhe/output/trimuon/`
-```
 
 ### Available options for simulation:
 
@@ -103,7 +92,7 @@ Some options are available in `macro/run_sim.py`. Here are examples of the most 
 
   python ./run_sim.py -n 10 --sim aprime-muon --zvertex 500 --displaced --inputfile Brem_0.750000_z500_600_eps_-6 --inputpath /seaquest/users/cmantill/DarkQuest/lhe/output/displaced_Aprime_Muons_z500-600/ --outfile aprime_to_muons_brem_0p75_eps-6.root --outpath output/
 
-   python ./run_sim.py -n 10 --sim aprime-electron --zvertex 500 --displaced --inputfile Brem_0.163460_z500_600_eps_-6  --inputpath /seaquest/users/cmantill/DarkQuest/lhe/output/displaced_Aprime_Electrons_z500-600/ --outfile aprime_to_electrons_brem_0p16_eps-6.root --outpath output/
+  python ./run_sim.py -n 10 --sim aprime-electron --zvertex 500 --displaced --inputfile Brem_0.163460_z500_600_eps_-6  --inputpath /seaquest/users/cmantill/DarkQuest/lhe/output/displaced_Aprime_Electrons_z500-600/ --outfile aprime_to_electrons_brem_0p16_eps-6.root --outpath output/
   ```
 
 - Particle gun:
@@ -149,3 +138,6 @@ Practically, you can obtain the command to mix pileup by adding the `--pileup` o
 ```
 python ./run_sim.py -n 10 --sim gun --gun electron --zvertex 520 --displaced --outfile electron_gun_z520.root --outpath output/ --pileup 
 ```
+
+</details>
+
