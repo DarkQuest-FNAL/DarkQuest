@@ -2,6 +2,9 @@
 #include <TTree.h>
 #include <iomanip>
 
+#include <chrono>
+#include <ctime>
+
 #include <fun4all/Fun4AllReturnCodes.h>
 #include <fun4all/PHTFileServer.h>
 #include <geom_svc/GeomSvc.h>
@@ -27,24 +30,19 @@
 
 #include "SimAna.h"
 
-SimAna::SimAna(const std::string& name)
-    : SubsysReco(name)
-    , _legacyContainer(true)
-    , _saveSecondaries(false)
-    , _savePrimaries(true)
-    , _saveTracks(true)
-    , _saveVertex(true)
+SimAna::SimAna(const std::string &name)
+    : SubsysReco(name), _legacyContainer(true), _saveSecondaries(false), _savePrimaries(true), _saveTracks(true), _saveVertex(true)
 {
 }
 
 SimAna::~SimAna() {}
 
-int SimAna::Init(PHCompositeNode* topNode)
+int SimAna::Init(PHCompositeNode *topNode)
 {
     return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int SimAna::InitRun(PHCompositeNode* topNode)
+int SimAna::InitRun(PHCompositeNode *topNode)
 {
     int ret = GetNodes(topNode);
     if (ret != Fun4AllReturnCodes::EVENT_OK)
@@ -54,18 +52,25 @@ int SimAna::InitRun(PHCompositeNode* topNode)
     ResetEvalVars();
     MakeTree();
 
+    startTime = std::chrono::system_clock::now();
+    // TDatime start;
+    // startTime = start.Convert();
+    // std::cout<<"startTime = "<<startTime<<std::endl;
+
     return Fun4AllReturnCodes::EVENT_OK;
 }
 
 // find one g4 hit at station
-PHG4Hit* SimAna::FindG4HitAtStation(const int trk_id, const PHG4HitContainer* g4hc)
+PHG4Hit *SimAna::FindG4HitAtStation(const int trk_id, const PHG4HitContainer *g4hc)
 {
-    PHG4Hit* hit = nullptr;
+    PHG4Hit *hit = nullptr;
     PHG4HitContainer::ConstRange range = g4hc->getHits();
     for (PHG4HitContainer::ConstIterator it = range.first; it != range.second;
-         it++) {
-        PHG4Hit* tmphit = it->second;
-        if (tmphit->get_trkid() == trk_id) {
+         it++)
+    {
+        PHG4Hit *tmphit = it->second;
+        if (tmphit->get_trkid() == trk_id)
+        {
             hit = tmphit;
             break;
         }
@@ -74,14 +79,16 @@ PHG4Hit* SimAna::FindG4HitAtStation(const int trk_id, const PHG4HitContainer* g4
 }
 
 // find several g4 hits at one station (e.g for emcal)
-std::vector<PHG4Hit*> SimAna::FindG4HitsAtStation(const int trk_id, const PHG4HitContainer* g4hc)
+std::vector<PHG4Hit *> SimAna::FindG4HitsAtStation(const int trk_id, const PHG4HitContainer *g4hc)
 {
-    std::vector<PHG4Hit*> vhit;
+    std::vector<PHG4Hit *> vhit;
     PHG4HitContainer::ConstRange range = g4hc->getHits();
     for (PHG4HitContainer::ConstIterator it = range.first; it != range.second;
-         it++) {
-        PHG4Hit* tmphit = it->second;
-        if (tmphit->get_trkid() == trk_id) {
+         it++)
+    {
+        PHG4Hit *tmphit = it->second;
+        if (tmphit->get_trkid() == trk_id)
+        {
             vhit.push_back(tmphit);
         }
     }
@@ -89,13 +96,15 @@ std::vector<PHG4Hit*> SimAna::FindG4HitsAtStation(const int trk_id, const PHG4Hi
 }
 
 // find g4shower
-PHG4Shower* SimAna::get_primary_shower(PHG4Particle* primary)
+PHG4Shower *SimAna::get_primary_shower(PHG4Particle *primary)
 {
-    PHG4Shower* shower = nullptr;
+    PHG4Shower *shower = nullptr;
     for (auto iter = _truth->GetPrimaryShowerRange().first;
-         iter != _truth->GetPrimaryShowerRange().second; ++iter) {
-        PHG4Shower* tmpshower = iter->second;
-        if (tmpshower->get_parent_particle_id() == primary->get_track_id()) {
+         iter != _truth->GetPrimaryShowerRange().second; ++iter)
+    {
+        PHG4Shower *tmpshower = iter->second;
+        if (tmpshower->get_parent_particle_id() == primary->get_track_id())
+        {
             shower = tmpshower;
             break;
         }
@@ -104,19 +113,20 @@ PHG4Shower* SimAna::get_primary_shower(PHG4Particle* primary)
 }
 
 // find best reco track (closer to target momentum)
-SRecTrack* SimAna::FindBestMomRecTrack(SRecEvent* recEvent, const float true_TargetP)
+SRecTrack *SimAna::FindBestMomRecTrack(SRecEvent *recEvent, const float true_TargetP)
 {
     double dP = 100.; // delta(momentum)
     double hold_dP = 99999.;
 
-    SRecTrack* Best_recTrack = NULL;
-    for (int itrack = 0; itrack < recEvent->getNTracks(); ++itrack) {
+    SRecTrack *Best_recTrack = NULL;
+    for (int itrack = 0; itrack < recEvent->getNTracks(); ++itrack)
+    {
         if (hold_dP > dP)
             hold_dP = dP;
-        SRecTrack* recTrack = &recEvent->getTrack(itrack);
+        SRecTrack *recTrack = &recEvent->getTrack(itrack);
         dP = fabs(true_TargetP - recTrack->getTargetMom().Mag());
 
-        //Finding out best match track in terms of energy
+        // Finding out best match track in terms of energy
         if (dP - hold_dP < 0.)
             Best_recTrack = recTrack;
     }
@@ -124,18 +134,23 @@ SRecTrack* SimAna::FindBestMomRecTrack(SRecEvent* recEvent, const float true_Tar
 }
 
 // find common ids for reco and truth tracks
-int SimAna::FindCommonHitIDs(std::vector<int>& hitidvec1, std::vector<int>& hitidvec2)
+int SimAna::FindCommonHitIDs(std::vector<int> &hitidvec1, std::vector<int> &hitidvec2)
 {
-    //This function assumes the input vectors have been sorted
+    // This function assumes the input vectors have been sorted
     auto iter = hitidvec1.begin();
     auto jter = hitidvec2.begin();
 
     int nCommon = 0;
-    while (iter != hitidvec1.end() && jter != hitidvec2.end()) {
-        if (*iter < *jter) {
+    while (iter != hitidvec1.end() && jter != hitidvec2.end())
+    {
+        if (*iter < *jter)
+        {
             ++iter;
-        } else {
-            if (!(*jter < *iter)) {
+        }
+        else
+        {
+            if (!(*jter < *iter))
+            {
                 ++nCommon;
                 ++iter;
             }
@@ -174,20 +189,21 @@ void SimAna::save_vertex(bool b)
 int SimAna::ResetEvalVars()
 {
     /** Hits
-   */
-    for (int i = 0; i < 1000; ++i) {
-        hit_detid[i] = std::numeric_limits<short>::max(); // detector ID
-        hit_elmid[i] = std::numeric_limits<short>::max(); // element ID
-        hit_trkid[i] = std::numeric_limits<short>::max(); // track ID
+     */
+    for (int i = 0; i < 1000; ++i)
+    {
+        hit_detid[i] = std::numeric_limits<short>::max();    // detector ID
+        hit_elmid[i] = std::numeric_limits<short>::max();    // element ID
+        hit_trkid[i] = std::numeric_limits<short>::max();    // track ID
         hit_driftdis[i] = std::numeric_limits<float>::max(); // drift distance
-        hit_pos[i] = std::numeric_limits<float>::max(); // hit position
-        hit_edep[i] = std::numeric_limits<float>::max(); // hit deposited energy
-        hit_truthx[i] = std::numeric_limits<float>::max(); // truth position of hit (x)
-        hit_truthy[i] = std::numeric_limits<float>::max(); // truth position of hit (y)
-        hit_truthz[i] = std::numeric_limits<float>::max(); // truth position of hit (z)
-        hit_truthpx[i] = std::numeric_limits<float>::max(); // truth momentum of hit (x)
-        hit_truthpy[i] = std::numeric_limits<float>::max(); // truth momentum of hit (y)
-        hit_truthpz[i] = std::numeric_limits<float>::max(); // truth momentum of hit (z)
+        hit_pos[i] = std::numeric_limits<float>::max();      // hit position
+        hit_edep[i] = std::numeric_limits<float>::max();     // hit deposited energy
+        hit_truthx[i] = std::numeric_limits<float>::max();   // truth position of hit (x)
+        hit_truthy[i] = std::numeric_limits<float>::max();   // truth position of hit (y)
+        hit_truthz[i] = std::numeric_limits<float>::max();   // truth position of hit (z)
+        hit_truthpx[i] = std::numeric_limits<float>::max();  // truth momentum of hit (x)
+        hit_truthpy[i] = std::numeric_limits<float>::max();  // truth momentum of hit (y)
+        hit_truthpz[i] = std::numeric_limits<float>::max();  // truth momentum of hit (z)
     }
 
     rec_status = 0;
@@ -195,65 +211,67 @@ int SimAna::ResetEvalVars()
     /** Tracks:
       - Truth tracks (truthtrack_*)
       - Reconstructed tracks (track_*)
-      - Station 3 tracklets 
+      - Station 3 tracklets
    */
-    n_truthtracks = 0; // number of truth tracks
-    n_tracks = 0; // number of reconstructed tracks
+    n_truthtracks = 0;  // number of truth tracks
+    n_tracks = 0;       // number of reconstructed tracks
     n_st3tracklets = 0; // number of station 3 tracklets
-    for (int i = 0; i < 100; ++i) {
-        truthtrack_charge[i] = std::numeric_limits<int>::max(); // truth track charge
-        truthtrack_x_st1[i] = std::numeric_limits<int>::max(); // position of truth track at station 1 (x)
-        truthtrack_y_st1[i] = std::numeric_limits<int>::max(); // position of truth track at station 1 (y)
-        truthtrack_z_st1[i] = std::numeric_limits<int>::max(); // position of truth track at station 1 (z)
-        truthtrack_px_st1[i] = std::numeric_limits<int>::max(); // momentum of truth track at station 1 (x)
-        truthtrack_py_st1[i] = std::numeric_limits<int>::max(); // momentum of truth track at station 1 (y)
-        truthtrack_pz_st1[i] = std::numeric_limits<int>::max(); // momentum of truth track at station 1 (z)
-        truthtrack_x_st3[i] = std::numeric_limits<int>::max(); // position of truth track at station 3 (x)
-        truthtrack_y_st3[i] = std::numeric_limits<int>::max(); // position of truth track at station 3 (y)
-        truthtrack_z_st3[i] = std::numeric_limits<int>::max(); // position of truth track at station 3 (z)
-        truthtrack_px_st3[i] = std::numeric_limits<int>::max(); // momentum of truth track at station 3 (x)
-        truthtrack_py_st3[i] = std::numeric_limits<int>::max(); // momentum of truth track at station 3 (y)
-        truthtrack_pz_st3[i] = std::numeric_limits<int>::max(); // momentum of truth track at station 3 (z)
-        truthtrack_x_vtx[i] = std::numeric_limits<int>::max(); // position of vertex associated with truth track (x)
-        truthtrack_y_vtx[i] = std::numeric_limits<int>::max(); // position of vertex associated with truth track (y)
-        truthtrack_z_vtx[i] = std::numeric_limits<int>::max(); // position of vertex associated with truth track (z)
-        truthtrack_px_vtx[i] = std::numeric_limits<int>::max(); // momentum of vertex associated with truth track (x)
-        truthtrack_py_vtx[i] = std::numeric_limits<int>::max(); // momentum of vertex associated with truth track (y)
-        truthtrack_pz_vtx[i] = std::numeric_limits<int>::max(); // momentum of vertex associated with truth track (z)
+    for (int i = 0; i < 100; ++i)
+    {
+        truthtrack_charge[i] = std::numeric_limits<int>::max();      // truth track charge
+        truthtrack_x_st1[i] = std::numeric_limits<int>::max();       // position of truth track at station 1 (x)
+        truthtrack_y_st1[i] = std::numeric_limits<int>::max();       // position of truth track at station 1 (y)
+        truthtrack_z_st1[i] = std::numeric_limits<int>::max();       // position of truth track at station 1 (z)
+        truthtrack_px_st1[i] = std::numeric_limits<int>::max();      // momentum of truth track at station 1 (x)
+        truthtrack_py_st1[i] = std::numeric_limits<int>::max();      // momentum of truth track at station 1 (y)
+        truthtrack_pz_st1[i] = std::numeric_limits<int>::max();      // momentum of truth track at station 1 (z)
+        truthtrack_x_st3[i] = std::numeric_limits<int>::max();       // position of truth track at station 3 (x)
+        truthtrack_y_st3[i] = std::numeric_limits<int>::max();       // position of truth track at station 3 (y)
+        truthtrack_z_st3[i] = std::numeric_limits<int>::max();       // position of truth track at station 3 (z)
+        truthtrack_px_st3[i] = std::numeric_limits<int>::max();      // momentum of truth track at station 3 (x)
+        truthtrack_py_st3[i] = std::numeric_limits<int>::max();      // momentum of truth track at station 3 (y)
+        truthtrack_pz_st3[i] = std::numeric_limits<int>::max();      // momentum of truth track at station 3 (z)
+        truthtrack_x_vtx[i] = std::numeric_limits<int>::max();       // position of vertex associated with truth track (x)
+        truthtrack_y_vtx[i] = std::numeric_limits<int>::max();       // position of vertex associated with truth track (y)
+        truthtrack_z_vtx[i] = std::numeric_limits<int>::max();       // position of vertex associated with truth track (z)
+        truthtrack_px_vtx[i] = std::numeric_limits<int>::max();      // momentum of vertex associated with truth track (x)
+        truthtrack_py_vtx[i] = std::numeric_limits<int>::max();      // momentum of vertex associated with truth track (y)
+        truthtrack_pz_vtx[i] = std::numeric_limits<int>::max();      // momentum of vertex associated with truth track (z)
         truthtrack_rectrack_id[i] = std::numeric_limits<int>::max(); // recTrack associated with truth track;
 
-        track_charge[i] = std::numeric_limits<int>::max(); // track charge
-        track_nhits[i] = std::numeric_limits<int>::max(); // number of hits associated with track
-        track_x_target[i] = std::numeric_limits<float>::max(); // position of track at target (x)
-        track_y_target[i] = std::numeric_limits<float>::max(); // position of track at target (y)
-        track_z_target[i] = std::numeric_limits<float>::max(); // position of track at target (z)
+        track_charge[i] = std::numeric_limits<int>::max();      // track charge
+        track_particleID[i] = std::numeric_limits<int>::max();  // track particleID
+        track_nhits[i] = std::numeric_limits<int>::max();       // number of hits associated with track
+        track_x_target[i] = std::numeric_limits<float>::max();  // position of track at target (x)
+        track_y_target[i] = std::numeric_limits<float>::max();  // position of track at target (y)
+        track_z_target[i] = std::numeric_limits<float>::max();  // position of track at target (z)
         track_px_target[i] = std::numeric_limits<float>::max(); // momentum of track at target (x)
         track_py_target[i] = std::numeric_limits<float>::max(); // momentum of track at target (y)
         track_pz_target[i] = std::numeric_limits<float>::max(); // momentum of track at target (z)
-        track_x_st1[i] = std::numeric_limits<float>::max(); // position of track at station 1 (x)
-        track_y_st1[i] = std::numeric_limits<float>::max(); // position of track at station 1 (y)
-        track_z_st1[i] = std::numeric_limits<float>::max(); // position of track at station 1 (z)
-        track_px_st1[i] = std::numeric_limits<float>::max(); // momentum of track at station 1 (x)
-        track_py_st1[i] = std::numeric_limits<float>::max(); // momentum of track at station 1 (y)
-        track_pz_st1[i] = std::numeric_limits<float>::max(); // momentum of track at station 1 (z)
-        track_x_st3[i] = std::numeric_limits<float>::max(); // position of track at station 3 (x)
-        track_y_st3[i] = std::numeric_limits<float>::max(); // position of track at station 3 (y)
-        track_z_st3[i] = std::numeric_limits<float>::max(); // position of track at station 3 (z)
-        track_px_st3[i] = std::numeric_limits<float>::max(); // momentum of track at station 3 (x)
-        track_py_st3[i] = std::numeric_limits<float>::max(); // momentum of track at station 3 (y)
-        track_pz_st3[i] = std::numeric_limits<float>::max(); // momentum of track at station 3 (z)
-        track_x_vtx[i] = std::numeric_limits<float>::max(); // position of vertex associated with track (x)
-        track_y_vtx[i] = std::numeric_limits<float>::max(); // position of vertex associated with track (y)
-        track_z_vtx[i] = std::numeric_limits<float>::max(); // position of vertex associated with track (z)
-        track_px_vtx[i] = std::numeric_limits<float>::max(); // momentum of vertex associated with track (x)
-        track_py_vtx[i] = std::numeric_limits<float>::max(); // momentum of vertex associated with track (y)
-        track_pz_vtx[i] = std::numeric_limits<float>::max(); // momentum of vertex associated with track (z)
-        track_x_CAL[i] = std::numeric_limits<float>::max(); // extrapolation of position of track at EMCAL calorimeter (x)
-        track_y_CAL[i] = std::numeric_limits<float>::max(); // extrapolation of position of track at EMCAL calorimeter (y)
-        track_chisq[i] = std::numeric_limits<float>::max(); // chi square of track (associated w. track quality)
-        track_prob[i] = std::numeric_limits<float>::max(); // probability of track (associated w. track quality)
-        track_quality[i] = std::numeric_limits<float>::max(); // track quality (based on number of hits and chi-square)
-        track_isValid[i] = std::numeric_limits<int>::max(); // is the track valid? Based on https://github.com/E1039-Collaboration/e1039-core/blob/d9fdd60cefa8f099f62fed8e8794feac1aedc348/packages/reco/interface/SRecEvent.cxx
+        track_x_st1[i] = std::numeric_limits<float>::max();     // position of track at station 1 (x)
+        track_y_st1[i] = std::numeric_limits<float>::max();     // position of track at station 1 (y)
+        track_z_st1[i] = std::numeric_limits<float>::max();     // position of track at station 1 (z)
+        track_px_st1[i] = std::numeric_limits<float>::max();    // momentum of track at station 1 (x)
+        track_py_st1[i] = std::numeric_limits<float>::max();    // momentum of track at station 1 (y)
+        track_pz_st1[i] = std::numeric_limits<float>::max();    // momentum of track at station 1 (z)
+        track_x_st3[i] = std::numeric_limits<float>::max();     // position of track at station 3 (x)
+        track_y_st3[i] = std::numeric_limits<float>::max();     // position of track at station 3 (y)
+        track_z_st3[i] = std::numeric_limits<float>::max();     // position of track at station 3 (z)
+        track_px_st3[i] = std::numeric_limits<float>::max();    // momentum of track at station 3 (x)
+        track_py_st3[i] = std::numeric_limits<float>::max();    // momentum of track at station 3 (y)
+        track_pz_st3[i] = std::numeric_limits<float>::max();    // momentum of track at station 3 (z)
+        track_x_vtx[i] = std::numeric_limits<float>::max();     // position of vertex associated with track (x)
+        track_y_vtx[i] = std::numeric_limits<float>::max();     // position of vertex associated with track (y)
+        track_z_vtx[i] = std::numeric_limits<float>::max();     // position of vertex associated with track (z)
+        track_px_vtx[i] = std::numeric_limits<float>::max();    // momentum of vertex associated with track (x)
+        track_py_vtx[i] = std::numeric_limits<float>::max();    // momentum of vertex associated with track (y)
+        track_pz_vtx[i] = std::numeric_limits<float>::max();    // momentum of vertex associated with track (z)
+        track_x_CAL[i] = std::numeric_limits<float>::max();     // extrapolation of position of track at EMCAL calorimeter (x)
+        track_y_CAL[i] = std::numeric_limits<float>::max();     // extrapolation of position of track at EMCAL calorimeter (y)
+        track_chisq[i] = std::numeric_limits<float>::max();     // chi square of track (associated w. track quality)
+        track_prob[i] = std::numeric_limits<float>::max();      // probability of track (associated w. track quality)
+        track_quality[i] = std::numeric_limits<float>::max();   // track quality (based on number of hits and chi-square)
+        track_isValid[i] = std::numeric_limits<int>::max();     // is the track valid? Based on https://github.com/E1039-Collaboration/e1039-core/blob/d9fdd60cefa8f099f62fed8e8794feac1aedc348/packages/reco/interface/SRecEvent.cxx
         track_nhits_st1[i] = std::numeric_limits<float>::max(); // number of hits in station 1
         track_nhits_st2[i] = std::numeric_limits<float>::max(); // number of hits in station 2
         track_nhits_st3[i] = std::numeric_limits<float>::max(); // number of hits in station 3
@@ -303,41 +321,45 @@ int SimAna::ResetEvalVars()
    */
     n_truthdimuons = 0;
     n_dimuons = 0;
-    for (int i = 0; i < 100; ++i) {
-        truthdimuon_mass[i] = std::numeric_limits<float>::max(); // mass of truth dimuon system
-        truthdimuon_x_vtx[i] = std::numeric_limits<float>::max(); // position of vertex of truth dimuon system (x)
-        truthdimuon_y_vtx[i] = std::numeric_limits<float>::max(); // position of vertex of truth dimuon system (y)
-        truthdimuon_z_vtx[i] = std::numeric_limits<float>::max(); // position of vertex of truth dimuon system (z)
-        truthdimuon_px[i] = std::numeric_limits<float>::max(); // momentum of truth dimuon system (x)
-        truthdimuon_py[i] = std::numeric_limits<float>::max(); // momentum of truth dimuon system (y)
-        truthdimuon_pz[i] = std::numeric_limits<float>::max(); // momentum of truth dimuon system (z)
+    for (int i = 0; i < 100; ++i)
+    {
+        truthdimuon_mass[i] = std::numeric_limits<float>::max();   // mass of truth dimuon system
+        truthdimuon_x_vtx[i] = std::numeric_limits<float>::max();  // position of vertex of truth dimuon system (x)
+        truthdimuon_y_vtx[i] = std::numeric_limits<float>::max();  // position of vertex of truth dimuon system (y)
+        truthdimuon_z_vtx[i] = std::numeric_limits<float>::max();  // position of vertex of truth dimuon system (z)
+        truthdimuon_px[i] = std::numeric_limits<float>::max();     // momentum of truth dimuon system (x)
+        truthdimuon_py[i] = std::numeric_limits<float>::max();     // momentum of truth dimuon system (y)
+        truthdimuon_pz[i] = std::numeric_limits<float>::max();     // momentum of truth dimuon system (z)
         truthdimuon_pmom_x[i] = std::numeric_limits<float>::max(); // momentum of positive muon in truth dimuon pair (x) - see https://github.com/E1039-Collaboration/e1039-core/blob/6f13d8621dd6577aa7427ba835ca12f28d04f5f6/interface_main/SQDimuon_v1.h#L36-L40
         truthdimuon_pmom_y[i] = std::numeric_limits<float>::max(); // momentum of positive muon in truth dimuon pair (y)
         truthdimuon_pmom_z[i] = std::numeric_limits<float>::max(); // momentum of positive muon in truth dimuon pair (z)
         truthdimuon_nmom_x[i] = std::numeric_limits<float>::max(); // momentum of negative muon in truth dimuon pair (x)
         truthdimuon_nmom_y[i] = std::numeric_limits<float>::max(); // momentum of negative muon in truth dimuon pair (y)
         truthdimuon_nmom_z[i] = std::numeric_limits<float>::max(); // momentum of negative muon in truth dimuon pair (z)
+        truthdimuon_recoed[i] = std::numeric_limits<int>::max();
 
-        dimuon_mass[i] = std::numeric_limits<float>::max(); // mass of dimuon system
-        dimuon_chisq[i] = std::numeric_limits<float>::max(); // chi-square of dimuon system
-        dimuon_x_vtx[i] = std::numeric_limits<float>::max(); // position of vertex of dimuon system (x)
-        dimuon_y_vtx[i] = std::numeric_limits<float>::max(); // position of vertex of dimuon system (y)
-        dimuon_z_vtx[i] = std::numeric_limits<float>::max(); // position of vertex of dimuon system (z)
-        dimuon_px[i] = std::numeric_limits<float>::max(); // momentum of dimuon system (x)
-        dimuon_py[i] = std::numeric_limits<float>::max(); // momentum of dimuon system (y)
-        dimuon_pz[i] = std::numeric_limits<float>::max(); // momentum of dimuon system (z)
-        dimuon_pmom_x[i] = std::numeric_limits<float>::max(); // momentum of positive muon in dimuon pair (x)
-        dimuon_pmom_y[i] = std::numeric_limits<float>::max(); // momentum of positive muon in dimuon pair (y)
-        dimuon_pmom_z[i] = std::numeric_limits<float>::max(); // momentum of positive muon in dimuon pair (z)
-        dimuon_nmom_x[i] = std::numeric_limits<float>::max(); // momentum of negative muon in dimuon pair (x)
-        dimuon_nmom_y[i] = std::numeric_limits<float>::max(); // momentum of negative muon in dimuon pair (y)
-        dimuon_nmom_z[i] = std::numeric_limits<float>::max(); // momentum of negative muon in dimuon pair (z)
-        dimuon_ppos_x[i] = std::numeric_limits<float>::max(); // position of positive muon in dimuon pair (x)
-        dimuon_ppos_y[i] = std::numeric_limits<float>::max(); // position of positive muon in dimuon pair (y)
-        dimuon_ppos_z[i] = std::numeric_limits<float>::max(); // position of positive muon in dimuon pair (z)
-        dimuon_npos_x[i] = std::numeric_limits<float>::max(); // position of negative muon in dimuon pair (x)
-        dimuon_npos_y[i] = std::numeric_limits<float>::max(); // position of negative muon in dimuon pair (y)
-        dimuon_npos_z[i] = std::numeric_limits<float>::max(); // position of negative muon in dimuon pair (z)
+        dimuon_mass[i] = std::numeric_limits<float>::max();     // mass of dimuon system
+        dimuon_chisq[i] = std::numeric_limits<float>::max();    // chi-square of dimuon system
+        dimuon_chisq_vx[i] = std::numeric_limits<float>::max(); // chi-square of dimuon system
+        dimuon_x_vtx[i] = std::numeric_limits<float>::max();    // position of vertex of dimuon system (x)
+        dimuon_y_vtx[i] = std::numeric_limits<float>::max();    // position of vertex of dimuon system (y)
+        dimuon_z_vtx[i] = std::numeric_limits<float>::max();    // position of vertex of dimuon system (z)
+        dimuon_px[i] = std::numeric_limits<float>::max();       // momentum of dimuon system (x)
+        dimuon_py[i] = std::numeric_limits<float>::max();       // momentum of dimuon system (y)
+        dimuon_pz[i] = std::numeric_limits<float>::max();       // momentum of dimuon system (z)
+        dimuon_pmom_x[i] = std::numeric_limits<float>::max();   // momentum of positive muon in dimuon pair (x)
+        dimuon_pmom_y[i] = std::numeric_limits<float>::max();   // momentum of positive muon in dimuon pair (y)
+        dimuon_pmom_z[i] = std::numeric_limits<float>::max();   // momentum of positive muon in dimuon pair (z)
+        dimuon_nmom_x[i] = std::numeric_limits<float>::max();   // momentum of negative muon in dimuon pair (x)
+        dimuon_nmom_y[i] = std::numeric_limits<float>::max();   // momentum of negative muon in dimuon pair (y)
+        dimuon_nmom_z[i] = std::numeric_limits<float>::max();   // momentum of negative muon in dimuon pair (z)
+        dimuon_ppos_x[i] = std::numeric_limits<float>::max();   // position of positive muon in dimuon pair (x)
+        dimuon_ppos_y[i] = std::numeric_limits<float>::max();   // position of positive muon in dimuon pair (y)
+        dimuon_ppos_z[i] = std::numeric_limits<float>::max();   // position of positive muon in dimuon pair (z)
+        dimuon_npos_x[i] = std::numeric_limits<float>::max();   // position of negative muon in dimuon pair (x)
+        dimuon_npos_y[i] = std::numeric_limits<float>::max();   // position of negative muon in dimuon pair (y)
+        dimuon_npos_z[i] = std::numeric_limits<float>::max();   // position of negative muon in dimuon pair (z)
+        dimuon_matched[i] = std::numeric_limits<int>::max();
     }
 
     /** Truth information:
@@ -347,54 +369,56 @@ int SimAna::ResetEvalVars()
         - Hits in each station for each primary g*_st*
         - Hits in each hodoscope for each primary g*_h*
    */
-    n_showers = 0; // number of g4 showers in EMCAL
-    n_primaries = 0; // number of hits of primary particles
+    n_showers = 0;     // number of g4 showers in EMCAL
+    n_primaries = 0;   // number of hits of primary particles
     n_secondaries = 0; // number of hits of secondary particles
-    for (int i = 0; i < 1000; ++i) {
-        sx_ecal[i] = std::numeric_limits<float>::max(); // position of EMCAL truth shower (x)
-        sy_ecal[i] = std::numeric_limits<float>::max(); // position of EMCAL truth shower (y)
-        sz_ecal[i] = std::numeric_limits<float>::max(); // position of EMCAL truth shower (z)
+    for (int i = 0; i < 1000; ++i)
+    {
+        sx_ecal[i] = std::numeric_limits<float>::max();    // position of EMCAL truth shower (x)
+        sy_ecal[i] = std::numeric_limits<float>::max();    // position of EMCAL truth shower (y)
+        sz_ecal[i] = std::numeric_limits<float>::max();    // position of EMCAL truth shower (z)
         sedep_ecal[i] = std::numeric_limits<float>::max(); // energy deposited in EMCAL by truth shower
 
         gtrkid[i] = std::numeric_limits<int>::max(); // track ID of primary truth particle
-        gpid[i] = std::numeric_limits<int>::max(); // particle ID of primary truth particle
-        gvx[i] = std::numeric_limits<float>::max(); // vertex position of primary truth particle (x)
-        gvy[i] = std::numeric_limits<float>::max(); // vertex position of primary truth particle (y)
-        gvz[i] = std::numeric_limits<float>::max(); // vertex position of primary truth particle (z)
-        gpx[i] = std::numeric_limits<float>::max(); // momentum of primary truth particle (x)
-        gpy[i] = std::numeric_limits<float>::max(); // momentum of primary truth particle (y)
-        gpz[i] = std::numeric_limits<float>::max(); // momentum of primary truth particle (z)
-        gpt[i] = std::numeric_limits<float>::max(); // transverse momentum of primary truth particle
+        gpid[i] = std::numeric_limits<int>::max();   // particle ID of primary truth particle
+        gvx[i] = std::numeric_limits<float>::max();  // vertex position of primary truth particle (x)
+        gvy[i] = std::numeric_limits<float>::max();  // vertex position of primary truth particle (y)
+        gvz[i] = std::numeric_limits<float>::max();  // vertex position of primary truth particle (z)
+        gpx[i] = std::numeric_limits<float>::max();  // momentum of primary truth particle (x)
+        gpy[i] = std::numeric_limits<float>::max();  // momentum of primary truth particle (y)
+        gpz[i] = std::numeric_limits<float>::max();  // momentum of primary truth particle (z)
+        gpt[i] = std::numeric_limits<float>::max();  // transverse momentum of primary truth particle
         geta[i] = std::numeric_limits<float>::max(); // eta angle of primary truth particle
         gphi[i] = std::numeric_limits<float>::max(); // phi angle of primary truth particle
-        ge[i] = std::numeric_limits<float>::max(); // energy of primary truth particle
+        ge[i] = std::numeric_limits<float>::max();   // energy of primary truth particle
 
         nhits_ecal[i] = 0; // number of hits in EMCAL for a given primary truth particle
-        for (int j = 0; j < 100; ++j) {
-            gx_ecal[i][j] = std::numeric_limits<int>::max(); // position of associated hit in EMCAL (x)
-            gy_ecal[i][j] = std::numeric_limits<int>::max(); // position of associated hit in EMCAL (y)
-            gz_ecal[i][j] = std::numeric_limits<int>::max(); // position of associated hit in EMCAL (z)
-            gpx_ecal[i][j] = std::numeric_limits<int>::max(); // momentum of associated hit in EMCAL (x)
-            gpy_ecal[i][j] = std::numeric_limits<int>::max(); // momentum of associated hit in EMCAL (y)
-            gpz_ecal[i][j] = std::numeric_limits<int>::max(); // momentum of associated hit in EMCAL (z)
+        for (int j = 0; j < 100; ++j)
+        {
+            gx_ecal[i][j] = std::numeric_limits<int>::max();    // position of associated hit in EMCAL (x)
+            gy_ecal[i][j] = std::numeric_limits<int>::max();    // position of associated hit in EMCAL (y)
+            gz_ecal[i][j] = std::numeric_limits<int>::max();    // position of associated hit in EMCAL (z)
+            gpx_ecal[i][j] = std::numeric_limits<int>::max();   // momentum of associated hit in EMCAL (x)
+            gpy_ecal[i][j] = std::numeric_limits<int>::max();   // momentum of associated hit in EMCAL (y)
+            gpz_ecal[i][j] = std::numeric_limits<int>::max();   // momentum of associated hit in EMCAL (z)
             gedep_ecal[i][j] = std::numeric_limits<int>::max(); // energy deposited by associated hit in EMCAL
         }
 
-        gx_st1[i] = std::numeric_limits<float>::max(); // position of truth hit at station 1 (x)
-        gy_st1[i] = std::numeric_limits<float>::max(); // position of truth hit at station 1 (y)
-        gz_st1[i] = std::numeric_limits<float>::max(); // position of truth hit at station 1 (z)
+        gx_st1[i] = std::numeric_limits<float>::max();  // position of truth hit at station 1 (x)
+        gy_st1[i] = std::numeric_limits<float>::max();  // position of truth hit at station 1 (y)
+        gz_st1[i] = std::numeric_limits<float>::max();  // position of truth hit at station 1 (z)
         gpx_st1[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 1 (x)
         gpy_st1[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 1 (y)
         gpz_st1[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 1 (z)
-        gx_st2[i] = std::numeric_limits<float>::max(); // position of truth hit at station 2 (x)
-        gy_st2[i] = std::numeric_limits<float>::max(); // position of truth hit at station 2 (y)
-        gz_st2[i] = std::numeric_limits<float>::max(); // position of truth hit at station 2 (z)
+        gx_st2[i] = std::numeric_limits<float>::max();  // position of truth hit at station 2 (x)
+        gy_st2[i] = std::numeric_limits<float>::max();  // position of truth hit at station 2 (y)
+        gz_st2[i] = std::numeric_limits<float>::max();  // position of truth hit at station 2 (z)
         gpx_st2[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 2 (x)
         gpy_st2[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 2 (y)
         gpz_st2[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 2 (z)
-        gx_st3[i] = std::numeric_limits<float>::max(); // position of truth hit at station 3 (x)
-        gy_st3[i] = std::numeric_limits<float>::max(); // position of truth hit at station 3 (y)
-        gz_st3[i] = std::numeric_limits<float>::max(); // position of truth hit at station 3 (z)
+        gx_st3[i] = std::numeric_limits<float>::max();  // position of truth hit at station 3 (x)
+        gy_st3[i] = std::numeric_limits<float>::max();  // position of truth hit at station 3 (y)
+        gz_st3[i] = std::numeric_limits<float>::max();  // position of truth hit at station 3 (z)
         gpx_st3[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 3 (x)
         gpy_st3[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 3 (y)
         gpz_st3[i] = std::numeric_limits<float>::max(); // momentum of truth hit at station 3 (z)
@@ -426,16 +450,16 @@ int SimAna::ResetEvalVars()
         gpz_h4[i] = std::numeric_limits<float>::max();
 
         gtrkid_sec[i] = std::numeric_limits<int>::max(); // track ID of secondary truth particle
-        gpid_sec[i] = std::numeric_limits<int>::max(); // particle ID of secondary truth particle
-        gvx_sec[i] = std::numeric_limits<float>::max(); // vertex position (x) of secondary truth particle
-        gvy_sec[i] = std::numeric_limits<float>::max(); // vertex position (y) of secondary truth particle
-        gvz_sec[i] = std::numeric_limits<float>::max(); // vertex position (z) of secondary truth particle
-        gpx_sec[i] = std::numeric_limits<float>::max(); // momentum (x) of secondary truth particle
-        gpy_sec[i] = std::numeric_limits<float>::max(); // momentum (y) of secondary truth particle
-        gpz_sec[i] = std::numeric_limits<float>::max(); // momentum (z) of secondary truth particle
-        ge_sec[i] = std::numeric_limits<float>::max(); // energy of secondary truth particle
+        gpid_sec[i] = std::numeric_limits<int>::max();   // particle ID of secondary truth particle
+        gvx_sec[i] = std::numeric_limits<float>::max();  // vertex position (x) of secondary truth particle
+        gvy_sec[i] = std::numeric_limits<float>::max();  // vertex position (y) of secondary truth particle
+        gvz_sec[i] = std::numeric_limits<float>::max();  // vertex position (z) of secondary truth particle
+        gpx_sec[i] = std::numeric_limits<float>::max();  // momentum (x) of secondary truth particle
+        gpy_sec[i] = std::numeric_limits<float>::max();  // momentum (y) of secondary truth particle
+        gpz_sec[i] = std::numeric_limits<float>::max();  // momentum (z) of secondary truth particle
+        ge_sec[i] = std::numeric_limits<float>::max();   // energy of secondary truth particle
 
-        //nhits_ecal_sec[i] = 0;
+        // nhits_ecal_sec[i] = 0;
     }
 
     /* Trigger information
@@ -445,18 +469,20 @@ int SimAna::ResetEvalVars()
      fpga_trigger[3]: SQEvent::MATRIX4
      fpga_trigger[4]: SQEvent::MATRIX5
    */
-    for (int i = 0; i < 5; ++i) {
-        fpga_trigger[i] = 0; // trigger bit
+    for (int i = 0; i < 5; ++i)
+    {
+        fpga_trigger[i] = 0; // fpga trigger bit
+        nim_trigger[i] = 0;  // nim trigger bits
     }
 
     /* Weight
-   */
+     */
     weight = 1;
 
     return 0;
 }
 
-int SimAna::process_event(PHCompositeNode* topNode)
+int SimAna::process_event(PHCompositeNode *topNode)
 {
     // reset variables to max.
     ResetEvalVars();
@@ -464,28 +490,36 @@ int SimAna::process_event(PHCompositeNode* topNode)
     // save hits by default
     n_hits = 0;
     std::map<int, int> list_cnt; // [det ID] -> hit count
-    for (int ihit = 0; ihit < _hitVector->size(); ++ihit) {
-        SQHit* hit = _hitVector->at(ihit);
-        int hit_id = hit->get_hit_id();
+    for (int ihit = 0; ihit < _hitVector->size(); ++ihit)
+    {
+        SQHit *hit = _hitVector->at(ihit);
+        // if(!hit->is_in_time()) continue;
         int det_id = hit->get_detector_id();
+        if (n_hits <= 1000)
+        {
+            // SQHit* hit = _hitVector->at(ihit);
+            int hit_id = hit->get_hit_id();
+            // int det_id = hit->get_detector_id();
+            // list_cnt[det_id]++;
+            hit_detid[n_hits] = det_id;
+            hit_elmid[n_hits] = hit->get_element_id();
+            hit_trkid[n_hits] = hit->get_track_id();
+            hit_driftdis[n_hits] = hit->get_drift_distance();
+            hit_pos[n_hits] = hit->get_pos();
+            hit_edep[n_hits] = hit->get_edep();
+            hit_truthx[n_hits] = hit->get_truth_x();
+            hit_truthy[n_hits] = hit->get_truth_y();
+            hit_truthz[n_hits] = hit->get_truth_z();
+            hit_truthpx[n_hits] = hit->get_truth_px();
+            hit_truthpy[n_hits] = hit->get_truth_py();
+            hit_truthpz[n_hits] = hit->get_truth_pz();
+        }
         list_cnt[det_id]++;
-        hit_detid[n_hits] = det_id;
-        hit_elmid[n_hits] = hit->get_element_id();
-        hit_trkid[n_hits] = hit->get_track_id();
-        hit_driftdis[n_hits] = hit->get_drift_distance();
-        hit_pos[n_hits] = hit->get_pos();
-        hit_edep[n_hits] = hit->get_edep();
-        hit_truthx[n_hits] = hit->get_truth_x();
-        hit_truthy[n_hits] = hit->get_truth_y();
-        hit_truthz[n_hits] = hit->get_truth_z();
-        hit_truthpx[n_hits] = hit->get_truth_px();
-        hit_truthpy[n_hits] = hit->get_truth_py();
-        hit_truthpz[n_hits] = hit->get_truth_pz();
         ++n_hits;
-        if (n_hits >= 1000)
-            break;
+        // if (n_hits >= 1000)
+        //     break;
     }
-    GeomSvc* geom = GeomSvc::instance();
+    GeomSvc *geom = GeomSvc::instance();
     n_hits_h1x = list_cnt[geom->getDetectorID("H1T")] + list_cnt[geom->getDetectorID("H1B")];
     n_hits_h2x = list_cnt[geom->getDetectorID("H2T")] + list_cnt[geom->getDetectorID("H2B")];
     n_hits_h3x = list_cnt[geom->getDetectorID("H3T")] + list_cnt[geom->getDetectorID("H3B")];
@@ -503,7 +537,8 @@ int SimAna::process_event(PHCompositeNode* topNode)
     n_hits_d2 = 0;
     n_hits_d3p = 0;
     n_hits_d3m = 0;
-    for (int i = 1; i <= 6; ++i) {
+    for (int i = 1; i <= 6; ++i)
+    {
         n_hits_d0 += list_cnt[i];
         n_hits_d1 += list_cnt[i + 6];
         n_hits_d2 += list_cnt[i + 12];
@@ -511,17 +546,30 @@ int SimAna::process_event(PHCompositeNode* topNode)
         n_hits_d3m += list_cnt[i + 24];
     }
 
+    passHitCuts = 0;
+    if (n_hits_d0 < 300 && n_hits_d2 < 300 && n_hits_d3p < 300 && n_hits_d3m < 300)
+    {
+        passHitCuts = 1;
+    }
+
     // save rec status
     // the meaning of these status flag:
     // https://github.com/E1039-Collaboration/e1039-core/blob/master/packages/global_consts/GlobalConsts.h#L17-L27
     rec_status = _legacyContainer ? _recEvent->getRecStatus() : 0;
 
+    allRecoed = 0;
+    allCouldBeRecoed = 0;
+
     // tracks
-    if (_saveTracks) {
+    if (_saveTracks)
+    {
         int n_recTracks = _legacyContainer ? _recEvent->getNTracks() : _recTrackVector->size();
         n_truthtracks = 0;
-        for (int itrk = 0; itrk < _trackVector->size(); ++itrk) {
-            SQTrack* track = _trackVector->at(itrk);
+        int acceptableTruth = 0;
+        int recoedTruth = 0;
+        for (int itrk = 0; itrk < _trackVector->size(); ++itrk)
+        {
+            SQTrack *track = _trackVector->at(itrk);
 
             truthtrack_charge[n_truthtracks] = track->get_charge();
             truthtrack_x_st1[n_truthtracks] = (track->get_pos_st1()).X();
@@ -545,16 +593,49 @@ int SimAna::process_event(PHCompositeNode* topNode)
             // get the matched reco track ID
             truthtrack_rectrack_id[n_truthtracks] = track->get_rec_track_id();
             ++n_truthtracks;
-            if (n_truthtracks >= 100)
+
+            int recoed = 0;
+            if (std::abs((track->get_pos_st3()).X()) > 0.0001 && std::abs((track->get_pos_st3()).Y()) > 0.0001 && std::abs((track->get_pos_st3()).X()) < 155 && std::abs((track->get_pos_st3()).Y()) < 155)
+            {
+                acceptableTruth++;
+                for (int Rtrk = 0; Rtrk < n_recTracks; ++Rtrk)
+                {
+                    SRecTrack *recTrack = _legacyContainer ? &(_recEvent->getTrack(Rtrk)) : dynamic_cast<SRecTrack *>(_recTrackVector->at(Rtrk));
+                    if (std::abs((recTrack->getPositionVecSt1()).X() - (track->get_pos_st1()).X()) < 3. && std::abs((recTrack->getPositionVecSt1()).Y() - (track->get_pos_st1()).Y()) < 4. && std::abs((recTrack->getPositionVecSt3()).X() - (track->get_pos_st3()).X()) < 3. && std::abs((recTrack->getPositionVecSt3()).Y() - (track->get_pos_st3()).Y()) < 4.)
+                    {
+                        recoed = 1;
+                    }
+                }
+            }
+            if (recoed)
+            {
+                recoedTruth++;
+            }
+
+            if (n_truthtracks >= 1000)
                 break;
         }
 
-        //std::cout<<"the recid is "<<recid<<std::endl;
-        for (int itrk = 0; itrk < n_recTracks; ++itrk) {
+        if (acceptableTruth == _trackVector->size())
+        {
+            allCouldBeRecoed = 1;
+        }
+        if (recoedTruth == _trackVector->size())
+        {
+            allRecoed = 1;
+        }
+
+        numNonMatched = 0;
+        nFakeTracksTop2 = 0;
+        nRealTracks = 0;
+        // std::cout<<"the recid is "<<recid<<std::endl;
+        for (int itrk = 0; itrk < n_recTracks; ++itrk)
+        {
             // saving all tracks to the ntuples to study 'fakes'
-            SRecTrack* recTrack = _legacyContainer ? &(_recEvent->getTrack(itrk)) : dynamic_cast<SRecTrack*>(_recTrackVector->at(itrk));
-            //std::cout << "******************** (recTrack->getTargetMom()).Px() " << (recTrack->getTargetMom()).Px() << std::endl;
+            SRecTrack *recTrack = _legacyContainer ? &(_recEvent->getTrack(itrk)) : dynamic_cast<SRecTrack *>(_recTrackVector->at(itrk));
+            // std::cout << "******************** (recTrack->getTargetMom()).Px() " << (recTrack->getTargetMom()).Px() << std::endl;
             track_charge[n_tracks] = recTrack->getCharge();
+            track_particleID[n_tracks] = recTrack->get_particleID();
             track_nhits[n_tracks] = recTrack->getNHits();
             track_x_target[n_tracks] = (recTrack->getTargetPos()).X();
             track_y_target[n_tracks] = (recTrack->getTargetPos()).Y();
@@ -589,16 +670,42 @@ int SimAna::process_event(PHCompositeNode* topNode)
             track_nhits_st1[n_tracks] = recTrack->getNHitsInStation(1);
             track_nhits_st2[n_tracks] = recTrack->getNHitsInStation(2);
             track_nhits_st3[n_tracks] = recTrack->getNHitsInStation(3);
+
+            int matched = 0;
+            for (int Ttrk = 0; Ttrk < _trackVector->size(); ++Ttrk)
+            {
+                SQTrack *track = _trackVector->at(Ttrk);
+                if (std::abs((recTrack->getPositionVecSt1()).X() - (track->get_pos_st1()).X()) < 3. && std::abs((recTrack->getPositionVecSt1()).Y() - (track->get_pos_st1()).Y()) < 4. && std::abs((recTrack->getPositionVecSt3()).X() - (track->get_pos_st3()).X()) < 3. && std::abs((recTrack->getPositionVecSt3()).Y() - (track->get_pos_st3()).Y()) < 4.)
+                {
+                    matched = 1;
+                }
+            }
+            if (!(matched))
+            {
+                numNonMatched++;
+                if (n_tracks < 2)
+                {
+                    nFakeTracksTop2++;
+                }
+            }
+            else
+            {
+                nRealTracks++;
+            }
+            track_matched[n_tracks] = matched;
+
             ++n_tracks;
+
             if (n_tracks >= 100)
                 break;
         }
 
         n_st3tracklets = 0;
-        //std::cout<<"about to enter st3tracklet loop"<<std::endl;
+        // std::cout<<"about to enter st3tracklet loop"<<std::endl;
         int n_st3trackletsINDEX = _legacyContainer ? _recEvent->getNSt3Tracklets() : _recSt3TrackletVector->size();
-        for (int itrk = 0; itrk < n_st3trackletsINDEX; ++itrk) {
-            SRecTrack* track = _legacyContainer ? &(_recEvent->getSt3Tracklet(n_st3tracklets)) : dynamic_cast<SRecTrack*>(_recSt3TrackletVector->at(n_st3tracklets));
+        for (int itrk = 0; itrk < n_st3trackletsINDEX; ++itrk)
+        {
+            SRecTrack *track = _legacyContainer ? &(_recEvent->getSt3Tracklet(n_st3tracklets)) : dynamic_cast<SRecTrack *>(_recSt3TrackletVector->at(n_st3tracklets));
             st3tracklet_charge[n_st3tracklets] = track->getCharge();
             st3tracklet_nhits[n_st3tracklets] = track->getNHits();
             st3tracklet_x_target[n_st3tracklets] = (track->getTargetPos()).X();
@@ -639,15 +746,18 @@ int SimAna::process_event(PHCompositeNode* topNode)
             if (n_st3tracklets >= 100)
                 break;
         }
-        //std::cout<<"print out of n_st3tracklets: "<<n_st3tracklets<<std::endl;
+        // std::cout<<"print out of n_st3tracklets: "<<n_st3tracklets<<std::endl;
     }
 
-    if (_saveVertex) {
+    if (_saveVertex)
+    {
         // vertices
         n_truthdimuons = 0;
         int nDimuons = _dimuonVector->size();
-        for (int i = 0; i < nDimuons; ++i) {
-            SQDimuon* dimuon = _dimuonVector->at(i);
+        int nRecDimuons = _legacyContainer ? _recEvent->getNDimuons() : (_recDimuonVector ? _recDimuonVector->size() : -1);
+        for (int i = 0; i < nDimuons; ++i)
+        {
+            SQDimuon *dimuon = _dimuonVector->at(i);
             // truth dimuon
             // from https://github.com/E1039-Collaboration/e1039-core/blob/master/simulation/g4dst/TruthNodeMaker.cc#L133-L155
             truthdimuon_mass[n_truthdimuons] = dimuon->get_mom().M();
@@ -663,24 +773,69 @@ int SimAna::process_event(PHCompositeNode* topNode)
             truthdimuon_nmom_x[n_truthdimuons] = (dimuon->get_mom_neg()).Px();
             truthdimuon_nmom_y[n_truthdimuons] = (dimuon->get_mom_neg()).Py();
             truthdimuon_nmom_z[n_truthdimuons] = (dimuon->get_mom_neg()).Pz();
+
+            int recoed = 0;
+            for (int rdm = 0; rdm < nRecDimuons; ++rdm)
+            {
+                SRecDimuon *recDimuon = _legacyContainer ? &(_recEvent->getDimuon(rdm)) : dynamic_cast<SRecDimuon *>(_recDimuonVector->at(rdm));
+                // if( std::abs( ((dimuon->get_mom()).X() - (recDimuon->get_mom()).X())/(dimuon->get_mom()).X() + (recDimuon->get_mom()).X() ) < 0.35 && std::abs( ((dimuon->get_mom()).Y() - (recDimuon->get_mom()).Y())/(dimuon->get_mom()).Y() + (recDimuon->get_mom()).Y() ) < 0.35 && std::abs( ((dimuon->get_mom()).Z() - (recDimuon->get_mom()).Z())/(dimuon->get_mom()).Z() + (recDimuon->get_mom()).Z() ) < 0.1 && std::abs( ((recDimuon->p_pos).Px() - (dimuon->get_mom_pos()).Px())/((recDimuon->p_pos).Px() + (dimuon->get_mom_pos()).Px()) ) < 0.35 &&  std::abs( ((recDimuon->p_pos).Py() - (dimuon->get_mom_pos()).Py())/((recDimuon->p_pos).Py() + (dimuon->get_mom_pos()).Py()) ) < 0.35 && std::abs( ((recDimuon->p_pos).Pz() - (dimuon->get_mom_pos()).Pz())/((recDimuon->p_pos).Pz() + (dimuon->get_mom_pos()).Pz()) ) < 0.1 && std::abs( ((recDimuon->p_neg).Px() - (dimuon->get_mom_neg()).Px())/((recDimuon->p_neg).Px() + (dimuon->get_mom_ned()).Px()) ) < 0.35 &&  std::abs( ((recDimuon->p_neg).Py() - (dimuon->get_mom_neg()).Py())/((recDimuon->p_neg).Py() + (dimuon->get_mom_neg()).Py()) ) < 0.35 && std::abs( ((recDimuon->p_neg).Pz() - (dimuon->get_mom_neg()).Pz())/((recDimuon->p_neg).Pz() + (dimuon->get_mom_neg()).Pz()) ) < 0.1 ){
+                int numFailures = 0;
+                if (std::abs(((dimuon->get_mom()).X() - (recDimuon->get_mom()).X())) > 0.65)
+                    numFailures++;
+                if (std::abs(((dimuon->get_mom()).Y() - (recDimuon->get_mom()).Y())) > 0.65)
+                    numFailures++;
+                if (std::abs(((dimuon->get_mom()).Z() - (recDimuon->get_mom()).Z())) > 10)
+                    numFailures++;
+                if (std::abs(((recDimuon->p_pos).Px() - (dimuon->get_mom_pos()).Px())) > 0.65)
+                    numFailures++;
+                if (std::abs(((recDimuon->p_pos).Py() - (dimuon->get_mom_pos()).Py())) > 0.65)
+                    numFailures++;
+                if (std::abs(((recDimuon->p_pos).Pz() - (dimuon->get_mom_pos()).Pz())) > 10)
+                    numFailures++;
+                if (std::abs(((recDimuon->p_neg).Px() - (dimuon->get_mom_neg()).Px())) > 0.65)
+                    numFailures++;
+                if (std::abs(((recDimuon->p_neg).Py() - (dimuon->get_mom_neg()).Py())) > 0.65)
+                    numFailures++;
+                if (std::abs(((recDimuon->p_neg).Pz() - (dimuon->get_mom_neg()).Pz())) > 10)
+                    numFailures++;
+                // std::cout<<"std::abs( ((dimuon->get_mom()).X() - (recDimuon->get_mom()).X()) ) = "<<std::abs( ((dimuon->get_mom()).X() - (recDimuon->get_mom()).X()) )<<" std::abs( ((dimuon->get_mom()).Y() - (recDimuon->get_mom()).Y()) ) = "<<std::abs( ((dimuon->get_mom()).Y() - (recDimuon->get_mom()).Y()) )<<" std::abs( ((dimuon->get_mom()).Z() - (recDimuon->get_mom()).Z()) ) = "<<std::abs( ((dimuon->get_mom()).Z() - (recDimuon->get_mom()).Z()) )<<" std::abs( ((recDimuon->p_pos).Px() - (dimuon->get_mom_pos()).Px())) = "<<std::abs( ((recDimuon->p_pos).Px() - (dimuon->get_mom_pos()).Px()))<<" std::abs( ((recDimuon->p_pos).Py() - (dimuon->get_mom_pos()).Py()) ) = "<<std::abs( ((recDimuon->p_pos).Py() - (dimuon->get_mom_pos()).Py()) )<<" std::abs( ((recDimuon->p_pos).Pz() - (dimuon->get_mom_pos()).Pz())) = "<<std::abs( ((recDimuon->p_pos).Pz() - (dimuon->get_mom_pos()).Pz()))<<" std::abs( ((recDimuon->p_neg).Px() - (dimuon->get_mom_neg()).Px()) ) = "<<std::abs( ((recDimuon->p_neg).Px() - (dimuon->get_mom_neg()).Px()) )<<" std::abs( ((recDimuon->p_neg).Py() - (dimuon->get_mom_neg()).Py())) = "<<std::abs( ((recDimuon->p_neg).Py() - (dimuon->get_mom_neg()).Py()))<<" std::abs( ((recDimuon->p_neg).Pz() - (dimuon->get_mom_neg()).Pz()) ) = "<<std::abs( ((recDimuon->p_neg).Pz() - (dimuon->get_mom_neg()).Pz()) )<<" numFailures =  "<<numFailures<<std::endl;
+
+                // if( std::abs( ((dimuon->get_mom()).X() - (recDimuon->get_mom()).X()) ) < 0.5 && std::abs( ((dimuon->get_mom()).Y() - (recDimuon->get_mom()).Y()) ) < 0.5 && std::abs( ((dimuon->get_mom()).Z() - (recDimuon->get_mom()).Z()) ) < 10 && std::abs( ((recDimuon->p_pos).Px() - (dimuon->get_mom_pos()).Px())) < 0.5 &&  std::abs( ((recDimuon->p_pos).Py() - (dimuon->get_mom_pos()).Py()) ) < 0.5 && std::abs( ((recDimuon->p_pos).Pz() - (dimuon->get_mom_pos()).Pz())) < 10 && std::abs( ((recDimuon->p_neg).Px() - (dimuon->get_mom_neg()).Px()) ) < 0.5 &&  std::abs( ((recDimuon->p_neg).Py() - (dimuon->get_mom_neg()).Py())) < 0.5 && std::abs( ((recDimuon->p_neg).Pz() - (dimuon->get_mom_neg()).Pz()) ) < 10 ){
+                if (numFailures < 3)
+                {
+                    recoed = 1;
+                }
+            }
+            truthdimuon_recoed[n_truthdimuons] = recoed;
+
             ++n_truthdimuons;
             if (n_truthdimuons >= 100)
                 break;
         }
 
+        mainDMRecoed = 0;
+        if (n_truthdimuons > 0)
+        {
+            mainDMRecoed = truthdimuon_recoed[n_truthdimuons - 1];
+        }
+
+        nTrueDM = 0;
+        nFakeDM = 0;
+
         n_dimuons = 0;
-        int nRecDimuons = _legacyContainer ? _recEvent->getNDimuons() : (_recDimuonVector ? _recDimuonVector->size() : -1);
-        for (int i = 0; i < nRecDimuons; ++i) {
-            SRecDimuon* recDimuon = _legacyContainer ? &(_recEvent->getDimuon(i)) : dynamic_cast<SRecDimuon*>(_recDimuonVector->at(i));
+        for (int i = 0; i < nRecDimuons; ++i)
+        {
+            SRecDimuon *recDimuon = _legacyContainer ? &(_recEvent->getDimuon(i)) : dynamic_cast<SRecDimuon *>(_recDimuonVector->at(i));
             dimuon_mass[n_dimuons] = recDimuon->mass;
             dimuon_chisq[n_dimuons] = recDimuon->get_chisq();
+            dimuon_chisq_vx[n_dimuons] = recDimuon->get_chisq_vx();
             dimuon_x_vtx[n_dimuons] = (recDimuon->vtx).X();
             dimuon_y_vtx[n_dimuons] = (recDimuon->vtx).Y();
             dimuon_z_vtx[n_dimuons] = (recDimuon->vtx).Z();
             dimuon_px[n_dimuons] = (recDimuon->get_mom()).X();
             dimuon_py[n_dimuons] = (recDimuon->get_mom()).Y();
             dimuon_pz[n_dimuons] = (recDimuon->get_mom()).Z();
-            dimuon_pmom_x[n_dimuons] = (recDimuon->p_pos).Px(); //4-momentum of the muon tracks after vertex fit
+            dimuon_pmom_x[n_dimuons] = (recDimuon->p_pos).Px(); // 4-momentum of the muon tracks after vertex fit
             dimuon_pmom_y[n_dimuons] = (recDimuon->p_pos).Py();
             dimuon_pmom_z[n_dimuons] = (recDimuon->p_pos).Pz();
             dimuon_nmom_x[n_dimuons] = (recDimuon->p_neg).Px();
@@ -693,19 +848,57 @@ int SimAna::process_event(PHCompositeNode* topNode)
             dimuon_npos_y[n_dimuons] = (recDimuon->vtx_neg).Y();
             dimuon_npos_z[n_dimuons] = (recDimuon->vtx_neg).Z();
 
+            int matched = 0;
+            for (int tdm = 0; tdm < nDimuons; ++tdm)
+            {
+                SQDimuon *dimuon = _dimuonVector->at(tdm);
+                // if( std::abs( ((dimuon->get_mom()).X() - dimuon_px[n_dimuons])/(dimuon->get_mom()).X() + dimuon_px[n_dimuons] ) < 0.35 && std::abs( ((dimuon->get_mom()).Y() - dimuon_py[n_dimuons])/(dimuon->get_mom()).Y() + dimuon_py[n_dimuons] ) < 0.35 && std::abs( ((dimuon->get_mom()).Z() - dimuon_pz[n_dimuons])/(dimuon->get_mom()).Z() + dimuon_pz[n_dimuons] ) < 0.1 && std::abs( (dimuon_pmom_x[n_dimuons] - (dimuon->get_mom_pos()).Px())/(dimuon_pmom_x[n_dimuons] + (dimuon->get_mom_pos()).Px()) ) < 0.35 &&  std::abs( (dimuon_pmom_y[n_dimuons] - (dimuon->get_mom_pos()).Py())/(dimuon_pmom_y[n_dimuons] + (dimuon->get_mom_pos()).Py()) ) < 0.35 && std::abs( (dimuon_pmom_z[n_dimuons] - (dimuon->get_mom_pos()).Pz())/(dimuon_pmom_z[n_dimuons] + (dimuon->get_mom_pos()).Pz()) ) < 0.1 && std::abs( (dimuon_nmom_x[n_dimuons] - (dimuon->get_mom_neg()).Px())/(dimuon_nmom_x[n_dimuons] + (dimuon->get_mom_ned()).Px()) ) < 0.35 &&  std::abs( (dimuon_nmom_y[n_dimuons] - (dimuon->get_mom_neg()).Py())/(dimuon_nmom_y[n_dimuons] + (dimuon->get_mom_neg()).Py()) ) < 0.35 && std::abs( (dimuon_nmom_z[n_dimuons] - (dimuon->get_mom_neg()).Pz())/(dimuon_nmom_z[n_dimuons] + (dimuon->get_mom_neg()).Pz()) ) < 0.1 ){
+                int numFailures = 0;
+                if (std::abs(((dimuon->get_mom()).X() - (recDimuon->get_mom()).X())) > 0.65)
+                    numFailures++;
+                if (std::abs(((dimuon->get_mom()).Y() - (recDimuon->get_mom()).Y())) > 0.65)
+                    numFailures++;
+                if (std::abs(((dimuon->get_mom()).Z() - (recDimuon->get_mom()).Z())) > 10)
+                    numFailures++;
+                if (std::abs(((recDimuon->p_pos).Px() - (dimuon->get_mom_pos()).Px())) > 0.65)
+                    numFailures++;
+                if (std::abs(((recDimuon->p_pos).Py() - (dimuon->get_mom_pos()).Py())) > 0.65)
+                    numFailures++;
+                if (std::abs(((recDimuon->p_pos).Pz() - (dimuon->get_mom_pos()).Pz())) > 10)
+                    numFailures++;
+                if (std::abs(((recDimuon->p_neg).Px() - (dimuon->get_mom_neg()).Px())) > 0.65)
+                    numFailures++;
+                if (std::abs(((recDimuon->p_neg).Py() - (dimuon->get_mom_neg()).Py())) > 0.65)
+                    numFailures++;
+                if (std::abs(((recDimuon->p_neg).Pz() - (dimuon->get_mom_neg()).Pz())) > 10)
+                    numFailures++;
+                // if( std::abs( ((dimuon->get_mom()).X() - (recDimuon->get_mom()).X()) ) < 0.5 && std::abs( ((dimuon->get_mom()).Y() - (recDimuon->get_mom()).Y()) ) < 0.5 && std::abs( ((dimuon->get_mom()).Z() - (recDimuon->get_mom()).Z()) ) < 10 && std::abs( ((recDimuon->p_pos).Px() - (dimuon->get_mom_pos()).Px())) < 0.5 &&  std::abs( ((recDimuon->p_pos).Py() - (dimuon->get_mom_pos()).Py()) ) < 0.5 && std::abs( ((recDimuon->p_pos).Pz() - (dimuon->get_mom_pos()).Pz())) < 10 && std::abs( ((recDimuon->p_neg).Px() - (dimuon->get_mom_neg()).Px()) ) < 0.5 &&  std::abs( ((recDimuon->p_neg).Py() - (dimuon->get_mom_neg()).Py())) < 0.5 && std::abs( ((recDimuon->p_neg).Pz() - (dimuon->get_mom_neg()).Pz()) ) < 10 ){
+                if (numFailures < 3)
+                {
+                    matched = 1;
+                }
+            }
+            dimuon_matched[n_dimuons] = matched;
+
+            nTrueDM += matched;
+            nFakeDM += (1 - matched);
+
             ++n_dimuons;
             if (n_dimuons >= 100)
                 break;
         }
 
         n_showers = 0;
-        if (_truth) {
+        if (_truth)
+        {
             for (auto iter = _truth->GetPrimaryParticleRange().first;
-                 iter != _truth->GetPrimaryParticleRange().second; ++iter) {
-                PHG4Particle* primary = iter->second;
+                 iter != _truth->GetPrimaryParticleRange().second; ++iter)
+            {
+                PHG4Particle *primary = iter->second;
                 int ECAL_volume = PHG4HitDefs::get_volume_id("G4HIT_EMCal");
-                PHG4Shower* shower = get_primary_shower(primary);
-                if (shower != 0) {
+                PHG4Shower *shower = get_primary_shower(primary);
+                if (shower != 0)
+                {
                     sx_ecal[n_showers] = shower->get_x();
                     sy_ecal[n_showers] = shower->get_y();
                     sz_ecal[n_showers] = shower->get_z();
@@ -721,21 +914,23 @@ int SimAna::process_event(PHCompositeNode* topNode)
     // uncomment this to print the truth tree
     // std::cout<<"ABOUT TO look at the secondary shower"<<std::endl;
     //_truth->identify();
-    //for (auto iterp = _truth->GetSecondaryParticleRange().first;
+    // for (auto iterp = _truth->GetSecondaryParticleRange().first;
     //     iterp != _truth->GetSecondaryParticleRange().second; ++iterp) {
     //  PHG4Particle *secondary = iterp->second;
-    //std::cout << " secondary particle " << secondary->get_pid() << " e" << secondary->get_e() << std::endl;
+    // std::cout << " secondary particle " << secondary->get_pid() << " e" << secondary->get_e() << std::endl;
     //}
 
-    if (_savePrimaries and _truth) {
+    if (_savePrimaries and _truth)
+    {
         n_primaries = 0;
         for (auto iterp = _truth->GetPrimaryParticleRange().first;
-             iterp != _truth->GetPrimaryParticleRange().second; ++iterp) {
-            PHG4Particle* primary = iterp->second;
+             iterp != _truth->GetPrimaryParticleRange().second; ++iterp)
+        {
+            PHG4Particle *primary = iterp->second;
             gpid[n_primaries] = primary->get_pid();
 
             int vtx_id = primary->get_vtx_id();
-            PHG4VtxPoint* vtx = _truth->GetVtx(vtx_id);
+            PHG4VtxPoint *vtx = _truth->GetVtx(vtx_id);
             gvx[n_primaries] = vtx->get_x();
             gvy[n_primaries] = vtx->get_y();
             gvz[n_primaries] = vtx->get_z();
@@ -753,11 +948,13 @@ int SimAna::process_event(PHCompositeNode* topNode)
             gtrkid[n_primaries] = trkID;
 
             // G4Hits at different stations
-            if (g4hc_ecal) {
-                std::vector<PHG4Hit*> g4hits = FindG4HitsAtStation(trkID, g4hc_ecal);
+            if (g4hc_ecal)
+            {
+                std::vector<PHG4Hit *> g4hits = FindG4HitsAtStation(trkID, g4hc_ecal);
                 nhits_ecal[n_primaries] = 0;
-                for (int iecal = 0; iecal < g4hits.size(); ++iecal) {
-                    PHG4Hit* g4hit = g4hits[iecal];
+                for (int iecal = 0; iecal < g4hits.size(); ++iecal)
+                {
+                    PHG4Hit *g4hit = g4hits[iecal];
                     gx_ecal[n_primaries][iecal] = g4hit->get_x(0);
                     gy_ecal[n_primaries][iecal] = g4hit->get_y(0);
                     gz_ecal[n_primaries][iecal] = g4hit->get_z(0);
@@ -766,16 +963,19 @@ int SimAna::process_event(PHCompositeNode* topNode)
                     gpz_ecal[n_primaries][iecal] = g4hit->get_pz(0);
                     gedep_ecal[n_primaries][iecal] = g4hit->get_edep();
                     ++nhits_ecal[n_primaries];
-                    if (iecal >= 100) {
+                    if (iecal >= 100)
+                    {
                         std::cout << "More than 100 hits in EMCAL " << std::endl;
                         break;
                     }
                 }
             }
 
-            if (g4hc_d1x) {
-                PHG4Hit* st1hit = FindG4HitAtStation(trkID, g4hc_d1x);
-                if (st1hit) {
+            if (g4hc_d1x)
+            {
+                PHG4Hit *st1hit = FindG4HitAtStation(trkID, g4hc_d1x);
+                if (st1hit)
+                {
                     gx_st1[n_primaries] = st1hit->get_x(0);
                     gy_st1[n_primaries] = st1hit->get_y(0);
                     gz_st1[n_primaries] = st1hit->get_z(0);
@@ -784,9 +984,11 @@ int SimAna::process_event(PHCompositeNode* topNode)
                     gpz_st1[n_primaries] = st1hit->get_pz(0);
                 }
             }
-            if (g4hc_d2xp) {
-                PHG4Hit* st2hit = FindG4HitAtStation(trkID, g4hc_d2xp);
-                if (st2hit) {
+            if (g4hc_d2xp)
+            {
+                PHG4Hit *st2hit = FindG4HitAtStation(trkID, g4hc_d2xp);
+                if (st2hit)
+                {
                     gx_st2[n_primaries] = st2hit->get_x(0);
                     gy_st2[n_primaries] = st2hit->get_y(0);
                     gz_st2[n_primaries] = st2hit->get_z(0);
@@ -795,11 +997,13 @@ int SimAna::process_event(PHCompositeNode* topNode)
                     gpz_st2[n_primaries] = st2hit->get_pz(0);
                 }
             }
-            if (g4hc_d3px) {
-                PHG4Hit* st3hit = FindG4HitAtStation(trkID, g4hc_d3px);
+            if (g4hc_d3px)
+            {
+                PHG4Hit *st3hit = FindG4HitAtStation(trkID, g4hc_d3px);
                 if (!st3hit)
-                    PHG4Hit* st3hit = FindG4HitAtStation(trkID, g4hc_d3mx);
-                if (st3hit) {
+                    PHG4Hit *st3hit = FindG4HitAtStation(trkID, g4hc_d3mx);
+                if (st3hit)
+                {
                     gx_st3[n_primaries] = st3hit->get_x(0);
                     gy_st3[n_primaries] = st3hit->get_y(0);
                     gz_st3[n_primaries] = st3hit->get_z(0);
@@ -809,11 +1013,13 @@ int SimAna::process_event(PHCompositeNode* topNode)
                 }
             }
 
-            if (g4hc_h1t || g4hc_h1b) {
-                PHG4Hit* h1hit = FindG4HitAtStation(trkID, g4hc_h1t);
+            if (g4hc_h1t || g4hc_h1b)
+            {
+                PHG4Hit *h1hit = FindG4HitAtStation(trkID, g4hc_h1t);
                 if (!h1hit)
                     h1hit = FindG4HitAtStation(trkID, g4hc_h1b);
-                if (h1hit) {
+                if (h1hit)
+                {
                     gx_h1[n_primaries] = h1hit->get_x(0);
                     gy_h1[n_primaries] = h1hit->get_y(0);
                     gz_h1[n_primaries] = h1hit->get_z(0);
@@ -822,11 +1028,13 @@ int SimAna::process_event(PHCompositeNode* topNode)
                     gpz_h1[n_primaries] = h1hit->get_pz(0);
                 }
             }
-            if (g4hc_h2t || g4hc_h2b) {
-                PHG4Hit* h2hit = FindG4HitAtStation(trkID, g4hc_h2t);
+            if (g4hc_h2t || g4hc_h2b)
+            {
+                PHG4Hit *h2hit = FindG4HitAtStation(trkID, g4hc_h2t);
                 if (!h2hit)
-                    PHG4Hit* h2hit = FindG4HitAtStation(trkID, g4hc_h2b);
-                if (h2hit) {
+                    PHG4Hit *h2hit = FindG4HitAtStation(trkID, g4hc_h2b);
+                if (h2hit)
+                {
                     gx_h2[n_primaries] = h2hit->get_x(0);
                     gy_h2[n_primaries] = h2hit->get_y(0);
                     gz_h2[n_primaries] = h2hit->get_z(0);
@@ -835,11 +1043,13 @@ int SimAna::process_event(PHCompositeNode* topNode)
                     gpz_h2[n_primaries] = h2hit->get_pz(0);
                 }
             }
-            if (g4hc_h3t || g4hc_h3b) {
-                PHG4Hit* h3hit = FindG4HitAtStation(trkID, g4hc_h3t);
+            if (g4hc_h3t || g4hc_h3b)
+            {
+                PHG4Hit *h3hit = FindG4HitAtStation(trkID, g4hc_h3t);
                 if (!h3hit)
-                    PHG4Hit* h3hit = FindG4HitAtStation(trkID, g4hc_h3b);
-                if (h3hit) {
+                    PHG4Hit *h3hit = FindG4HitAtStation(trkID, g4hc_h3b);
+                if (h3hit)
+                {
                     gx_h3[n_primaries] = h3hit->get_x(0);
                     gy_h3[n_primaries] = h3hit->get_y(0);
                     gz_h3[n_primaries] = h3hit->get_z(0);
@@ -848,11 +1058,13 @@ int SimAna::process_event(PHCompositeNode* topNode)
                     gpz_h3[n_primaries] = h3hit->get_pz(0);
                 }
             }
-            if (g4hc_h4t || g4hc_h4b) {
-                PHG4Hit* h4hit = FindG4HitAtStation(trkID, g4hc_h4t);
+            if (g4hc_h4t || g4hc_h4b)
+            {
+                PHG4Hit *h4hit = FindG4HitAtStation(trkID, g4hc_h4t);
                 if (!h4hit)
-                    PHG4Hit* h4hit = FindG4HitAtStation(trkID, g4hc_h4b);
-                if (h4hit) {
+                    PHG4Hit *h4hit = FindG4HitAtStation(trkID, g4hc_h4b);
+                if (h4hit)
+                {
                     gx_h4[n_primaries] = h4hit->get_x(0);
                     gy_h4[n_primaries] = h4hit->get_y(0);
                     gz_h4[n_primaries] = h4hit->get_z(0);
@@ -879,23 +1091,23 @@ int SimAna::process_event(PHCompositeNode* topNode)
       //gvx_sec[n_secondaries] = vtx->get_x();
       //gvy_sec[n_secondaries] = vtx->get_y();
       //gvz_sec[n_secondaries] = vtx->get_z();
-      
+
       gpx_sec[n_secondaries] = secondary->get_px();
       gpy_sec[n_secondaries] = secondary->get_py();
       gpz_sec[n_secondaries] = secondary->get_pz();
       ge_sec[n_secondaries] = secondary->get_e();
-      
+
       //int trkID = secondary->get_track_id();
       //gtrkid_sec[n_secondaries] = trkID;
-      
-      //nhits_ecal_sec[n_secondaries] =0;                                                                                                                                                                                                                                   
+
+      //nhits_ecal_sec[n_secondaries] =0;
 
       if(g4hc_ecal){
-	std::vector<PHG4Hit*> g4hits = FindG4HitsAtStation(trkID, g4hc_ecal);
-	for(int iecal=0; iecal<g4hits.size(); ++iecal) {
-	  PHG4Hit* g4hit = g4hits[iecal];
-	  ++nhits_ecal_sec[n_secondaries];
-	}
+    std::vector<PHG4Hit*> g4hits = FindG4HitsAtStation(trkID, g4hc_ecal);
+    for(int iecal=0; iecal<g4hits.size(); ++iecal) {
+      PHG4Hit* g4hit = g4hits[iecal];
+      ++nhits_ecal_sec[n_secondaries];
+    }
       }
 
 
@@ -912,16 +1124,34 @@ int SimAna::process_event(PHCompositeNode* topNode)
     fpga_trigger[3] = _sqEvent->get_trigger(SQEvent::MATRIX4);
     fpga_trigger[4] = _sqEvent->get_trigger(SQEvent::MATRIX5);
 
+    nim_trigger[0] = _sqEvent->get_trigger(SQEvent::NIM1);
+    nim_trigger[1] = _sqEvent->get_trigger(SQEvent::NIM2);
+    nim_trigger[2] = _sqEvent->get_trigger(SQEvent::NIM3);
+    nim_trigger[3] = _sqEvent->get_trigger(SQEvent::NIM4);
+    nim_trigger[4] = _sqEvent->get_trigger(SQEvent::NIM5);
+
     // weight of MCEvent
     weight = _sqMCEvent->get_weight();
 
     ++eventID;
+
+    // TDatime now;
+    // int currTime = now.Convert();
+    // totalTime = currTime - startTime;
+    // startTime = currTime;
+
+    auto endTime = std::chrono::system_clock::now();
+
+    std::chrono::duration<double> elapsed_seconds = endTime - startTime;
+    startTime = endTime;
+    totalTime = elapsed_seconds.count();
+
     saveTree->Fill();
 
     return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int SimAna::End(PHCompositeNode* topNode)
+int SimAna::End(PHCompositeNode *topNode)
 {
     saveFile->cd();
     saveTree->Write();
@@ -929,62 +1159,74 @@ int SimAna::End(PHCompositeNode* topNode)
     return Fun4AllReturnCodes::EVENT_OK;
 }
 
-int SimAna::GetNodes(PHCompositeNode* topNode)
+int SimAna::GetNodes(PHCompositeNode *topNode)
 {
     _sqEvent = findNode::getClass<SQEvent_v1>(topNode, "SQEvent");
-    if (!_sqEvent) {
+    if (!_sqEvent)
+    {
         std::cout << "ERROR:: did not find SQEvent. Abort" << std::endl;
         return Fun4AllReturnCodes::ABORTEVENT;
     }
 
     _sqMCEvent = findNode::getClass<SQMCEvent>(topNode, "SQMCEvent");
-    if (!_sqMCEvent) {
+    if (!_sqMCEvent)
+    {
         std::cout << "ERROR:: did not find SQMCEvent. Abort" << std::endl;
         return Fun4AllReturnCodes::ABORTEVENT;
     }
 
     _hitVector = findNode::getClass<SQHitVector>(topNode, "SQHitVector");
-    if (!_hitVector) {
+    if (!_hitVector)
+    {
         std::cout << "ERROR:: did not find SQHitVector. Abort" << std::endl;
         return Fun4AllReturnCodes::ABORTEVENT;
     }
 
     _trackVector = findNode::getClass<SQTrackVector>(topNode, "SQTruthTrackVector");
-    if (!_trackVector) {
+    if (!_trackVector)
+    {
         std::cout << "WARNING:: did not find SQTruthTrackVector" << std::endl;
     }
 
     _dimuonVector = findNode::getClass<SQDimuonVector>(topNode, "SQTruthDimuonVector");
-    if (!_dimuonVector) {
+    if (!_dimuonVector)
+    {
         std::cout << "WARNING:: did not find SQTruthDimuonVector" << std::endl;
     }
 
-    if (_legacyContainer) {
+    if (_legacyContainer)
+    {
         _recEvent = findNode::getClass<SRecEvent>(topNode, "SRecEvent");
-        if (!_recEvent) {
+        if (!_recEvent)
+        {
             _recEvent = nullptr;
             std::cout << "WARNING:: no RecEvent " << std::endl;
-            //return Fun4AllReturnCodes::ABORTEVENT;
+            // return Fun4AllReturnCodes::ABORTEVENT;
         }
-    } else {
+    }
+    else
+    {
         _recTrackVector = findNode::getClass<SQTrackVector>(topNode, "SQRecTrackVector");
         _recDimuonVector = findNode::getClass<SQDimuonVector>(topNode, "SQRecDimuonVector");
-        if (!_recTrackVector) {
+        if (!_recTrackVector)
+        {
             std::cout << "ERROR:: did not find SQRecTrackVector. Abort" << std::endl;
             return Fun4AllReturnCodes::ABORTEVENT;
         }
 
         _recSt3TrackletVector = findNode::getClass<SQTrackVector>(topNode, "SQRecSt3TrackletVector");
-        if (!_recSt3TrackletVector) {
+        if (!_recSt3TrackletVector)
+        {
             std::cout << "ERROR:: did not find SQRecSt3TrackletVector. Abort" << std::endl;
             return Fun4AllReturnCodes::ABORTEVENT;
         }
     }
 
     _truth = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
-    if (!_truth) {
+    if (!_truth)
+    {
         std::cout << "WARNING:: did not find G4TruthInfo." << std::endl;
-        //return Fun4AllReturnCodes::ABORTEVENT;
+        // return Fun4AllReturnCodes::ABORTEVENT;
     }
 
     g4hc_d1x = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D1X");
@@ -993,9 +1235,10 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
     g4hc_d3mx = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D3mXp");
     if (!g4hc_d1x)
         g4hc_d1x = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_D0X"); // D0X is considered as station 1
-    if (!g4hc_d1x || !g4hc_d3px || !g4hc_d3mx) {
+    if (!g4hc_d1x || !g4hc_d3px || !g4hc_d3mx)
+    {
         std::cout << "WARNING:: SimAna::GetNode No drift chamber node " << std::endl;
-        //return Fun4AllReturnCodes::ABORTEVENT;
+        // return Fun4AllReturnCodes::ABORTEVENT;
     }
 
     g4hc_h1t = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H1T");
@@ -1010,9 +1253,10 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
     g4hc_h3b = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H3B");
     g4hc_h4t = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H4T");
     g4hc_h4b = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_H4B");
-    if (!g4hc_h1t || !g4hc_h1b || !g4hc_h2t || !g4hc_h2b || !g4hc_h3t || !g4hc_h3b || !g4hc_h4t || !g4hc_h4b) {
+    if (!g4hc_h1t || !g4hc_h1b || !g4hc_h2t || !g4hc_h2b || !g4hc_h3t || !g4hc_h3b || !g4hc_h4t || !g4hc_h4b)
+    {
         std::cout << "WARNING:: SimAna::GetNode No nodoscope node." << std::endl;
-        //return Fun4AllReturnCodes::ABORTEVENT;
+        // return Fun4AllReturnCodes::ABORTEVENT;
     }
 
     g4hc_p1y1 = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P1Y1");
@@ -1023,13 +1267,15 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
     g4hc_p2x2 = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P2X2");
     g4hc_p2y1 = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P2Y1");
     g4hc_p2y2 = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_P2Y2");
-    if (!g4hc_p1y1 || !g4hc_p1y2 || !g4hc_p1x1 || !g4hc_p1x2 || !g4hc_p2x1 || !g4hc_p2x2 || !g4hc_p2y1 || !g4hc_p2y2) {
+    if (!g4hc_p1y1 || !g4hc_p1y2 || !g4hc_p1x1 || !g4hc_p1x2 || !g4hc_p2x1 || !g4hc_p2x2 || !g4hc_p2y1 || !g4hc_p2y2)
+    {
         std::cout << "WARNING:: SimAna::GetNode No prototube node. " << std::endl;
-        //return Fun4AllReturnCodes::ABORTEVENT;
+        // return Fun4AllReturnCodes::ABORTEVENT;
     }
 
     g4hc_ecal = findNode::getClass<PHG4HitContainer>(topNode, "G4HIT_EMCal");
-    if (!g4hc_ecal) {
+    if (!g4hc_ecal)
+    {
         std::cout << "WARNING:: SimAna::GetNode No EMcal node" << std::endl;
     }
     return Fun4AllReturnCodes::EVENT_OK;
@@ -1037,9 +1283,20 @@ int SimAna::GetNodes(PHCompositeNode* topNode)
 
 void SimAna::MakeTree()
 {
-    saveFile = new TFile(saveNameOut, "RECREATE");
+    saveFile = new TFile(saveName.c_str(), "RECREATE");
     saveTree = new TTree("Events", "Tree Created by SimAna");
     saveTree->Branch("eventID", &eventID, "eventID/I");
+
+    saveTree->Branch("totalTime", &totalTime, "totalTime/F");
+    saveTree->Branch("allRecoed", &allRecoed, "allRecoed/I");
+    saveTree->Branch("allCouldBeRecoed", &allCouldBeRecoed, "allCouldBeRecoed/I");
+    saveTree->Branch("numNonMatched", &numNonMatched, "numNonMatched/I");
+    saveTree->Branch("nTrueDM", &nTrueDM, "nTrueDM/I");
+    saveTree->Branch("nFakeDM", &nFakeDM, "nFakeDM/I");
+    saveTree->Branch("nFakeTracksTop2", &nFakeTracksTop2, "nFakeTracksTop2/I");
+    saveTree->Branch("nRealTracks", &nRealTracks, "nRealTracks/I");
+    saveTree->Branch("mainDMRecoed", &mainDMRecoed, "mainDMRecoed/I");
+    saveTree->Branch("passHitCuts", &passHitCuts, "passHitCuts/I");
 
     saveTree->Branch("n_hits", &n_hits, "n_hits/I");
     saveTree->Branch("n_hits_h1x", &n_hits_h1x, "n_hits_h1x/I");
@@ -1070,7 +1327,8 @@ void SimAna::MakeTree()
     saveTree->Branch("hit_truthpy", hit_truthpy, "hit_truthpy[n_hits]/F");
     saveTree->Branch("hit_truthpz", hit_truthpz, "hit_truthpz[n_hits]/F");
 
-    if (_saveTracks) {
+    if (_saveTracks)
+    {
         saveTree->Branch("n_truthtracks", &n_truthtracks, "n_truthtracks/I");
         saveTree->Branch("truthtrack_charge", truthtrack_charge, "truthtrack_charge[n_truthtracks]/I");
         saveTree->Branch("truthtrack_x_st1", truthtrack_x_st1, "truthtrack_x_st1[n_truthtracks]/F");
@@ -1096,6 +1354,7 @@ void SimAna::MakeTree()
         saveTree->Branch("rec_status", &rec_status, "rec_status/I");
         saveTree->Branch("n_tracks", &n_tracks, "n_tracks/I");
         saveTree->Branch("track_charge", track_charge, "track_charge[n_tracks]/I");
+        saveTree->Branch("track_particleID", track_particleID, "track_particleID[n_tracks]/I");
         saveTree->Branch("track_nhits", track_nhits, "track_nhits[n_tracks]/I");
         saveTree->Branch("track_x_target", track_x_target, "track_x_target[n_tracks]/F");
         saveTree->Branch("track_y_target", track_y_target, "track_y_target[n_tracks]/F");
@@ -1127,6 +1386,7 @@ void SimAna::MakeTree()
         saveTree->Branch("track_prob", track_prob, "track_prob[n_tracks]/F");
         saveTree->Branch("track_quality", track_quality, "track_quality[n_tracks]/F");
         saveTree->Branch("track_isValid", track_isValid, "track_isValid[n_tracks]/I");
+        saveTree->Branch("track_matched", track_matched, "track_matched[n_tracks]/I");
         saveTree->Branch("track_nhits_st1", track_nhits_st1, "track_nhits_st1[n_tracks]/I");
         saveTree->Branch("track_nhits_st2", track_nhits_st2, "track_nhits_st2[n_tracks]/I");
         saveTree->Branch("track_nhits_st3", track_nhits_st3, "track_nhits_st3[n_tracks]/I");
@@ -1170,7 +1430,8 @@ void SimAna::MakeTree()
         saveTree->Branch("st3tracklet_nhits_st3", st3tracklet_nhits_st3, "st3tracklet_nhits_st3[n_st3tracklets]/I");
     }
 
-    if (_saveVertex) {
+    if (_saveVertex)
+    {
         saveTree->Branch("n_truthdimuons", &n_truthdimuons, "n_truthdimuons/I");
         saveTree->Branch("truthdimuon_mass", truthdimuon_mass, "truthdimuon_mass[n_truthdimuons]/F");
         saveTree->Branch("truthdimuon_x_vtx", truthdimuon_x_vtx, "truthdimuon_x_vtx[n_truthdimuons]/F");
@@ -1185,10 +1446,12 @@ void SimAna::MakeTree()
         saveTree->Branch("truthdimuon_nmom_x", truthdimuon_nmom_x, "truthdimuon_nmom_x[n_truthdimuons]/F");
         saveTree->Branch("truthdimuon_nmom_y", truthdimuon_nmom_y, "truthdimuon_nmom_y[n_truthdimuons]/F");
         saveTree->Branch("truthdimuon_nmom_z", truthdimuon_nmom_z, "truthdimuon_nmom_z[n_truthdimuons]/F");
+        saveTree->Branch("truthdimuon_recoed", truthdimuon_recoed, "truthdimuon_recoed[n_truthdimuons]/I");
 
         saveTree->Branch("n_dimuons", &n_dimuons, "n_dimuons/I");
         saveTree->Branch("dimuon_mass", dimuon_mass, "dimuon_mass[n_dimuons]/F");
         saveTree->Branch("dimuon_chisq", dimuon_chisq, "dimuon_chisq[n_dimuons]/F");
+        saveTree->Branch("dimuon_chisq_vx", dimuon_chisq_vx, "dimuon_chisq_vx[n_dimuons]/F");
         saveTree->Branch("dimuon_x_vtx", dimuon_x_vtx, "dimuon_x_vtx[n_dimuons]/F");
         saveTree->Branch("dimuon_y_vtx", dimuon_y_vtx, "dimuon_y_vtx[n_dimuons]/F");
         saveTree->Branch("dimuon_z_vtx", dimuon_z_vtx, "dimuon_z_vtx[n_dimuons]/F");
@@ -1207,9 +1470,11 @@ void SimAna::MakeTree()
         saveTree->Branch("dimuon_npos_x", dimuon_npos_x, "dimuon_npos_x[n_dimuons]/F");
         saveTree->Branch("dimuon_npos_y", dimuon_npos_y, "dimuon_npos_y[n_dimuons]/F");
         saveTree->Branch("dimuon_npos_z", dimuon_npos_z, "dimuon_npos_z[n_dimuons]/F");
+        saveTree->Branch("dimuon_matched", dimuon_matched, "dimuon_matched[n_dimuons]/I");
     }
 
-    if (_savePrimaries) {
+    if (_savePrimaries)
+    {
         saveTree->Branch("n_showers", &n_showers, "n_showers/I");
         saveTree->Branch("sx_ecal", &sx_ecal, "sx_ecal[n_showers]/F");
         saveTree->Branch("sy_ecal", &sy_ecal, "sy_ecal[n_showers]/F");
@@ -1296,21 +1561,23 @@ void SimAna::MakeTree()
         saveTree->Branch("gpz_p1", gpz_p1, "gpz_p1[n_primaries]/F");
     }
 
-    if (_saveSecondaries) {
+    if (_saveSecondaries)
+    {
         saveTree->Branch("n_secondaries", &n_secondaries, "n_secondaries/I");
-        //saveTree->Branch("gtrkid_sec",        gtrkid_sec,              "gtrkid_sec[n_secondaries]/I");
+        // saveTree->Branch("gtrkid_sec",        gtrkid_sec,              "gtrkid_sec[n_secondaries]/I");
         saveTree->Branch("gpid_sec", gpid_sec, "gpid_sec[n_secondaries]/I");
-        //saveTree->Branch("gvx_sec",           gvx_sec,                 "gvx_sec[n_secondaries]/F");
-        //saveTree->Branch("gvy_sec",           gvy_sec,                 "gvy_sec[n_secondaries]/F");
-        //saveTree->Branch("gvz_sec",           gvz_sec,                 "gvz_sec[n_secondaries]/F");
+        // saveTree->Branch("gvx_sec",           gvx_sec,                 "gvx_sec[n_secondaries]/F");
+        // saveTree->Branch("gvy_sec",           gvy_sec,                 "gvy_sec[n_secondaries]/F");
+        // saveTree->Branch("gvz_sec",           gvz_sec,                 "gvz_sec[n_secondaries]/F");
         saveTree->Branch("gpx_sec", gpx_sec, "gpx_sec[n_secondaries]/F");
         saveTree->Branch("gpy_sec", gpy_sec, "gpy_sec[n_secondaries]/F");
         saveTree->Branch("gpz_sec", gpz_sec, "gpz_sec[n_secondaries]/F");
         saveTree->Branch("ge_sec", ge_sec, "ge_sec[n_secondaries]/F");
-        //saveTree->Branch("nhits_ecal_sec",    nhits_ecal_sec,          "nhits_ecal_sec[n_secondaries]/I");
+        // saveTree->Branch("nhits_ecal_sec",    nhits_ecal_sec,          "nhits_ecal_sec[n_secondaries]/I");
     }
 
     saveTree->Branch("fpga_trigger", fpga_trigger, "fpga_trigger[5]/O");
+    saveTree->Branch("nim_trigger", nim_trigger, "nim_trigger[5]/O");
 
     saveTree->Branch("weight", &weight, "weight/F");
 }

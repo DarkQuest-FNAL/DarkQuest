@@ -6,6 +6,9 @@
 #include <fun4all/SubsysReco.h>
 #include <map>
 
+#include <chrono>
+#include <ctime>
+
 class TFile;
 class TTree;
 class SQHitVector;
@@ -40,7 +43,7 @@ public:
     int FindCommonHitIDs(std::vector<int>& hitidvec1, std::vector<int>& hitidvec2);
     SRecTrack* FindBestMomRecTrack(SRecEvent* recEvent, const float true_P);
 
-    void set_out_name(std::string out_file) { saveNameOut = out_file.c_str(); }
+    void set_out_name(std::string out_file) { saveName = out_file.c_str(); }
     void set_legacy_rec_container(bool b);
     void save_secondaries(bool b);
     void save_primaries(bool b);
@@ -103,12 +106,23 @@ private:
     PHG4HitContainer* g4hc_ecal;
 
     // Output
-    TString saveName;
-    const char* saveNameOut;
+    std::string saveName;
+
     TFile* saveFile;
     int eventID;
     TTree* saveTree;
 
+  float totalTime;
+
+  int passHitCuts;
+  int nTrueDM;
+  int nFakeDM;
+  float TrueDMFrac;
+  int nFakeTracks;
+  int nFakeTracksTop2;
+  int nRealTracks;
+  int mainDMRecoed;
+  
     int n_hits;
     int n_hits_h1x;
     int n_hits_h2x;
@@ -139,30 +153,31 @@ private:
     float hit_truthpz[1000];
 
     int n_truthtracks;
-    int truthtrack_charge[100];
-    float truthtrack_x_st1[100];
-    float truthtrack_y_st1[100];
-    float truthtrack_z_st1[100];
-    float truthtrack_px_st1[100];
-    float truthtrack_py_st1[100];
-    float truthtrack_pz_st1[100];
-    float truthtrack_x_st3[100];
-    float truthtrack_y_st3[100];
-    float truthtrack_z_st3[100];
-    float truthtrack_px_st3[100];
-    float truthtrack_py_st3[100];
-    float truthtrack_pz_st3[100];
-    float truthtrack_x_vtx[100];
-    float truthtrack_y_vtx[100];
-    float truthtrack_z_vtx[100];
-    float truthtrack_px_vtx[100];
-    float truthtrack_py_vtx[100];
-    float truthtrack_pz_vtx[100];
-    int truthtrack_rectrack_id[100];
+    int truthtrack_charge[1000];
+    float truthtrack_x_st1[1000];
+    float truthtrack_y_st1[1000];
+    float truthtrack_z_st1[1000];
+    float truthtrack_px_st1[1000];
+    float truthtrack_py_st1[1000];
+    float truthtrack_pz_st1[1000];
+    float truthtrack_x_st3[1000];
+    float truthtrack_y_st3[1000];
+    float truthtrack_z_st3[1000];
+    float truthtrack_px_st3[1000];
+    float truthtrack_py_st3[1000];
+    float truthtrack_pz_st3[1000];
+    float truthtrack_x_vtx[1000];
+    float truthtrack_y_vtx[1000];
+    float truthtrack_z_vtx[1000];
+    float truthtrack_px_vtx[1000];
+    float truthtrack_py_vtx[1000];
+    float truthtrack_pz_vtx[1000];
+    int truthtrack_rectrack_id[1000];
 
     int rec_status;
     int n_tracks;
     int track_charge[100];
+    int track_particleID[100];
     int track_nhits[100];
     float track_x_target[100];
     float track_y_target[100];
@@ -194,6 +209,7 @@ private:
     float track_chisq[100];
     float track_prob[100];
     float track_quality[100];
+    int track_matched[100];
     int track_isValid[100];
     int track_nhits_st1[100];
     int track_nhits_st2[100];
@@ -251,10 +267,12 @@ private:
     float truthdimuon_nmom_x[100];
     float truthdimuon_nmom_y[100];
     float truthdimuon_nmom_z[100];
+    int truthdimuon_recoed[100];
 
     int n_dimuons;
     float dimuon_mass[100];
     float dimuon_chisq[100];
+    float dimuon_chisq_vx[100];
     float dimuon_x_vtx[100];
     float dimuon_y_vtx[100];
     float dimuon_z_vtx[100];
@@ -273,7 +291,8 @@ private:
     float dimuon_npos_x[100];
     float dimuon_npos_y[100];
     float dimuon_npos_z[100];
-
+    int dimuon_matched[100];
+  
     int n_showers;
     float sx_ecal[1000];
     float sy_ecal[1000];
@@ -380,8 +399,15 @@ private:
     //int nhits_ecal_sec[1000];
 
     bool fpga_trigger[5];
+    bool nim_trigger[5];
 
     float weight;
+  
+  std::chrono::time_point<std::chrono::system_clock> startTime;
+
+  int allRecoed;
+  int allCouldBeRecoed;
+  int numNonMatched;
 };
 
 #endif

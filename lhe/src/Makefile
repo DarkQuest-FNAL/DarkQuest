@@ -1,9 +1,10 @@
 ROOTLIBS = `root-config --glibs`
 ROOTCFLAGS = `root-config --cflags`
 
+
 BIN := ../bin
 SRC_DIR := ../src
-LDLIBS=$(ROOTLIBS) -lgsl -lgslcblas -L/seaquest/users/cmantill/DarkQuest/lhe/HepMC/lib/ -lHepMC -I/seaquest/users/cmantill/DarkQuest/lhe/HepMC/include/
+LDLIBS=$(ROOTLIBS) -lgsl -lgslcblas -L/home/dsperka/DarkQuest-FNAL/DarkQuest/lhe/HepMClib/ -lHepMC -I/home/dsperka/DarkQuest-FNAL/DarkQuest/lhe/HepMC/include/
 INCFILES=-I$(SRC_DIR)
 CPP=g++
 CPPFLAGS=$(LDLIBS) $(ROOTCFLAGS) -g
