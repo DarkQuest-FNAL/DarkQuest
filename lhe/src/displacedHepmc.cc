@@ -170,6 +170,8 @@ int main(int argc, char **argv)
   char *cvalue = NULL;
   int index;
 
+  bool isNewFile = false;
+
   if (argc < 10)
   {
     printf(
@@ -192,6 +194,7 @@ int main(int argc, char **argv)
   mass = atof(argv[7]);
   min_vz = atof(argv[8]);
   max_vz = atof(argv[9]);
+  isNewFile = atof(argv[10]);
 
   double e_cm[2000], r_ratio[2000];
   int n_rpoints = 0;
@@ -285,19 +288,44 @@ int main(int argc, char **argv)
       struct stdhep_entry *temp = new struct stdhep_entry;
       fgets(line, 1000, in_file);
       char blah[1000];
-      int n_tokens =
-          sscanf(line, "%d %d %d %*d %lf %lf %lf %lf %lf", &(temp->idhep),
-                 &(temp->isthep), &(temp->jmohep[0]), &(temp->phep[3]),
-                 &(temp->phep[0]), &(temp->phep[1]), &(temp->phep[2]),
-                 &(temp->phep[4]));
-      if (n_tokens < 8)
-        break;
+      int n_tokens = 0;
+      if (!isNewFile)
+      {
+        n_tokens =
+            sscanf(line, "%d %d %d %*d %lf %lf %lf %lf %lf", &(temp->idhep),
+                   &(temp->isthep), &(temp->jmohep[0]), &(temp->phep[3]),
+                   &(temp->phep[0]), &(temp->phep[1]), &(temp->phep[2]),
+                   &(temp->phep[4]));
+        if (n_tokens < 8)
+          break;
+      }
+      else
+      {
+        n_tokens = sscanf(line, "%d %d %d %*d %*d %*d %lf %lf %lf %lf %lf %*lf %*lf", &(temp->idhep),
+                          &(temp->isthep), &(temp->jmohep[0]), &(temp->phep[3]),
+                          &(temp->phep[0]), &(temp->phep[1]), &(temp->phep[2]),
+                          &(temp->phep[4]));
+        if (temp->idhep != 5 && n_tokens < 8)
+          break;
+      }
       switch (temp->isthep)
       { // translate between status conventions for
         // HEPEUP (LHE) and HEPEVT (StdHep)
       case 1:
-      case 2:
+        temp->isthep = 3;
         break;
+      case 2:
+      {
+        if (!isNewFile)
+          break;
+        else
+        {
+          if (temp->idhep == 221 || temp->idhep == 111)
+            temp->isthep = 0;
+          else
+            break;
+        }
+      }
       case -1:
         temp->isthep = 3;
         break;
@@ -305,7 +333,7 @@ int main(int argc, char **argv)
         temp->isthep = 0;
       }
       if (temp->isthep == 2 &&
-          temp->idhep == 666)
+          (temp->idhep == 666 || temp->idhep == 100))
       { // intermediate particle, PDG ID 666
         if (temp_event.aprime)
           printf("WARNING: multiple A'\n");
@@ -361,7 +389,11 @@ int main(int argc, char **argv)
       }
     }
     else
+    {
       printf("WARNING: missing A' decays\n");
+      printf("aprime: %p, postrack: %p, negtrack: %p\n", temp_event.aprime,
+             temp_event.postrack, temp_event.negtrack);
+    }
     nevhep++;
   }
 
@@ -371,7 +403,9 @@ int main(int argc, char **argv)
   float mean_acceptance_simple = sum_probs_simple / v_prob_simple.size();
   float sum_probs = 0;
   for (int i = 0; i < v_prob.size(); i++)
+  {
     sum_probs += v_prob.at(i);
+  }
   float mean_acceptance = sum_probs / v_prob.size();
 
   printf("calculate acceptance for mass %f and eps %.9f and ctau %f vz between %f and %f : %f \n", mass, eps, ctau, min_vz, max_vz, mean_acceptance);
@@ -455,7 +489,7 @@ int main(int argc, char **argv)
     double prob = 0.;
     if (vtx_displacement_min >= vtx_displacement_max)
     {
-      printf("vtx_displacement_min > vtx_displacement_max, fail sampling; weight set to 0\n");
+      // printf("vtx_displacement_min > vtx_displacement_max, fail sampling; weight set to 0\n");
     }
     else
     {
